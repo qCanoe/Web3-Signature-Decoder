@@ -1,0 +1,312 @@
+[
+  {
+    "method": "eth_sign",
+    "address": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+    "message": "0xdd54f25d0bbeae343a1dec3acce8dc5b3a0886bdb9c5e667f65d5bbbe11bc093",
+    "raw": [
+      "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+      "0xdd54f25d0bbeae343a1dec3acce8dc5b3a0886bdb9c5e667f65d5bbbe11bc093"
+    ],
+    "signature": "0xaabbccddeeff11223344556677889900aabbccddeeff11223344556677889900aabbccddeeff112233445566778899001c",
+    "visible_to_user": "❌"
+  },
+  {
+    "method": "personal_sign",
+    "address": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+    "message": "Login to dApp - Nonce: 785391",
+    "raw": [
+      "0x4c6f67696e20746f206444617070202d204e6f6e63653a20373835333931",
+      "0x742d35Cc6634C0532925a3b844Bc454e4438f44e"
+    ],
+    "signature": "0xbbccddeeffaabbccddeeff11223344556677889900aabbccddeeff11223344556677889900aabbccddeeff11223344551b",
+    "visible_to_user": "✅ Login to dApp - Nonce: 785391"
+  },
+  {
+    "method": "eth_signTypedData_v4",
+    "address": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+    "message": {
+      "domain": {
+        "name": "DemoDAO",
+        "version": "1",
+        "chainId": 1,
+        "verifyingContract": "0x1F98431c8aD98523631AE4a59f267346ea31F984"
+      },
+      "types": {
+        "EIP712Domain": [
+          { "name": "name", "type": "string" },
+          { "name": "version", "type": "string" },
+          { "name": "chainId", "type": "uint256" },
+          { "name": "verifyingContract", "type": "address" }
+        ],
+        "Vote": [
+          { "name": "proposalId", "type": "uint256" },
+          { "name": "support", "type": "bool" }
+        ]
+      },
+      "primaryType": "Vote",
+      "message": {
+        "proposalId": 42,
+        "support": true
+      }
+    },
+    "raw": [
+      "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+      {
+        "domain": {
+          "name": "DemoDAO",
+          "version": "1",
+          "chainId": 1,
+          "verifyingContract": "0x1F98431c8aD98523631AE4a59f267346ea31F984"
+        },
+        "types": {
+          "EIP712Domain": [
+            { "name": "name", "type": "string" },
+            { "name": "version", "type": "string" },
+            { "name": "chainId", "type": "uint256" },
+            { "name": "verifyingContract", "type": "address" }
+          ],
+          "Vote": [
+            { "name": "proposalId", "type": "uint256" },
+            { "name": "support", "type": "bool" }
+          ]
+        },
+        "primaryType": "Vote",
+        "message": {
+          "proposalId": 42,
+          "support": true
+        }
+      }
+    ],
+    "signature": "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdef1c",
+    "visible_to_user": "✅ Vote on proposal #42 (support: true)"
+  },
+  {
+    "method": "eth_sendTransaction",
+    "address": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+    "message": {
+      "to": "0x267be1c1D684F78cb4F6a176C4911b741e4Ffdc0",
+      "value": "0xde0b6b3a7640000", 
+      "gas": "0x5208",
+      "gasPrice": "0x3b9aca00",
+      "nonce": "0x0"
+    },
+    "raw": [
+      {
+        "from": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+        "to": "0x267be1c1D684F78cb4F6a176C4911b741e4Ffdc0",
+        "value": "0xde0b6b3a7640000",
+        "gas": "0x5208",
+        "gasPrice": "0x3b9aca00",
+        "nonce": "0x0"
+      }
+    ],
+    "signature": "0xTX_HASH_FAKE_123",
+    "visible_to_user": "✅ Send 1.0 ETH to 0x267be1c1D684F78cb4F6a176C4911b741e4Ffdc0"
+  },
+  {
+    "method": "personal_sign",
+    "address": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+    "message": "Welcome to OpenSea!\n\nClick to sign in and accept the OpenSea Terms of Service: https://opensea.io/tos\n\nThis request will not trigger a blockchain transaction or cost any gas fees.\n\nYour authentication status will reset after 24 hours.\n\nWallet address:\n0x742d35cc6634c0532925a3b844bc454e4438f44e\n\nNonce:\n01234567-89ab-cdef-0123-456789abcdef",
+    "raw": [
+      "0x57656c636f6d6520746f204f70656e536561210a0a436c69636b20746f207369676e20696e20616e642061636365707420746865204f70656e536561205465726d73206f6620536572766963653a2068747470733a2f2f6f70656e7365612e696f2f746f730a0a5468697320726571756573742077696c6c206e6f7420747269676765722061206c6f636b636861696e207472616e73616374696f6e206f7220636f737420616e79206761732066656573556f75722061757468656e7469636174696f6e207374617475732077696c6c207265736574206166746572203234202e0a0a57616c6c657420616464726573733a0a3078373432643335636336363334633035333239323561336238343462633435346534343338663434650a0a4e6f6e63653a0a30313233343536372d383961622d636465662d303132332d343536373839616263646566",
+      "0x742d35Cc6634C0532925a3b844Bc454e4438f44e"
+    ],
+    "signature": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1b",
+    "visible_to_user": "✅ Welcome to OpenSea! Click to sign in..."
+  },
+  {
+    "method": "eth_signTypedData_v4",
+    "address": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+    "message": {
+      "domain": {
+        "name": "Seaport",
+        "version": "1.1",
+        "chainId": 1,
+        "verifyingContract": "0x00000000006c3852cbEf3e08E8dF289169EdE581"
+      },
+      "types": {
+        "EIP712Domain": [
+          { "name": "name", "type": "string" },
+          { "name": "version", "type": "string" },
+          { "name": "chainId", "type": "uint256" },
+          { "name": "verifyingContract", "type": "address" }
+        ],
+        "OrderComponents": [
+          { "name": "offerer", "type": "address" },
+          { "name": "zone", "type": "address" },
+          { "name": "offer", "type": "OfferItem[]" },
+          { "name": "consideration", "type": "ConsiderationItem[]" },
+          { "name": "orderType", "type": "uint8" },
+          { "name": "startTime", "type": "uint256" },
+          { "name": "endTime", "type": "uint256" },
+          { "name": "zoneHash", "type": "bytes32" },
+          { "name": "salt", "type": "uint256" },
+          { "name": "conduitKey", "type": "bytes32" },
+          { "name": "counter", "type": "uint256" }
+        ],
+        "OfferItem": [
+          { "name": "itemType", "type": "uint8" },
+          { "name": "token", "type": "address" },
+          { "name": "identifierOrCriteria", "type": "uint256" },
+          { "name": "startAmount", "type": "uint256" },
+          { "name": "endAmount", "type": "uint256" }
+        ],
+        "ConsiderationItem": [
+          { "name": "itemType", "type": "uint8" },
+          { "name": "token", "type": "address" },
+          { "name": "identifierOrCriteria", "type": "uint256" },
+          { "name": "startAmount", "type": "uint256" },
+          { "name": "endAmount", "type": "uint256" },
+          { "name": "recipient", "type": "address" }
+        ]
+      },
+      "primaryType": "OrderComponents",
+      "message": {
+        "offerer": "0x742d35cc6634c0532925a3b844bc454e4438f44e",
+        "offer": [
+          {
+            "itemType": "2",
+            "token": "0xB852c6b5892256C264Cc2C888eA462189154D8d7",
+            "identifierOrCriteria": "3377",
+            "startAmount": "1",
+            "endAmount": "1"
+          }
+        ],
+        "consideration": [
+          {
+            "itemType": "1",
+            "token": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+            "identifierOrCriteria": "0",
+            "startAmount": "3700000000000000000",
+            "endAmount": "3700000000000000000",
+            "recipient": "0x742d35cc6634c0532925a3b844bc454e4438f44e"
+          }
+        ],
+        "startTime": "1675151142",
+        "endTime": "1676015142",
+        "orderType": "2",
+        "zone": "0x110b2B128A9eD1be5Ef3232D8e4E41640dF5c2Cd",
+        "zoneHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "salt": "24446860302761739304752683030156737591518664810215442929818316022741225326226",
+        "conduitKey": "0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000",
+        "counter": "0"
+      }
+    },
+    "raw": [
+      "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+      {
+        "domain": {
+          "name": "Seaport",
+          "version": "1.1",
+          "chainId": 1,
+          "verifyingContract": "0x00000000006c3852cbEf3e08E8dF289169EdE581"
+        },
+        "types": {
+          "EIP712Domain": [
+            { "name": "name", "type": "string" },
+            { "name": "version", "type": "string" },
+            { "name": "chainId", "type": "uint256" },
+            { "name": "verifyingContract", "type": "address" }
+          ],
+          "OrderComponents": [
+            { "name": "offerer", "type": "address" },
+            { "name": "zone", "type": "address" },
+            { "name": "offer", "type": "OfferItem[]" },
+            { "name": "consideration", "type": "ConsiderationItem[]" },
+            { "name": "orderType", "type": "uint8" },
+            { "name": "startTime", "type": "uint256" },
+            { "name": "endTime", "type": "uint256" },
+            { "name": "zoneHash", "type": "bytes32" },
+            { "name": "salt", "type": "uint256" },
+            { "name": "conduitKey", "type": "bytes32" },
+            { "name": "counter", "type": "uint256" }
+          ],
+          "OfferItem": [
+            { "name": "itemType", "type": "uint8" },
+            { "name": "token", "type": "address" },
+            { "name": "identifierOrCriteria", "type": "uint256" },
+            { "name": "startAmount", "type": "uint256" },
+            { "name": "endAmount", "type": "uint256" }
+          ],
+          "ConsiderationItem": [
+            { "name": "itemType", "type": "uint8" },
+            { "name": "token", "type": "address" },
+            { "name": "identifierOrCriteria", "type": "uint256" },
+            { "name": "startAmount", "type": "uint256" },
+            { "name": "endAmount", "type": "uint256" },
+            { "name": "recipient", "type": "address" }
+          ]
+        },
+        "primaryType": "OrderComponents",
+        "message": {
+          "offerer": "0x742d35cc6634c0532925a3b844bc454e4438f44e",
+          "offer": [
+            {
+              "itemType": "2",
+              "token": "0xB852c6b5892256C264Cc2C888eA462189154D8d7",
+              "identifierOrCriteria": "3377",
+              "startAmount": "1",
+              "endAmount": "1"
+            }
+          ],
+          "consideration": [
+            {
+              "itemType": "1",
+              "token": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+              "identifierOrCriteria": "0",
+              "startAmount": "3700000000000000000",
+              "endAmount": "3700000000000000000",
+              "recipient": "0x742d35cc6634c0532925a3b844bc454e4438f44e"
+            }
+          ],
+          "startTime": "1675151142",
+          "endTime": "1676015142",
+          "orderType": "2",
+          "zone": "0x110b2B128A9eD1be5Ef3232D8e4E41640dF5c2Cd",
+          "zoneHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "salt": "24446860302761739304752683030156737591518664810215442929818316022741225326226",
+          "conduitKey": "0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000",
+          "counter": "0"
+        }
+      }
+    ],
+    "signature": "0xseaport_nft_listing_signature_fake_123",
+    "visible_to_user": "✅ List NFT #3377 for 3.7 ETH on Seaport"
+  },
+  {
+    "method": "personal_sign",
+    "address": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+    "message": "I authorize the transfer of my tokens",
+    "raw": [
+      "0x4920617574686f72697a6520746865207472616e73666572206f66206d7920746f6b656e73",
+      "0x742d35Cc6634C0532925a3b844Bc454e4438f44e"
+    ],
+    "signature": "0xdangerous_auth_signature_fake_456",
+    "visible_to_user": "⚠️ I authorize the transfer of my tokens"
+  },
+  {
+    "method": "eth_sendTransaction",
+    "address": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+    "message": {
+      "to": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+      "value": "0x0",
+      "data": "0xa9059cbb000000000000000000000000d8da6bf26964af9d7eed9e03e53415d37aa96045000000000000000000000000000000000000000000000000000000000098bca0",
+      "gas": "0xc350",
+      "gasPrice": "0x4a817c800",
+      "nonce": "0x5"
+    },
+    "raw": [
+      {
+        "from": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+        "to": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "value": "0x0",
+        "data": "0xa9059cbb000000000000000000000000d8da6bf26964af9d7eed9e03e53415d37aa96045000000000000000000000000000000000000000000000000000000000098bca0",
+        "gas": "0xc350",
+        "gasPrice": "0x4a817c800",
+        "nonce": "0x5"
+      }
+    ],
+    "signature": "0xusdt_transfer_signature_fake_789",
+    "visible_to_user": "✅ Transfer 10 USDT to 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
+  }
+] 

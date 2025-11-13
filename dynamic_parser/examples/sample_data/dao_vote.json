@@ -1,0 +1,58 @@
+{
+  "types": {
+    "EIP712Domain": [
+      {
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "name": "version",
+        "type": "string"
+      },
+      {
+        "name": "chainId",
+        "type": "uint256"
+      },
+      {
+        "name": "verifyingContract",
+        "type": "address"
+      }
+    ],
+    "Ballot": [
+      {
+        "name": "proposalId",
+        "type": "uint256"
+      },
+      {
+        "name": "voter",
+        "type": "address"
+      },
+      {
+        "name": "support",
+        "type": "uint8"
+      },
+      {
+        "name": "reason",
+        "type": "string"
+      },
+      {
+        "name": "timestamp",
+        "type": "uint256"
+      }
+    ]
+  },
+  "primaryType": "Ballot",
+  "domain": {
+    "name": "Compound Governor Bravo",
+    "version": "1",
+    "chainId": 1,
+    "verifyingContract": "0xc0Da02939E1441F497fd74F78cE7Decb17B66529"
+  },
+  "message": {
+    "proposalId": 123,
+    "voter": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+    "support": 1,
+    "reason": "I support this proposal for better governance",
+    "timestamp": 1699143856
+  }
+}
