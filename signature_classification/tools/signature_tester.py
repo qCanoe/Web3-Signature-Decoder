@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-以太坊签名分类器测试工具
+Ethereum Signature Classifier Test Tool
 
-使用方法:
-  python signature_tester.py         # 批量测试所有样本
-  python signature_tester.py 2       # 测试第2个样本
-  python signature_tester.py 1       # 测试第1个样本
+Usage:
+  python signature_tester.py         # Batch test all samples
+  python signature_tester.py 2       # Test sample #2
+  python signature_tester.py 1       # Test sample #1
 
-功能:
-- 自动加载 test_samples.json 中的测试数据
-- 支持批量测试(默认)和单独测试(通过索引)
-- 验证数据完整性和签名类型分类
+Features:
+- Automatically load test data from test_samples.json
+- Support batch testing (default) and individual testing (by index)
+- Verify data integrity and signature type classification
 """
 
 import json
@@ -18,7 +18,7 @@ import sys
 import os
 from typing import Dict, Any, Union, Optional
 
-# 添加父目录到路径以导入模块
+# Add parent directory to path to import modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from signature_classification import (
@@ -29,10 +29,10 @@ from signature_classification import (
 
 
 class SignatureTester:
-    """签名测试器"""
+    """Signature tester"""
     
     def __init__(self):
-        """初始化测试器"""
+        """Initialize tester"""
         self.classifier = SignatureClassifier()
         self.validator = SignatureValidator()
         self.risk_analyzer = RiskAnalyzer()

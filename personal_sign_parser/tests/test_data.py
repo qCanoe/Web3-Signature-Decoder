@@ -1,11 +1,11 @@
 """
-PersonalSign 解析器测试数据
-包含各种类型的 PersonalSign 消息示例
+PersonalSign Parser Test Data
+Contains various types of PersonalSign message examples
 """
 
 from typing import Dict, List, Any
 
-# 登录类型消息示例
+# Login type message examples
 LOGIN_MESSAGES = [
     {
         "message": "Sign in to example.com\nNonce: abc123\nTimestamp: 1640995200",
@@ -44,7 +44,7 @@ LOGIN_MESSAGES = [
     }
 ]
 
-# 绑定类型消息示例
+# Binding type message examples
 BINDING_MESSAGES = [
     {
         "message": "Bind email: user@example.com\nCode: 123456",
@@ -85,7 +85,7 @@ BINDING_MESSAGES = [
     }
 ]
 
-# 授权类型消息示例
+# Authorization type message examples
 AUTHORIZATION_MESSAGES = [
     {
         "message": "Authorize access to: user profile\nPermissions: read, write\nResource: /api/user",
@@ -117,7 +117,7 @@ AUTHORIZATION_MESSAGES = [
     }
 ]
 
-# 验证类型消息示例
+# Verification type message examples
 VERIFICATION_MESSAGES = [
     {
         "message": "Verify ownership of this wallet\nChallenge: random_challenge_123\nAddress: 0x1234567890123456789012345678901234567890",
@@ -146,7 +146,7 @@ VERIFICATION_MESSAGES = [
     }
 ]
 
-# 自定义消息示例
+# Custom message examples
 CUSTOM_MESSAGES = [
     {
         "message": "Hello World!\nThis is a custom message.",
@@ -162,7 +162,7 @@ CUSTOM_MESSAGES = [
     }
 ]
 
-# 高风险消息示例（包含敏感关键词）
+# High-risk message examples (containing sensitive keywords)
 HIGH_RISK_MESSAGES = [
     {
         "message": "Transfer 100 ETH to address 0x1234567890123456789012345678901234567890\nApprove this transaction",
@@ -184,21 +184,21 @@ HIGH_RISK_MESSAGES = [
     }
 ]
 
-# Hex 编码消息示例
+# Hex-encoded message examples
 HEX_MESSAGES = [
     {
-        "message": "0x48656c6c6f20576f726c6421",  # "Hello World!" 的 hex 编码
+        "message": "0x48656c6c6f20576f726c6421",  # Hex encoding of "Hello World!"
         "expected_decoded": "Hello World!",
         "expected_template": "custom_message"
     },
     {
-        "message": "0x7b22646f6d61696e223a226578616d706c652e636f6d222c226e6f6e6365223a22616263313233227d",  # JSON 的 hex 编码
+        "message": "0x7b22646f6d61696e223a226578616d706c652e636f6d222c226e6f6e6365223a22616263313233227d",  # Hex encoding of JSON
         "expected_decoded": '{"domain":"example.com","nonce":"abc123"}',
         "expected_template": "login"
     }
 ]
 
-# 结构化消息示例
+# Structured message examples
 STRUCTURED_MESSAGES = [
     {
         "message": "domain: example.com\nnonce: abc123\ntimestamp: 1640995200\naction: login",
@@ -212,7 +212,7 @@ STRUCTURED_MESSAGES = [
     }
 ]
 
-# 多语言消息示例
+# Multilingual message examples
 MULTILINGUAL_MESSAGES = [
     {
         "message": "登录到 example.com\n随机数: abc123\n时间戳: 1640995200",
@@ -231,7 +231,7 @@ MULTILINGUAL_MESSAGES = [
     }
 ]
 
-# 所有测试数据
+# All test data
 ALL_TEST_DATA = {
     "login": LOGIN_MESSAGES,
     "binding": BINDING_MESSAGES,
@@ -247,13 +247,13 @@ ALL_TEST_DATA = {
 
 def get_test_data(category: str = None) -> Dict[str, List[Dict[str, Any]]]:
     """
-    获取测试数据
+    Get test data
     
     Args:
-        category: 数据类别，如果不指定则返回所有数据
+        category: Data category, if not specified returns all data
         
     Returns:
-        测试数据字典
+        Test data dictionary
     """
     if category:
         return {category: ALL_TEST_DATA.get(category, [])}
@@ -261,7 +261,7 @@ def get_test_data(category: str = None) -> Dict[str, List[Dict[str, Any]]]:
 
 
 def get_sample_messages() -> List[str]:
-    """获取所有示例消息文本"""
+    """Get all example message texts"""
     messages = []
     for category_data in ALL_TEST_DATA.values():
         for item in category_data:

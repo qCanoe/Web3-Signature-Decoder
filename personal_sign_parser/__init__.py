@@ -1,6 +1,6 @@
 """
-PersonalSign 解析器
-用于解析和分析 personal_sign 签名中的参数和模板识别
+PersonalSign Parser
+Used to parse and analyze parameters and template recognition in personal_sign signatures
 """
 
 from .parser import PersonalSignParser

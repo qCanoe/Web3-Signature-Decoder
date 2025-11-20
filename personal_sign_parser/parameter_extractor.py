@@ -1,6 +1,6 @@
 """
-PersonalSign 参数提取器
-用于从 personal_sign 消息中提取结构化参数
+PersonalSign Parameter Extractor
+Used to extract structured parameters from personal_sign messages
 """
 
 import re
@@ -12,47 +12,47 @@ from .models import ExtractedParameters, RegexPatterns
 
 
 class ParameterExtractor:
-    """参数提取器"""
+    """Parameter extractor"""
     
     def __init__(self):
         self.patterns = RegexPatterns()
         
     def extract(self, message: str) -> ExtractedParameters:
         """
-        从消息中提取参数
+        Extract parameters from message
         
         Args:
-            message: 要解析的消息
+            message: Message to parse
             
         Returns:
-            提取的参数对象
+            Extracted parameters object
         """
         params = ExtractedParameters()
         
-        # 清理消息（去除多余空白）
+        # Clean message (remove extra whitespace)
         cleaned_message = self._clean_message(message)
         
-        # 尝试解析为 JSON
+        # Try to parse as JSON
         json_data = self._try_parse_json(cleaned_message)
         if json_data:
             self._extract_from_json(json_data, params)
         
-        # 尝试解析为 URL 查询参数
+        # Try to parse as URL query parameters
         query_params = self._try_parse_query_string(cleaned_message)
         if query_params:
             self._extract_from_query_params(query_params, params)
         
-        # 使用正则表达式提取
+        # Extract using regular expressions
         self._extract_with_regex(cleaned_message, params)
         
-        # 提取结构化文本参数
+        # Extract structured text parameters
         self._extract_structured_text(cleaned_message, params)
         
         return params
     
     def _clean_message(self, message: str) -> str:
-        """清理消息"""
-        # 如果是 hex 编码的消息，尝试解码
+        """Clean message"""
+        # If it's a hex-encoded message, try to decode
         if message.startswith('0x'):
             try:
                 hex_bytes = bytes.fromhex(message[2:])
@@ -65,11 +65,11 @@ class ParameterExtractor:
         return message.strip()
     
     def _try_parse_json(self, message: str) -> Optional[Dict[str, Any]]:
-        """尝试解析为 JSON"""
+        """Try to parse as JSON"""
         try:
             return json.loads(message)
         except (json.JSONDecodeError, ValueError):
-            # 尝试查找 JSON 片段
+            # Try to find JSON fragments
             json_pattern = re.compile(r'\{[^{}]*\}')
             matches = json_pattern.findall(message)
             for match in matches:
@@ -80,15 +80,15 @@ class ParameterExtractor:
             return None
     
     def _try_parse_query_string(self, message: str) -> Optional[Dict[str, List[str]]]:
-        """尝试解析为 URL 查询字符串"""
+        """Try to parse as URL query string"""
         try:
-            # 如果包含 URL
+            # If contains URL
             if 'http' in message:
                 parsed_url = urlparse(message)
                 if parsed_url.query:
                     return parse_qs(parsed_url.query)
             
-            # 如果直接是查询字符串格式
+            # If directly in query string format
             if '=' in message and '&' in message:
                 return parse_qs(message)
             
@@ -97,33 +97,33 @@ class ParameterExtractor:
             return None
     
     def _extract_from_json(self, data: Dict[str, Any], params: ExtractedParameters):
-        """从 JSON 数据中提取参数"""
-        # 通用参数
+        """Extract parameters from JSON data"""
+        # Common parameters
         params.domain = data.get('domain') or data.get('uri') or data.get('url')
         params.nonce = str(data.get('nonce', '')) if data.get('nonce') else None
         params.timestamp = str(data.get('timestamp', '')) if data.get('timestamp') else None
         params.expires_at = str(data.get('expires_at', '')) if data.get('expires_at') else None
         params.address = data.get('address') or data.get('wallet_address')
         
-        # 登录相关
+        # Login related
         params.session_id = data.get('session_id') or data.get('sessionId')
         params.user_id = data.get('user_id') or data.get('userId')
         
-        # 绑定相关
+        # Binding related
         params.binding_target = data.get('email') or data.get('phone') or data.get('username')
         params.binding_type = data.get('binding_type') or data.get('type')
         
-        # 授权相关
+        # Authorization related
         if 'permissions' in data:
             params.permissions = data['permissions'] if isinstance(data['permissions'], list) else [data['permissions']]
         params.resource = data.get('resource')
         params.action = data.get('action')
         
-        # 验证相关
+        # Verification related
         params.challenge = data.get('challenge')
         params.verification_code = data.get('code') or data.get('verification_code')
         
-        # 自定义字段
+        # Custom fields
         excluded_keys = {
             'domain', 'uri', 'url', 'nonce', 'timestamp', 'expires_at', 'address', 
             'wallet_address', 'session_id', 'sessionId', 'user_id', 'userId',
@@ -136,7 +136,7 @@ class ParameterExtractor:
                 params.custom_fields[key] = str(value)
     
     def _extract_from_query_params(self, query_params: Dict[str, List[str]], params: ExtractedParameters):
-        """从 URL 查询参数中提取"""
+        """Extract from URL query parameters"""
         def get_first_value(key: str) -> Optional[str]:
             return query_params.get(key, [None])[0]
         
@@ -148,26 +148,26 @@ class ParameterExtractor:
         params.challenge = get_first_value('challenge')
     
     def _extract_with_regex(self, message: str, params: ExtractedParameters):
-        """使用正则表达式提取参数"""
-        # 提取以太坊地址
+        """Extract parameters using regular expressions"""
+        # Extract Ethereum address
         if not params.address:
             eth_addresses = self.patterns.ETH_ADDRESS.findall(message)
             if eth_addresses:
                 params.address = eth_addresses[0]
         
-        # 提取域名
+        # Extract domain
         if not params.domain:
             domains = self.patterns.DOMAIN.findall(message)
             if domains:
                 params.domain = domains[0] if isinstance(domains[0], str) else domains[0][0]
         
-        # 提取时间戳
+        # Extract timestamp
         if not params.timestamp:
             timestamps = self.patterns.TIMESTAMP.findall(message)
             if timestamps:
                 params.timestamp = timestamps[0]
         
-        # 提取 UUID（可能是 session_id 或 nonce）
+        # Extract UUID (might be session_id or nonce)
         uuids = self.patterns.UUID.findall(message)
         if uuids:
             if not params.session_id:
@@ -175,7 +175,7 @@ class ParameterExtractor:
             elif not params.nonce:
                 params.nonce = uuids[0]
         
-        # 提取 Token
+        # Extract Token
         tokens = self.patterns.TOKEN.findall(message)
         if tokens:
             for token in tokens:
@@ -184,7 +184,7 @@ class ParameterExtractor:
                     break
     
     def _extract_structured_text(self, message: str, params: ExtractedParameters):
-        """从结构化文本中提取参数"""
+        """Extract parameters from structured text"""
         lines = message.split('\n')
         
         for line in lines:
@@ -192,7 +192,7 @@ class ParameterExtractor:
             if not line or ':' not in line:
                 continue
             
-            # 简单的 key:value 格式
+            # Simple key:value format
             if line.count(':') == 1:
                 key, value = line.split(':', 1)
                 key = key.strip().lower()
@@ -201,7 +201,7 @@ class ParameterExtractor:
                 if not value:
                     continue
                 
-                # 映射常见的键名
+                # Map common key names
                 if key in ['domain', 'site', 'website']:
                     params.domain = params.domain or value
                 elif key in ['nonce', 'random', 'token']:
@@ -223,11 +223,11 @@ class ParameterExtractor:
                 elif key in ['challenge', 'code']:
                     params.challenge = params.challenge or value
                 else:
-                    # 其他自定义字段
+                    # Other custom fields
                     params.custom_fields[key] = value
     
     def extract_security_info(self, message: str) -> Dict[str, Any]:
-        """提取安全相关信息"""
+        """Extract security-related information"""
         security_info = {
             'contains_sensitive_keywords': False,
             'sensitive_keywords': [],
@@ -239,7 +239,7 @@ class ParameterExtractor:
             'is_hex_encoded': message.startswith('0x')
         }
         
-        # 检查敏感关键词
+        # Check for sensitive keywords
         from .models import TemplateKeywords
         all_security_keywords = TemplateKeywords.SECURITY_KEY
         message_lower = message.lower()

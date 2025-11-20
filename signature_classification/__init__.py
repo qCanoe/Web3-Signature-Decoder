@@ -1,7 +1,7 @@
 """
-签名类型识别与分级模块
+Signature Type Recognition and Classification Module
 
-提供以太坊签名类型的自动识别、分级和风险评估功能
+Provides automatic recognition, classification, and risk assessment functionality for Ethereum signature types
 """
 
 from .signature_types import SignatureType, SignatureCategory, SecurityLevel

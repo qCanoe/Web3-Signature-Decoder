@@ -1,6 +1,6 @@
 """
-PersonalSign 模板识别器
-用于识别 personal_sign 消息的模板类型（登录、绑定、签名授权等）
+PersonalSign Template Detector
+Used to identify template types of personal_sign messages (login, binding, signature authorization, etc.)
 """
 
 import re
@@ -14,28 +14,28 @@ from .models import (
 
 
 class TemplateDetector:
-    """模板识别器"""
+    """Template detector"""
     
     def __init__(self):
         self.template_rules = self._build_template_rules()
     
     def detect(self, message: str, extracted_params: Optional[ExtractedParameters] = None) -> TemplateInfo:
         """
-        检测消息的模板类型
+        Detect message template type
         
         Args:
-            message: 要检测的消息
-            extracted_params: 已提取的参数（可选）
+            message: Message to detect
+            extracted_params: Extracted parameters (optional)
             
         Returns:
-            模板信息
+            Template information
         """
         message_lower = message.lower()
         best_match = None
         best_score = 0.0
         best_patterns = []
         
-        # 对每个模板进行评分
+        # Score each template
         for template_type, rules in self.template_rules.items():
             score, matched_patterns = self._calculate_template_score(message_lower, rules, extracted_params)
             
@@ -44,16 +44,16 @@ class TemplateDetector:
                 best_match = template_type
                 best_patterns = matched_patterns
         
-        # 如果没有匹配到任何模板，设为 UNKNOWN
+        # If no template matched, set to UNKNOWN
         if best_match is None or best_score < 0.3:
             best_match = PersonalSignTemplateType.UNKNOWN
             best_score = 0.0
             best_patterns = []
         
-        # 生成模板描述
+        # Generate template description
         description = self._generate_template_description(best_match, best_score)
         
-        # 确定安全级别
+        # Determine security level
         security_level = self._determine_security_level(best_match, message_lower)
         
         return TemplateInfo(
@@ -67,7 +67,7 @@ class TemplateDetector:
         )
     
     def _build_template_rules(self) -> Dict[PersonalSignTemplateType, Dict]:
-        """构建模板识别规则"""
+        """Build template recognition rules"""
         return {
             PersonalSignTemplateType.LOGIN: {
                 'keywords': TemplateKeywords.LOGIN,
@@ -107,7 +107,7 @@ class TemplateDetector:
             
             PersonalSignTemplateType.AUTHORIZATION: {
                 'keywords': TemplateKeywords.AUTHORIZATION,
-                'weight': 1.2,  # 更高权重，因为安全敏感
+                'weight': 1.2,  # Higher weight due to security sensitivity
                 'patterns': [
                     r'authorize',
                     r'授权',
@@ -144,11 +144,11 @@ class TemplateDetector:
         }
     
     def _calculate_template_score(self, message: str, rules: Dict, params: Optional[ExtractedParameters]) -> Tuple[float, List[str]]:
-        """计算模板匹配得分"""
+        """Calculate template matching score"""
         score = 0.0
         matched_patterns = []
         
-        # 1. 关键词匹配
+        # 1. Keyword matching
         keyword_matches = 0
         for keyword in rules['keywords']:
             if keyword.lower() in message:
@@ -159,7 +159,7 @@ class TemplateDetector:
             keyword_score = min(keyword_matches / len(rules['keywords']), 1.0) * 0.4
             score += keyword_score
         
-        # 2. 正则模式匹配
+        # 2. Regular expression pattern matching
         pattern_matches = 0
         for pattern in rules['patterns']:
             if re.search(pattern, message, re.IGNORECASE):
@@ -170,7 +170,7 @@ class TemplateDetector:
             pattern_score = min(pattern_matches / len(rules['patterns']), 1.0) * 0.4
             score += pattern_score
         
-        # 3. 必需指示符检查
+        # 3. Required indicator check
         required_found = 0
         for indicator in rules['required_indicators']:
             if indicator in message:
@@ -181,7 +181,7 @@ class TemplateDetector:
             required_score = min(required_found / len(rules['required_indicators']), 1.0) * 0.2
             score += required_score
         
-        # 4. 参数字段加权
+        # 4. Parameter field weighting
         if params:
             boost_score = self._calculate_field_boost(params, rules.get('boost_fields', []))
             penalty_score = self._calculate_field_penalty(params, rules.get('penalty_fields', []))
@@ -194,16 +194,16 @@ class TemplateDetector:
             if penalty_score > 0:
                 matched_patterns.append(f"field_penalty:{penalty_score:.2f}")
         
-        # 应用权重
+        # Apply weight
         score *= rules.get('weight', 1.0)
         
-        # 确保得分在 0-1 范围内
+        # Ensure score is in 0-1 range
         score = max(0.0, min(1.0, score))
         
         return score, matched_patterns
     
     def _calculate_field_boost(self, params: ExtractedParameters, boost_fields: List[str]) -> float:
-        """计算字段加权得分"""
+        """Calculate field boost score"""
         boost = 0.0
         
         for field in boost_fields:
@@ -211,40 +211,40 @@ class TemplateDetector:
             if value:
                 boost += 0.1
         
-        return min(boost, 0.3)  # 最大加权 0.3
+        return min(boost, 0.3)  # Maximum boost 0.3
     
     def _calculate_field_penalty(self, params: ExtractedParameters, penalty_fields: List[str]) -> float:
-        """计算字段惩罚得分"""
+        """Calculate field penalty score"""
         penalty = 0.0
         
-        # 检查自定义字段中是否包含惩罚关键词
+        # Check if custom fields contain penalty keywords
         message_text = " ".join(params.custom_fields.values()).lower()
         
         for field in penalty_fields:
             if field in message_text:
                 penalty += 0.2
         
-        return min(penalty, 0.5)  # 最大惩罚 0.5
+        return min(penalty, 0.5)  # Maximum penalty 0.5
     
     def _generate_template_description(self, template_type: PersonalSignTemplateType, confidence: float) -> str:
-        """生成模板描述"""
+        """Generate template description"""
         descriptions = {
-            PersonalSignTemplateType.LOGIN: "用户登录验证消息",
-            PersonalSignTemplateType.BINDING: "账户绑定验证消息",
-            PersonalSignTemplateType.AUTHORIZATION: "权限授权确认消息",
-            PersonalSignTemplateType.VERIFICATION: "身份验证确认消息",
-            PersonalSignTemplateType.CUSTOM_MESSAGE: "自定义消息",
-            PersonalSignTemplateType.UNKNOWN: "未知类型消息"
+            PersonalSignTemplateType.LOGIN: "User login verification message",
+            PersonalSignTemplateType.BINDING: "Account binding verification message",
+            PersonalSignTemplateType.AUTHORIZATION: "Permission authorization confirmation message",
+            PersonalSignTemplateType.VERIFICATION: "Identity verification confirmation message",
+            PersonalSignTemplateType.CUSTOM_MESSAGE: "Custom message",
+            PersonalSignTemplateType.UNKNOWN: "Unknown type message"
         }
         
-        base_desc = descriptions.get(template_type, "未知消息")
-        confidence_desc = f"（置信度: {confidence:.1%}）"
+        base_desc = descriptions.get(template_type, "Unknown message")
+        confidence_desc = f" (Confidence: {confidence:.1%})"
         
         return f"{base_desc}{confidence_desc}"
     
     def _determine_security_level(self, template_type: PersonalSignTemplateType, message: str) -> str:
-        """确定安全级别"""
-        # 检查是否包含高风险关键词
+        """Determine security level"""
+        # Check if contains high-risk keywords
         high_risk_keywords = ['transfer', 'send', 'withdraw', 'approve', 'spend', '转账', '发送', '提取', '批准']
         medium_risk_keywords = ['authorize', 'permission', 'grant', '授权', '权限', '允许']
         
@@ -261,7 +261,7 @@ class TemplateDetector:
             return "low"
     
     def _get_required_fields(self, template_type: PersonalSignTemplateType) -> List[str]:
-        """获取模板必需字段"""
+        """Get template required fields"""
         required_fields_map = {
             PersonalSignTemplateType.LOGIN: ['domain', 'nonce'],
             PersonalSignTemplateType.BINDING: ['binding_target', 'binding_type'],
@@ -274,7 +274,7 @@ class TemplateDetector:
         return required_fields_map.get(template_type, [])
     
     def _get_optional_fields(self, template_type: PersonalSignTemplateType) -> List[str]:
-        """获取模板可选字段"""
+        """Get template optional fields"""
         optional_fields_map = {
             PersonalSignTemplateType.LOGIN: ['session_id', 'user_id', 'timestamp', 'expires_at'],
             PersonalSignTemplateType.BINDING: ['nonce', 'timestamp', 'expires_at'],
@@ -287,7 +287,7 @@ class TemplateDetector:
         return optional_fields_map.get(template_type, [])
     
     def analyze_message_structure(self, message: str) -> Dict[str, any]:
-        """分析消息结构"""
+        """Analyze message structure"""
         return {
             'is_structured': self._is_structured_message(message),
             'format_type': self._detect_format_type(message),
@@ -299,18 +299,18 @@ class TemplateDetector:
         }
     
     def _is_structured_message(self, message: str) -> bool:
-        """判断是否为结构化消息"""
+        """Determine if message is structured"""
         indicators = [
-            ':' in message and '\n' in message,  # 多行键值对
+            ':' in message and '\n' in message,  # Multi-line key-value pairs
             message.strip().startswith('{') and message.strip().endswith('}'),  # JSON
-            '=' in message and '&' in message,  # 查询字符串
-            re.search(r'\w+\s*:\s*\w+', message)  # 键值对格式
+            '=' in message and '&' in message,  # Query string
+            re.search(r'\w+\s*:\s*\w+', message)  # Key-value format
         ]
         
         return any(indicators)
     
     def _detect_format_type(self, message: str) -> str:
-        """检测消息格式类型"""
+        """Detect message format type"""
         if self._looks_like_json(message):
             return 'json'
         elif '=' in message and '&' in message:
@@ -323,7 +323,7 @@ class TemplateDetector:
             return 'plain_text'
     
     def _looks_like_json(self, message: str) -> bool:
-        """判断是否看起来像 JSON"""
+        """Determine if message looks like JSON"""
         message = message.strip()
         return (message.startswith('{') and message.endswith('}')) or \
                (message.startswith('[') and message.endswith(']')) 

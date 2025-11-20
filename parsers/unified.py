@@ -1,6 +1,6 @@
 """
-统一签名解析器
-支持自动识别和解析多种签名类型：EIP712、Personal Sign、Transaction
+Unified Signature Parser
+Supports automatic detection and parsing of multiple signature types: EIP712, Personal Sign, Transaction
 """
 
 import json
@@ -9,7 +9,7 @@ from enum import Enum
 
 
 class SignatureType(str, Enum):
-    """签名类型"""
+    """Signature type"""
     EIP712 = "eip712"
     PERSONAL_SIGN = "personal_sign"
     TRANSACTION = "transaction"
@@ -17,26 +17,26 @@ class SignatureType(str, Enum):
 
 
 class UnifiedSignatureParser:
-    """统一签名解析器"""
+    """Unified signature parser"""
     
     def __init__(self, enable_nlp: bool = False, openai_api_key: Optional[str] = None):
         """
-        初始化统一解析器
+        Initialize unified parser
         
         Args:
-            enable_nlp: 是否启用NLP自然语言生成
-            openai_api_key: OpenAI API密钥（用于AI分析）
+            enable_nlp: Whether to enable NLP natural language generation
+            openai_api_key: OpenAI API key (for AI analysis)
         """
         self.enable_nlp = enable_nlp
         self.openai_api_key = openai_api_key
         
-        # 延迟加载解析器，避免循环导入
+        # Lazy load parsers to avoid circular imports
         self._eip712_parser = None
         self._personal_sign_parser = None
         self._transaction_parser = None
     
     def _get_eip712_parser(self):
-        """获取EIP712解析器实例"""
+        """Get EIP712 parser instance"""
         if self._eip712_parser is None:
             from dynamic_parser.core import DynamicEIP712Parser
             self._eip712_parser = DynamicEIP712Parser(
@@ -45,14 +45,14 @@ class UnifiedSignatureParser:
         return self._eip712_parser
     
     def _get_personal_sign_parser(self):
-        """获取Personal Sign解析器实例"""
+        """Get Personal Sign parser instance"""
         if self._personal_sign_parser is None:
             from personal_sign_parser.parser import PersonalSignParser
             self._personal_sign_parser = PersonalSignParser()
         return self._personal_sign_parser
     
     def _get_transaction_parser(self):
-        """获取Transaction解析器实例"""
+        """Get Transaction parser instance"""
         if self._transaction_parser is None:
             from eth_transaction_parser.parser import EthTransactionParser
             self._transaction_parser = EthTransactionParser()
@@ -60,18 +60,18 @@ class UnifiedSignatureParser:
     
     def detect_signature_type(self, data: Union[str, Dict[str, Any]]) -> SignatureType:
         """
-        自动检测签名类型
+        Automatically detect signature type
         
         Args:
-            data: 签名数据（字符串或字典）
+            data: Signature data (string or dictionary)
             
         Returns:
-            SignatureType: 检测到的签名类型
+            SignatureType: Detected signature type
         """
         try:
-            # 如果是字符串，尝试解析为JSON
+            # If string, try to parse as JSON
             if isinstance(data, str):
-                # 如果是纯文本（不是JSON），可能是Personal Sign
+                # If plain text (not JSON), might be Personal Sign
                 try:
                     parsed_data = json.loads(data)
                 except json.JSONDecodeError:
@@ -79,17 +79,17 @@ class UnifiedSignatureParser:
             else:
                 parsed_data = data
             
-            # 检测EIP712签名
+            # Detect EIP712 signature
             if isinstance(parsed_data, dict):
-                # EIP712 必须包含 types, domain, primaryType, message
+                # EIP712 must contain types, domain, primaryType, message
                 if all(key in parsed_data for key in ['types', 'domain', 'primaryType', 'message']):
                     return SignatureType.EIP712
                 
-                # 检测Transaction
+                # Detect Transaction
                 if any(key in parsed_data for key in ['to', 'from', 'value', 'data', 'gas', 'gasPrice']):
                     return SignatureType.TRANSACTION
             
-            # 默认为Personal Sign（文本消息）
+            # Default to Personal Sign (text message)
             return SignatureType.PERSONAL_SIGN
             
         except Exception:
@@ -97,21 +97,21 @@ class UnifiedSignatureParser:
     
     def parse(self, data: Union[str, Dict[str, Any]], signature_type: Optional[SignatureType] = None) -> Dict[str, Any]:
         """
-        解析签名数据
+        Parse signature data
         
         Args:
-            data: 签名数据
-            signature_type: 指定签名类型（如果为None则自动检测）
+            data: Signature data
+            signature_type: Specify signature type (auto-detect if None)
             
         Returns:
-            Dict: 解析结果
+            Dict: Parsing result
         """
-        # 自动检测类型
+        # Auto-detect type
         if signature_type is None:
             signature_type = self.detect_signature_type(data)
         
         try:
-            # 根据类型调用相应的解析器
+            # Call appropriate parser based on type
             if signature_type == SignatureType.EIP712:
                 return self._parse_eip712(data)
             elif signature_type == SignatureType.PERSONAL_SIGN:
@@ -121,7 +121,7 @@ class UnifiedSignatureParser:
             else:
                 return {
                     'success': False,
-                    'error': f'不支持的签名类型: {signature_type}',
+                    'error': f'Unsupported signature type: {signature_type}',
                     'signature_type': signature_type.value
                 }
         
@@ -133,25 +133,25 @@ class UnifiedSignatureParser:
             }
     
     def _parse_eip712(self, data: Union[str, Dict[str, Any]]) -> Dict[str, Any]:
-        """解析EIP712签名"""
+        """Parse EIP712 signature"""
         parser = self._get_eip712_parser()
         
-        # 转换为字典格式
+        # Convert to dictionary format
         if isinstance(data, str):
             data = json.loads(data)
         
-        # 解析
+        # Parse
         result = parser.parse(data)
         formatted_result = parser.format_result(result)
         
-        # 生成AI分析（如果启用）
+        # Generate AI analysis (if enabled)
         ai_analysis = None
         if self.enable_nlp and self.openai_api_key:
             try:
                 from dynamic_parser.openai_nlp_generator import generate_english_with_openai
                 ai_analysis = generate_english_with_openai(data, self.openai_api_key)
             except Exception as e:
-                ai_analysis = {'error': f'AI分析失败: {str(e)}'}
+                ai_analysis = {'error': f'AI analysis failed: {str(e)}'}
         
         return {
             'success': True,
@@ -162,16 +162,16 @@ class UnifiedSignatureParser:
         }
     
     def _parse_personal_sign(self, data: Union[str, Dict[str, Any]]) -> Dict[str, Any]:
-        """解析Personal Sign消息"""
+        """Parse Personal Sign message"""
         parser = self._get_personal_sign_parser()
         
-        # 如果是字典格式，尝试提取message字段
+        # If dictionary format, try to extract message field
         if isinstance(data, dict):
             message = data.get('message', json.dumps(data))
         else:
             message = data
         
-        # 解析
+        # Parse
         result = parser.parse(message)
         
         return {
@@ -196,14 +196,14 @@ class UnifiedSignatureParser:
         }
     
     def _parse_transaction(self, data: Union[str, Dict[str, Any]]) -> Dict[str, Any]:
-        """解析以太坊交易"""
+        """Parse Ethereum transaction"""
         parser = self._get_transaction_parser()
         
-        # 转换为字典格式
+        # Convert to dictionary format
         if isinstance(data, str):
             data = json.loads(data)
         
-        # 解析
+        # Parse
         result = parser.parse(data)
         
         return {

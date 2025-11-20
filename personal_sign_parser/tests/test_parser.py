@@ -1,11 +1,11 @@
 """
-PersonalSign 解析器测试
+PersonalSign Parser Tests
 """
 
 import sys
 import os
 
-# 添加父目录到路径，以便导入模块
+# Add parent directory to path to import modules
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from personal_sign_parser import PersonalSignParser, PersonalSignTemplateType
@@ -13,191 +13,191 @@ from personal_sign_parser.tests.test_data import get_test_data
 
 
 def test_login_messages():
-    """测试登录消息解析"""
+    """Test login message parsing"""
     parser = PersonalSignParser()
     test_data = get_test_data("login")
     
-    print("🧪 测试登录消息解析...")
+    print("🧪 Testing login message parsing...")
     
     for i, item in enumerate(test_data["login"]):
         message = item["message"]
         expected_template = item["expected_template"]
         expected_params = item["expected_params"]
         
-        print(f"\n📝 测试用例 {i+1}:")
-        print(f"消息: {message[:50]}...")
+        print(f"\n📝 Test case {i+1}:")
+        print(f"Message: {message[:50]}...")
         
-        # 解析消息
+        # Parse message
         result = parser.parse(message)
         
-        # 检查模板类型
+        # Check template type
         detected_template = result.template_info.template_type.value
-        print(f"期望模板: {expected_template}")
-        print(f"检测模板: {detected_template}")
-        print(f"置信度: {result.template_info.confidence:.1%}")
+        print(f"Expected template: {expected_template}")
+        print(f"Detected template: {detected_template}")
+        print(f"Confidence: {result.template_info.confidence:.1%}")
         
-        # 检查参数提取
-        print("提取的参数:")
+        # Check parameter extraction
+        print("Extracted parameters:")
         for key, expected_value in expected_params.items():
             actual_value = getattr(result.extracted_parameters, key, None)
-            print(f"  {key}: {actual_value} (期望: {expected_value})")
+            print(f"  {key}: {actual_value} (expected: {expected_value})")
         
-        # 安全分析
-        print(f"风险级别: {result.risk_level}")
+        # Security analysis
+        print(f"Risk level: {result.risk_level}")
         if result.security_warnings:
-            print(f"安全警告: {result.security_warnings}")
+            print(f"Security warnings: {result.security_warnings}")
         
-        print("✅ 测试通过" if detected_template == expected_template else "❌ 测试失败")
+        print("✅ Test passed" if detected_template == expected_template else "❌ Test failed")
 
 
 def test_binding_messages():
-    """测试绑定消息解析"""
+    """Test binding message parsing"""
     parser = PersonalSignParser()
     test_data = get_test_data("binding")
     
-    print("\n🧪 测试绑定消息解析...")
+    print("\n🧪 Testing binding message parsing...")
     
     for i, item in enumerate(test_data["binding"]):
         message = item["message"]
         expected_template = item["expected_template"]
         
-        print(f"\n📝 测试用例 {i+1}:")
-        print(f"消息: {message[:50]}...")
+        print(f"\n📝 Test case {i+1}:")
+        print(f"Message: {message[:50]}...")
         
         result = parser.parse(message)
         detected_template = result.template_info.template_type.value
         
-        print(f"期望模板: {expected_template}")
-        print(f"检测模板: {detected_template}")
-        print(f"置信度: {result.template_info.confidence:.1%}")
+        print(f"Expected template: {expected_template}")
+        print(f"Detected template: {detected_template}")
+        print(f"Confidence: {result.template_info.confidence:.1%}")
         
-        # 检查绑定相关参数
+        # Check binding-related parameters
         if result.extracted_parameters.binding_target:
-            print(f"绑定目标: {result.extracted_parameters.binding_target}")
+            print(f"Binding target: {result.extracted_parameters.binding_target}")
         if result.extracted_parameters.binding_type:
-            print(f"绑定类型: {result.extracted_parameters.binding_type}")
+            print(f"Binding type: {result.extracted_parameters.binding_type}")
         if result.extracted_parameters.verification_code:
-            print(f"验证码: {result.extracted_parameters.verification_code}")
+            print(f"Verification code: {result.extracted_parameters.verification_code}")
         
-        print("✅ 测试通过" if detected_template == expected_template else "❌ 测试失败")
+        print("✅ Test passed" if detected_template == expected_template else "❌ Test failed")
 
 
 def test_authorization_messages():
-    """测试授权消息解析"""
+    """Test authorization message parsing"""
     parser = PersonalSignParser()
     test_data = get_test_data("authorization")
     
-    print("\n🧪 测试授权消息解析...")
+    print("\n🧪 Testing authorization message parsing...")
     
     for i, item in enumerate(test_data["authorization"]):
         message = item["message"]
         expected_template = item["expected_template"]
         
-        print(f"\n📝 测试用例 {i+1}:")
-        print(f"消息: {message[:50]}...")
+        print(f"\n📝 Test case {i+1}:")
+        print(f"Message: {message[:50]}...")
         
         result = parser.parse(message)
         detected_template = result.template_info.template_type.value
         
-        print(f"期望模板: {expected_template}")
-        print(f"检测模板: {detected_template}")
-        print(f"置信度: {result.template_info.confidence:.1%}")
-        print(f"安全级别: {result.template_info.security_level}")
+        print(f"Expected template: {expected_template}")
+        print(f"Detected template: {detected_template}")
+        print(f"Confidence: {result.template_info.confidence:.1%}")
+        print(f"Security level: {result.template_info.security_level}")
         
-        # 检查授权相关参数
+        # Check authorization-related parameters
         if result.extracted_parameters.permissions:
-            print(f"权限: {result.extracted_parameters.permissions}")
+            print(f"Permissions: {result.extracted_parameters.permissions}")
         if result.extracted_parameters.resource:
-            print(f"资源: {result.extracted_parameters.resource}")
+            print(f"Resource: {result.extracted_parameters.resource}")
         if result.extracted_parameters.action:
-            print(f"操作: {result.extracted_parameters.action}")
+            print(f"Action: {result.extracted_parameters.action}")
         
-        print("✅ 测试通过" if detected_template == expected_template else "❌ 测试失败")
+        print("✅ Test passed" if detected_template == expected_template else "❌ Test failed")
 
 
 def test_high_risk_messages():
-    """测试高风险消息检测"""
+    """Test high-risk message detection"""
     parser = PersonalSignParser()
     test_data = get_test_data("high_risk")
     
-    print("\n🧪 测试高风险消息检测...")
+    print("\n🧪 Testing high-risk message detection...")
     
     for i, item in enumerate(test_data["high_risk"]):
         message = item["message"]
         expected_risk = item["risk_level"]
         should_have_warnings = item["should_have_warnings"]
         
-        print(f"\n📝 测试用例 {i+1}:")
-        print(f"消息: {message[:50]}...")
+        print(f"\n📝 Test case {i+1}:")
+        print(f"Message: {message[:50]}...")
         
         result = parser.parse(message)
         
-        print(f"期望风险级别: {expected_risk}")
-        print(f"检测风险级别: {result.risk_level}")
-        print(f"安全警告: {result.security_warnings}")
+        print(f"Expected risk level: {expected_risk}")
+        print(f"Detected risk level: {result.risk_level}")
+        print(f"Security warnings: {result.security_warnings}")
         
         risk_correct = result.risk_level == expected_risk
         warnings_correct = bool(result.security_warnings) == should_have_warnings
         
-        print("✅ 风险级别正确" if risk_correct else "❌ 风险级别错误")
-        print("✅ 警告检测正确" if warnings_correct else "❌ 警告检测错误")
+        print("✅ Risk level correct" if risk_correct else "❌ Risk level incorrect")
+        print("✅ Warning detection correct" if warnings_correct else "❌ Warning detection incorrect")
 
 
 def test_hex_messages():
-    """测试 Hex 编码消息解析"""
+    """Test Hex-encoded message parsing"""
     parser = PersonalSignParser()
     test_data = get_test_data("hex_encoded")
     
-    print("\n🧪 测试 Hex 编码消息解析...")
+    print("\n🧪 Testing Hex-encoded message parsing...")
     
     for i, item in enumerate(test_data["hex_encoded"]):
         message = item["message"]
         expected_decoded = item["expected_decoded"]
         
-        print(f"\n📝 测试用例 {i+1}:")
-        print(f"Hex 消息: {message}")
-        print(f"期望解码: {expected_decoded}")
+        print(f"\n📝 Test case {i+1}:")
+        print(f"Hex message: {message}")
+        print(f"Expected decoded: {expected_decoded}")
         
         result = parser.parse(message)
         
-        print(f"检测为 Hex: {result.is_hex}")
-        print(f"模板类型: {result.template_info.template_type.value}")
-        print(f"消息长度: {result.message_length}")
+        print(f"Detected as Hex: {result.is_hex}")
+        print(f"Template type: {result.template_info.template_type.value}")
+        print(f"Message length: {result.message_length}")
         
-        print("✅ 测试通过")
+        print("✅ Test passed")
 
 
 def test_multilingual_messages():
-    """测试多语言消息解析"""
+    """Test multilingual message parsing"""
     parser = PersonalSignParser()
     test_data = get_test_data("multilingual")
     
-    print("\n🧪 测试多语言消息解析...")
+    print("\n🧪 Testing multilingual message parsing...")
     
     for i, item in enumerate(test_data["multilingual"]):
         message = item["message"]
         expected_language = item["language"]
         expected_template = item["expected_template"]
         
-        print(f"\n📝 测试用例 {i+1}:")
-        print(f"消息: {message}")
-        print(f"期望语言: {expected_language}")
+        print(f"\n📝 Test case {i+1}:")
+        print(f"Message: {message}")
+        print(f"Expected language: {expected_language}")
         
         result = parser.parse(message)
         
-        print(f"检测语言: {result.language}")
-        print(f"模板类型: {result.template_info.template_type.value}")
+        print(f"Detected language: {result.language}")
+        print(f"Template type: {result.template_info.template_type.value}")
         
         language_correct = result.language == expected_language
         template_correct = result.template_info.template_type.value == expected_template
         
-        print("✅ 语言检测正确" if language_correct else "❌ 语言检测错误")
-        print("✅ 模板检测正确" if template_correct else "❌ 模板检测错误")
+        print("✅ Language detection correct" if language_correct else "❌ Language detection incorrect")
+        print("✅ Template detection correct" if template_correct else "❌ Template detection incorrect")
 
 
 def run_all_tests():
-    """运行所有测试"""
-    print("🚀 开始运行 PersonalSign 解析器测试...\n")
+    """Run all tests"""
+    print("🚀 Starting PersonalSign parser tests...\n")
     
     try:
         test_login_messages()
@@ -207,10 +207,10 @@ def run_all_tests():
         test_hex_messages()
         test_multilingual_messages()
         
-        print("\n🎉 所有测试完成!")
+        print("\n🎉 All tests completed!")
         
     except Exception as e:
-        print(f"\n❌ 测试过程中发生错误: {e}")
+        print(f"\n❌ Error occurred during testing: {e}")
         import traceback
         traceback.print_exc()
 

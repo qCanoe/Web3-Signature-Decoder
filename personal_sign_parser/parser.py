@@ -1,6 +1,6 @@
 """
-PersonalSign 主解析器
-整合参数提取和模板识别功能
+PersonalSign Main Parser
+Integrates parameter extraction and template recognition functionality
 """
 
 import re
@@ -12,7 +12,7 @@ from .template_detector import TemplateDetector
 
 
 class PersonalSignParser:
-    """PersonalSign 解析器"""
+    """PersonalSign parser"""
     
     def __init__(self):
         self.parameter_extractor = ParameterExtractor()
@@ -20,27 +20,27 @@ class PersonalSignParser:
     
     def parse(self, message: Union[str, Dict[str, Any]]) -> PersonalSignMessage:
         """
-        解析 PersonalSign 消息
+        Parse PersonalSign message
         
         Args:
-            message: 要解析的消息，可以是字符串或字典
+            message: Message to parse, can be string or dictionary
             
         Returns:
-            解析后的 PersonalSign 消息对象
+            Parsed PersonalSign message object
         """
-        # 统一处理消息格式
+        # Normalize message format
         raw_message = self._normalize_message(message)
         
-        # 提取参数
+        # Extract parameters
         extracted_params = self.parameter_extractor.extract(raw_message)
         
-        # 检测模板类型
+        # Detect template type
         template_info = self.template_detector.detect(raw_message, extracted_params)
         
-        # 分析消息属性
+        # Analyze message properties
         message_props = self._analyze_message_properties(raw_message)
         
-        # 安全分析
+        # Security analysis
         security_analysis = self._perform_security_analysis(raw_message, template_info, extracted_params)
         
         return PersonalSignMessage(
@@ -59,22 +59,22 @@ class PersonalSignParser:
         )
     
     def _normalize_message(self, message: Union[str, Dict[str, Any]]) -> str:
-        """标准化消息格式"""
+        """Normalize message format"""
         if isinstance(message, dict):
-            # 如果是字典，尝试提取消息内容
+            # If it's a dictionary, try to extract message content
             if 'message' in message:
                 return str(message['message'])
             elif 'data' in message:
                 return str(message['data'])
             else:
-                # 将字典转换为 JSON 字符串
+                # Convert dictionary to JSON string
                 import json
                 return json.dumps(message, ensure_ascii=False)
         
         return str(message)
     
     def _analyze_message_properties(self, message: str) -> Dict[str, Any]:
-        """分析消息属性"""
+        """Analyze message properties"""
         from .models import RegexPatterns
         patterns = RegexPatterns()
         
@@ -89,61 +89,61 @@ class PersonalSignParser:
         }
     
     def _detect_language(self, text: str) -> str:
-        """检测文本语言"""
-        # 检查是否包含中文字符
+        """Detect text language"""
+        # Check if contains Chinese characters
         if any('\u4e00' <= char <= '\u9fff' for char in text):
             return "chinese"
-        # 检查是否包含日文字符
+        # Check if contains Japanese characters
         elif any('\u3040' <= char <= '\u309f' or '\u30a0' <= char <= '\u30ff' for char in text):
             return "japanese"
-        # 检查是否包含韩文字符
+        # Check if contains Korean characters
         elif any('\uac00' <= char <= '\ud7af' for char in text):
             return "korean"
         else:
             return "english"
     
     def _perform_security_analysis(self, message: str, template_info: TemplateInfo, params: ExtractedParameters) -> Dict[str, Any]:
-        """执行安全分析"""
+        """Perform security analysis"""
         warnings = []
         risk_level = "low"
         
-        # 基于模板类型的风险评估
+        # Risk assessment based on template type
         if template_info.security_level == "high":
             risk_level = "high"
-            warnings.append("此消息涉及高风险操作，请仔细验证")
+            warnings.append("This message involves high-risk operations, please verify carefully")
         elif template_info.security_level == "medium":
             risk_level = "medium"
-            warnings.append("此消息需要额外注意安全性")
+            warnings.append("This message requires extra attention to security")
         
-        # 检查敏感关键词
+        # Check for sensitive keywords
         security_info = self.parameter_extractor.extract_security_info(message)
         if security_info['contains_sensitive_keywords']:
             risk_level = "high"
-            keywords = ', '.join(security_info['sensitive_keywords'][:3])  # 最多显示3个
-            warnings.append(f"消息包含敏感关键词: {keywords}")
+            keywords = ', '.join(security_info['sensitive_keywords'][:3])  # Show at most 3
+            warnings.append(f"Message contains sensitive keywords: {keywords}")
         
-        # 检查消息长度
+        # Check message length
         if len(message) > 5000:
-            warnings.append("消息长度过长，可能存在风险")
+            warnings.append("Message is too long, may pose risks")
         
-        # 检查 URL
+        # Check URLs
         if security_info['contains_urls']:
-            warnings.append("消息包含URL链接，请验证链接安全性")
+            warnings.append("Message contains URL links, please verify link security")
         
-        # 检查未知模板类型
+        # Check unknown template type
         if template_info.template_type == PersonalSignTemplateType.UNKNOWN:
-            warnings.append("无法识别消息模板类型，请谨慎处理")
+            warnings.append("Unable to identify message template type, please handle with caution")
             if risk_level == "low":
                 risk_level = "medium"
         
-        # 检查置信度
+        # Check confidence
         if template_info.confidence < 0.5:
-            warnings.append(f"模板识别置信度较低 ({template_info.confidence:.1%})")
+            warnings.append(f"Template recognition confidence is low ({template_info.confidence:.1%})")
         
-        # 检查必需字段缺失
+        # Check for missing required fields
         missing_fields = self._check_missing_required_fields(template_info, params)
         if missing_fields:
-            warnings.append(f"缺少必需字段: {', '.join(missing_fields)}")
+            warnings.append(f"Missing required fields: {', '.join(missing_fields)}")
         
         return {
             'warnings': warnings,
@@ -151,7 +151,7 @@ class PersonalSignParser:
         }
     
     def _check_missing_required_fields(self, template_info: TemplateInfo, params: ExtractedParameters) -> List[str]:
-        """检查缺失的必需字段"""
+        """Check for missing required fields"""
         missing_fields = []
         
         for field in template_info.required_fields:
@@ -161,10 +161,10 @@ class PersonalSignParser:
         return missing_fields
     
     def get_template_examples(self, template_type: PersonalSignTemplateType) -> Dict[str, Any]:
-        """获取模板示例"""
+        """Get template examples"""
         examples = {
             PersonalSignTemplateType.LOGIN: {
-                'description': '登录验证消息示例',
+                'description': 'Login verification message example',
                 'examples': [
                     {
                         'message': 'Sign in to example.com\nNonce: abc123\nTimestamp: 1640995200',
@@ -177,7 +177,7 @@ class PersonalSignParser:
                 ]
             },
             PersonalSignTemplateType.BINDING: {
-                'description': '绑定验证消息示例',
+                'description': 'Binding verification message example',
                 'examples': [
                     {
                         'message': 'Bind email: user@example.com\nCode: 123456',
@@ -190,7 +190,7 @@ class PersonalSignParser:
                 ]
             },
             PersonalSignTemplateType.AUTHORIZATION: {
-                'description': '授权确认消息示例',
+                'description': 'Authorization confirmation message example',
                 'examples': [
                     {
                         'message': 'Authorize access to: user profile\nPermissions: read, write',
@@ -203,7 +203,7 @@ class PersonalSignParser:
                 ]
             },
             PersonalSignTemplateType.VERIFICATION: {
-                'description': '身份验证消息示例',
+                'description': 'Identity verification message example',
                 'examples': [
                     {
                         'message': 'Verify ownership of this wallet\nChallenge: random_challenge_123',
@@ -218,12 +218,12 @@ class PersonalSignParser:
         }
         
         return examples.get(template_type, {
-            'description': '未知模板类型',
+            'description': 'Unknown template type',
             'examples': []
         })
     
     def validate_message(self, parsed_message: PersonalSignMessage) -> Dict[str, Any]:
-        """验证解析后的消息"""
+        """Validate parsed message"""
         validation_result = {
             'is_valid': True,
             'errors': [],
@@ -234,20 +234,20 @@ class PersonalSignParser:
         template_info = parsed_message.template_info
         params = parsed_message.extracted_parameters
         
-        # 检查必需字段
+        # Check required fields
         missing_fields = self._check_missing_required_fields(template_info, params)
         if missing_fields:
             validation_result['is_valid'] = False
-            validation_result['errors'].append(f"缺少必需字段: {', '.join(missing_fields)}")
+            validation_result['errors'].append(f"Missing required fields: {', '.join(missing_fields)}")
         
-        # 检查模板置信度
+        # Check template confidence
         if template_info.confidence < 0.5:
-            validation_result['warnings'].append("模板识别置信度较低")
-            validation_result['suggestions'].append("建议人工验证消息类型")
+            validation_result['warnings'].append("Template recognition confidence is low")
+            validation_result['suggestions'].append("Suggest manual verification of message type")
         
-        # 检查安全风险
+        # Check security risk
         if parsed_message.risk_level == "high":
-            validation_result['warnings'].append("检测到高安全风险")
-            validation_result['suggestions'].append("建议仔细审查消息内容")
+            validation_result['warnings'].append("High security risk detected")
+            validation_result['suggestions'].append("Suggest careful review of message content")
         
         return validation_result 

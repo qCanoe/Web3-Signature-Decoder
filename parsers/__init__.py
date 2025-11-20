@@ -1,6 +1,6 @@
 """
-统一签名解析器包
-提供所有签名类型的统一解析接口
+Unified Signature Parser Package
+Provides unified parsing interface for all signature types
 """
 
 from .unified import UnifiedSignatureParser

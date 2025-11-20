@@ -1,5 +1,5 @@
 """
-签名验证器 - 验证签名数据格式和有效性
+Signature Validator - Validates signature data format and validity
 """
 
 import re
@@ -11,7 +11,7 @@ from .signature_types import SignatureType
 
 @dataclass
 class ValidationResult:
-    """验证结果"""
+    """Validation result"""
     is_valid: bool
     errors: List[str]
     warnings: List[str]
@@ -19,51 +19,51 @@ class ValidationResult:
 
 
 class SignatureValidator:
-    """签名验证器"""
+    """Signature validator"""
     
     def __init__(self):
-        """初始化验证器"""
+        """Initialize validator"""
         self._init_validation_rules()
     
     def _init_validation_rules(self):
-        """初始化验证规则"""
+        """Initialize validation rules"""
         
-        # 地址验证正则
+        # Address validation regex
         self.address_pattern = re.compile(r'^0x[a-fA-F0-9]{40}$')
         
-        # 哈希验证正则
+        # Hash validation regex
         self.hash_pattern = re.compile(r'^0x[a-fA-F0-9]{64}$')
         
-        # 十六进制数据验证
+        # Hexadecimal data validation
         self.hex_pattern = re.compile(r'^0x[a-fA-F0-9]*$')
         
-        # EIP-712 必需字段
+        # EIP-712 required fields
         self.eip712_required_fields = {"types", "domain", "primaryType", "message"}
         
-        # 交易必需字段
+        # Transaction required fields
         self.transaction_required_fields = {"to"}
         self.transaction_optional_fields = {"from", "value", "data", "gas", "gasPrice", "nonce"}
     
     def validate(self, data: Union[str, Dict[str, Any]], signature_type: SignatureType) -> ValidationResult:
         """
-        验证签名数据
+        Validate signature data
         
         Args:
-            data: 签名数据
-            signature_type: 签名类型
+            data: Signature data
+            signature_type: Signature type
             
         Returns:
-            验证结果
+            Validation result
         """
         errors = []
         warnings = []
         metadata = {}
         
-        # 基础数据验证
+        # Basic data validation
         base_errors = self._validate_base_data(data)
         errors.extend(base_errors)
         
-        # 根据签名类型进行专门验证
+        # Type-specific validation based on signature type
         if signature_type == SignatureType.ETH_SIGN_TYPED_DATA_V4:
             type_errors, type_warnings, type_metadata = self._validate_eip712(data)
         elif signature_type == SignatureType.ETH_SEND_TRANSACTION:
@@ -87,101 +87,101 @@ class SignatureValidator:
         )
     
     def _validate_base_data(self, data: Union[str, Dict[str, Any]]) -> List[str]:
-        """基础数据验证"""
+        """Basic data validation"""
         errors = []
         
         if data is None:
-            errors.append("数据不能为空")
+            errors.append("Data cannot be empty")
             return errors
         
         if isinstance(data, str):
             if not data.strip():
-                errors.append("字符串数据不能为空")
+                errors.append("String data cannot be empty")
         elif isinstance(data, dict):
             if not data:
-                errors.append("字典数据不能为空")
+                errors.append("Dictionary data cannot be empty")
         
         return errors
     
     def _validate_eip712(self, data: Union[str, Dict[str, Any]]) -> tuple[List[str], List[str], Dict[str, Any]]:
-        """验证EIP-712数据"""
+        """Validate EIP-712 data"""
         errors = []
         warnings = []
         metadata = {}
         
         if not isinstance(data, dict):
-            errors.append("EIP-712数据必须是字典格式")
+            errors.append("EIP-712 data must be in dictionary format")
             return errors, warnings, metadata
         
-        # 检查必需字段
+        # Check required fields
         missing_fields = self.eip712_required_fields - set(data.keys())
         if missing_fields:
-            errors.append(f"缺少必需字段: {', '.join(missing_fields)}")
+            errors.append(f"Missing required fields: {', '.join(missing_fields)}")
         
-        # 验证types字段
+        # Validate types field
         if "types" in data:
             types_errors = self._validate_eip712_types(data["types"])
             errors.extend(types_errors)
         
-        # 验证domain字段
+        # Validate domain field
         if "domain" in data:
             domain_errors, domain_metadata = self._validate_eip712_domain(data["domain"])
             errors.extend(domain_errors)
             metadata.update(domain_metadata)
         
-        # 验证primaryType字段
+        # Validate primaryType field
         if "primaryType" in data and "types" in data:
             primary_type = data["primaryType"]
             if not isinstance(primary_type, str):
-                errors.append("primaryType必须是字符串")
+                errors.append("primaryType must be a string")
             elif primary_type not in data["types"]:
-                errors.append(f"primaryType '{primary_type}' 不在types定义中")
+                errors.append(f"primaryType '{primary_type}' is not in types definition")
         
-        # 验证message字段
+        # Validate message field
         if "message" in data:
             if not isinstance(data["message"], dict):
-                errors.append("message字段必须是字典")
+                errors.append("message field must be a dictionary")
         
         return errors, warnings, metadata
     
     def _validate_eip712_types(self, types: Any) -> List[str]:
-        """验证EIP-712 types字段"""
+        """Validate EIP-712 types field"""
         errors = []
         
         if not isinstance(types, dict):
-            errors.append("types字段必须是字典")
+            errors.append("types field must be a dictionary")
             return errors
         
-        # 检查EIP712Domain类型
+        # Check EIP712Domain type
         if "EIP712Domain" not in types:
-            errors.append("types中必须包含EIP712Domain定义")
+            errors.append("types must include EIP712Domain definition")
         
-        # 验证类型定义格式
+        # Validate type definition format
         for type_name, type_def in types.items():
             if not isinstance(type_def, list):
-                errors.append(f"类型定义 '{type_name}' 必须是数组")
+                errors.append(f"Type definition '{type_name}' must be an array")
                 continue
             
             for field in type_def:
                 if not isinstance(field, dict):
-                    errors.append(f"类型 '{type_name}' 的字段定义必须是字典")
+                    errors.append(f"Field definition in type '{type_name}' must be a dictionary")
                     continue
                 
                 if "name" not in field or "type" not in field:
-                    errors.append(f"类型 '{type_name}' 的字段必须包含name和type")
+                    errors.append(f"Fields in type '{type_name}' must include name and type")
         
         return errors
     
     def _validate_eip712_domain(self, domain: Any) -> tuple[List[str], Dict[str, Any]]:
-        """验证EIP-712 domain字段"""
+        """Validate EIP-712 domain field"""
         errors = []
         metadata = {}
         
         if not isinstance(domain, dict):
-            errors.append("domain字段必须是字典")
+            errors.append("domain field must be a dictionary")
             return errors, metadata
         
-        # 验证常见域字段
+        # Validate common domain fields
         if "name" in domain:
             metadata["protocol_name"] = domain["name"]
         
@@ -199,50 +199,50 @@ class SignatureValidator:
             contract = domain["verifyingContract"]
             if isinstance(contract, str):
                 if not self.address_pattern.match(contract):
-                    errors.append("verifyingContract必须是有效的以太坊地址")
+                    errors.append("verifyingContract must be a valid Ethereum address")
                 else:
                     metadata["contract_address"] = contract
         
         return errors, metadata
     
     def _validate_transaction(self, data: Union[str, Dict[str, Any]]) -> tuple[List[str], List[str], Dict[str, Any]]:
-        """验证交易数据"""
+        """Validate transaction data"""
         errors = []
         warnings = []
         metadata = {}
         
         if not isinstance(data, dict):
-            errors.append("交易数据必须是字典格式")
+            errors.append("Transaction data must be in dictionary format")
             return errors, warnings, metadata
         
-        # 检查必需字段
+        # Check required fields
         if "to" not in data:
-            errors.append("交易必须包含'to'字段")
+            errors.append("Transaction must include 'to' field")
         else:
             to_address = data["to"]
             if to_address is not None and not self.address_pattern.match(str(to_address)):
-                errors.append("'to'字段必须是有效的以太坊地址或null")
+                errors.append("'to' field must be a valid Ethereum address or null")
         
-        # 验证可选字段
+        # Validate optional fields
         if "from" in data:
             from_address = data["from"]
             if not self.address_pattern.match(str(from_address)):
-                errors.append("'from'字段必须是有效的以太坊地址")
+                errors.append("'from' field must be a valid Ethereum address")
         
         if "value" in data:
             value = data["value"]
             if isinstance(value, str):
                 if not (value.startswith("0x") and self.hex_pattern.match(value)):
                     if not value.isdigit():
-                        errors.append("'value'字段必须是十六进制字符串或数字")
+                        errors.append("'value' field must be a hexadecimal string or number")
         
         if "data" in data:
             tx_data = data["data"]
             if isinstance(tx_data, str) and tx_data != "0x":
                 if not self.hex_pattern.match(tx_data):
-                    errors.append("'data'字段必须是有效的十六进制数据")
+                    errors.append("'data' field must be valid hexadecimal data")
         
-        # 验证Gas相关字段
+        # Validate gas-related fields
         gas_fields = ["gas", "gasLimit", "gasPrice", "maxFeePerGas", "maxPriorityFeePerGas"]
         for field in gas_fields:
             if field in data:
@@ -250,25 +250,25 @@ class SignatureValidator:
                 if isinstance(gas_value, str):
                     if not (gas_value.startswith("0x") and self.hex_pattern.match(gas_value)):
                         if not gas_value.isdigit():
-                            errors.append(f"'{field}'字段必须是十六进制字符串或数字")
+                            errors.append(f"'{field}' field must be a hexadecimal string or number")
         
         return errors, warnings, metadata
     
     def _validate_personal_sign(self, data: Union[str, Dict[str, Any]]) -> tuple[List[str], List[str], Dict[str, Any]]:
-        """验证个人签名数据"""
+        """Validate personal sign data"""
         errors = []
         warnings = []
         metadata = {}
         
         if isinstance(data, str):
-            # 验证字符串消息
+            # Validate string message
             if len(data) > 10000:  # 10KB limit
-                warnings.append("消息长度过长，可能影响用户体验")
+                warnings.append("Message length is too long, may affect user experience")
             
-            # 检查是否包含十六进制数据
+            # Check if contains hexadecimal data
             if data.startswith("0x"):
                 if not self.hex_pattern.match(data):
-                    errors.append("十六进制数据格式无效")
+                    errors.append("Invalid hexadecimal data format")
                 else:
                     metadata["data_type"] = "hex"
                     metadata["hex_length"] = len(data) - 2
@@ -277,28 +277,28 @@ class SignatureValidator:
                 metadata["text_length"] = len(data)
         
         elif isinstance(data, dict):
-            # 验证字典格式的个人消息
+            # Validate dictionary format personal message
             if "message" not in data:
-                warnings.append("字典格式的个人消息通常应包含'message'字段")
+                warnings.append("Dictionary format personal messages should usually include 'message' field")
         
         return errors, warnings, metadata
     
     def _validate_eth_sign(self, data: Union[str, Dict[str, Any]]) -> tuple[List[str], List[str], Dict[str, Any]]:
-        """验证eth_sign数据"""
+        """Validate eth_sign data"""
         errors = []
-        warnings = ["eth_sign方法存在安全风险，建议避免使用"]
+        warnings = ["eth_sign method has security risks, recommend avoiding use"]
         metadata = {}
         
         if isinstance(data, str):
             if not data.startswith("0x"):
-                errors.append("eth_sign数据必须是十六进制格式")
+                errors.append("eth_sign data must be in hexadecimal format")
             elif not self.hex_pattern.match(data):
-                errors.append("十六进制数据格式无效")
+                errors.append("Invalid hexadecimal data format")
             else:
                 hex_length = len(data) - 2
                 metadata["hex_length"] = hex_length
                 
-                # 根据长度判断数据类型
+                # Determine data type based on length
                 if hex_length == 64:  # 32 bytes hash
                     metadata["data_type"] = "hash"
                 elif hex_length == 130:  # 65 bytes signature
@@ -309,19 +309,19 @@ class SignatureValidator:
         return errors, warnings, metadata
     
     def validate_address(self, address: str) -> bool:
-        """验证以太坊地址格式"""
+        """Validate Ethereum address format"""
         if not isinstance(address, str):
             return False
         return bool(self.address_pattern.match(address))
     
     def validate_hash(self, hash_value: str) -> bool:
-        """验证哈希格式"""
+        """Validate hash format"""
         if not isinstance(hash_value, str):
             return False
         return bool(self.hash_pattern.match(hash_value))
     
     def validate_hex_data(self, hex_data: str) -> bool:
-        """验证十六进制数据格式"""
+        """Validate hexadecimal data format"""
         if not isinstance(hex_data, str):
             return False
         return bool(self.hex_pattern.match(hex_data)) 

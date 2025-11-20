@@ -1,5 +1,5 @@
 """
-签名分类器 - 核心签名识别引擎
+Signature Classifier - Core signature recognition engine
 """
 
 import json
@@ -12,37 +12,37 @@ from .signature_types import SignatureType, SignatureCategory, SecurityLevel, ge
 
 @dataclass
 class ClassificationResult:
-    """分类结果"""
+    """Classification result"""
     signature_type: SignatureType
     category: SignatureCategory
     security_level: SecurityLevel
-    confidence: float  # 置信度 0-1
+    confidence: float  # Confidence 0-1
     metadata: Dict[str, Any]
     warnings: List[str]
     detected_patterns: List[str]
 
 
 class SignatureClassifier:
-    """签名分类器 - 识别和分类以太坊签名类型"""
+    """Signature classifier - identifies and classifies Ethereum signature types"""
     
     def __init__(self):
-        """初始化分类器"""
+        """Initialize classifier"""
         self._init_patterns()
     
     def _init_patterns(self):
-        """初始化检测模式"""
+        """Initialize detection patterns"""
         
-        # EIP-712 检测模式
+        # EIP-712 detection patterns
         self.eip712_required_fields = {"types", "domain", "primaryType", "message"}
         self.eip712_domain_fields = {"name", "version", "chainId", "verifyingContract"}
         
-        # 交易数据检测模式
+        # Transaction data detection patterns
         self.transaction_fields = {
             "required": {"to"},
             "optional": {"from", "value", "data", "gas", "gasPrice", "gasLimit", "nonce", "maxFeePerGas", "maxPriorityFeePerGas"}
         }
         
-        # 十六进制模式
+        # Hexadecimal patterns
         self.hex_patterns = {
             "address": re.compile(r'^0x[a-fA-F0-9]{40}$'),
             "hash": re.compile(r'^0x[a-fA-F0-9]{64}$'),
@@ -50,7 +50,7 @@ class SignatureClassifier:
             "hex_data": re.compile(r'^0x[a-fA-F0-9]+$')
         }
         
-        # 危险关键词检测
+        # Risk keyword detection
         self.risk_keywords = {
             "high": ["transfer", "approve", "withdraw", "claim", "execute"],
             "medium": ["sign", "auth", "verify", "permit", "delegate"],
@@ -59,31 +59,31 @@ class SignatureClassifier:
     
     def classify(self, data: Union[str, Dict[str, Any]]) -> ClassificationResult:
         """
-        分类签名数据
+        Classify signature data
         
         Args:
-            data: 输入的签名数据
+            data: Input signature data
             
         Returns:
-            分类结果
+            Classification result
         """
-        # 数据预处理
+        # Data preprocessing
         processed_data, data_format = self._preprocess_data(data)
         
-        # 执行分类
+        # Perform classification
         signature_type = self._detect_signature_type(processed_data, data_format)
         
-        # 获取元数据
+        # Get metadata
         metadata = get_signature_metadata(signature_type)
         
-        # 计算置信度
+        # Calculate confidence
         confidence = self._calculate_confidence(processed_data, signature_type, data_format)
         
-        # 检测警告和模式
+        # Detect warnings and patterns
         warnings = self._detect_warnings(processed_data, signature_type)
         patterns = self._detect_patterns(processed_data, signature_type)
         
-        # 构建结果
+        # Build result
         return ClassificationResult(
             signature_type=signature_type,
             category=metadata.category,
@@ -102,16 +102,16 @@ class SignatureClassifier:
         )
     
     def _preprocess_data(self, data: Union[str, Dict[str, Any]]) -> Tuple[Union[str, Dict[str, Any]], str]:
-        """预处理输入数据"""
+        """Preprocess input data"""
         
         if isinstance(data, dict):
             return data, "dict"
         
         if isinstance(data, str):
-            # 去除空白字符
+            # Remove whitespace
             data = data.strip()
             
-            # 尝试解析JSON
+            # Try to parse JSON
             if data.startswith('{'):
                 try:
                     parsed = json.loads(data)
@@ -125,7 +125,7 @@ class SignatureClassifier:
         return str(data), "other"
     
     def _detect_signature_type(self, data: Union[str, Dict[str, Any]], data_format: str) -> SignatureType:
-        """检测签名类型"""
+        """Detect signature type"""
         
         if data_format in ["dict", "json_string"]:
             return self._classify_dict_data(data)
@@ -133,61 +133,61 @@ class SignatureClassifier:
             return self._classify_string_data(data)
     
     def _classify_dict_data(self, data: Dict[str, Any]) -> SignatureType:
-        """分类字典格式数据"""
+        """Classify dictionary format data"""
         
-        # 检查 EIP-712 结构
+        # Check EIP-712 structure
         if self._is_eip712_structure(data):
             return SignatureType.ETH_SIGN_TYPED_DATA_V4
         
-        # 检查交易结构
+        # Check transaction structure
         if self._is_transaction_structure(data):
             return SignatureType.ETH_SEND_TRANSACTION
         
-        # 检查个人消息结构
+        # Check personal message structure
         if self._is_personal_message_structure(data):
             return SignatureType.PERSONAL_SIGN
         
         return SignatureType.UNKNOWN
     
     def _classify_string_data(self, data: str) -> SignatureType:
-        """分类字符串格式数据"""
+        """Classify string format data"""
         
         if not data:
             return SignatureType.UNKNOWN
         
-        # 检查十六进制数据
+        # Check hexadecimal data
         if data.startswith("0x"):
             return self._classify_hex_data(data)
         
-        # 检查纯文本消息
+        # Check plain text message
         if self._is_readable_text(data):
             return SignatureType.PERSONAL_SIGN
         
         return SignatureType.UNKNOWN
     
     def _is_eip712_structure(self, data: Dict[str, Any]) -> bool:
-        """检查是否为EIP-712结构"""
+        """Check if it's an EIP-712 structure"""
         
-        # 检查必需字段
+        # Check required fields
         if not self.eip712_required_fields.issubset(data.keys()):
             return False
         
-        # 验证类型字段
+        # Validate types field
         types = data.get("types")
         if not isinstance(types, dict) or "EIP712Domain" not in types:
             return False
         
-        # 验证域字段
+        # Validate domain field
         domain = data.get("domain")
         if not isinstance(domain, dict):
             return False
         
-        # 验证主类型
+        # Validate primary type
         primary_type = data.get("primaryType")
         if not isinstance(primary_type, str) or primary_type not in types:
             return False
         
-        # 验证消息
+        # Validate message
         message = data.get("message")
         if not isinstance(message, dict):
             return False
@@ -195,13 +195,13 @@ class SignatureClassifier:
         return True
     
     def _is_transaction_structure(self, data: Dict[str, Any]) -> bool:
-        """检查是否为交易结构"""
+        """Check if it's a transaction structure"""
         
-        # 必须包含 'to' 字段，这是交易的基本要求
+        # Must include 'to' field, which is a basic requirement for transactions
         if "to" not in data:
             return False
         
-        # 检查交易相关字段的数量
+        # Check number of transaction-related fields
         transaction_field_count = 0
         all_transaction_fields = self.transaction_fields["required"] | self.transaction_fields["optional"]
         
@@ -209,17 +209,17 @@ class SignatureClassifier:
             if field in data:
                 transaction_field_count += 1
         
-        # 如果包含足够多的交易字段，认为是交易
+        # If contains enough transaction fields, consider it a transaction
         return transaction_field_count >= 2
     
     def _is_personal_message_structure(self, data: Dict[str, Any]) -> bool:
-        """检查是否为个人消息结构"""
+        """Check if it's a personal message structure"""
         
-        # 检查消息字段
+        # Check message field
         if "message" in data and isinstance(data["message"], str):
             return True
         
-        # 检查其他可能的消息字段
+        # Check other possible message fields
         message_fields = ["text", "content", "msg", "data"]
         for field in message_fields:
             if field in data and isinstance(data[field], str):
@@ -228,24 +228,24 @@ class SignatureClassifier:
         return False
     
     def _classify_hex_data(self, data: str) -> SignatureType:
-        """分类十六进制数据"""
+        """Classify hexadecimal data"""
         
-        # 检查地址格式
+        # Check address format
         if self.hex_patterns["address"].match(data):
             return SignatureType.PERSONAL_SIGN
         
-        # 检查哈希格式
+        # Check hash format
         if self.hex_patterns["hash"].match(data):
             return SignatureType.ETH_SIGN
         
-        # 检查签名格式
+        # Check signature format
         if self.hex_patterns["signature"].match(data):
             return SignatureType.ETH_SIGN
         
-        # 其他十六进制数据
+        # Other hexadecimal data
         if self.hex_patterns["hex_data"].match(data):
-            hex_length = len(data) - 2  # 减去 '0x'
-            if hex_length > 128:  # 长数据可能是原始签名
+            hex_length = len(data) - 2  # Subtract '0x'
+            if hex_length > 128:  # Long data might be raw signature
                 return SignatureType.ETH_SIGN
             else:
                 return SignatureType.PERSONAL_SIGN
@@ -253,26 +253,26 @@ class SignatureClassifier:
         return SignatureType.UNKNOWN
     
     def _is_readable_text(self, text: str) -> bool:
-        """检查是否为可读文本"""
+        """Check if it's readable text"""
         
         try:
-            # 检查UTF-8编码
+            # Check UTF-8 encoding
             text.encode('utf-8')
             
-            # 检查是否包含过多控制字符
+            # Check if contains too many control characters
             control_chars = sum(1 for c in text if ord(c) < 32 and c not in '\t\n\r')
             control_ratio = control_chars / len(text) if text else 0
             
-            # 如果控制字符比例过高，认为不是可读文本
+            # If control character ratio is too high, consider it not readable text
             return control_ratio < 0.1
             
         except UnicodeEncodeError:
             return False
     
     def _calculate_confidence(self, data: Union[str, Dict[str, Any]], signature_type: SignatureType, data_format: str) -> float:
-        """计算分类置信度"""
+        """Calculate classification confidence"""
         
-        confidence = 0.5  # 基础置信度
+        confidence = 0.5  # Base confidence
         
         if signature_type == SignatureType.ETH_SIGN_TYPED_DATA_V4:
             if isinstance(data, dict) and self._is_eip712_structure(data):
@@ -298,62 +298,62 @@ class SignatureClassifier:
         return confidence
     
     def _detect_warnings(self, data: Union[str, Dict[str, Any]], signature_type: SignatureType) -> List[str]:
-        """检测警告信息"""
+        """Detect warning messages"""
         
         warnings = []
         
-        # 高风险签名类型警告
+        # High-risk signature type warnings
         if signature_type == SignatureType.ETH_SIGN:
-            warnings.append("⚠️ eth_sign 方法存在极高安全风险，已被多数钱包禁用")
+            warnings.append("⚠️ eth_sign method has extremely high security risks and has been disabled by most wallets")
         
-        # 检查数据中的风险关键词
+        # Check risk keywords in data
         data_text = str(data).lower()
         
         for keyword in self.risk_keywords["phishing"]:
             if keyword in data_text:
-                warnings.append(f"⚠️ 检测到钓鱼相关关键词: '{keyword}'")
+                warnings.append(f"⚠️ Detected phishing-related keyword: '{keyword}'")
         
-        # EIP-712特定警告
+        # EIP-712 specific warnings
         if signature_type == SignatureType.ETH_SIGN_TYPED_DATA_V4 and isinstance(data, dict):
-            # 检查过期时间
+            # Check expiration time
             message = data.get("message", {})
             if isinstance(message, dict):
-                # 检查常见的时间字段
+                # Check common time fields
                 time_fields = ["endTime", "deadline", "expiry", "validUntil"]
                 for field in time_fields:
                     if field in message:
-                        warnings.append(f"⚠️ 签名包含时效性限制，请注意 {field} 字段")
+                        warnings.append(f"⚠️ Signature contains time limit, please note {field} field")
         
         return warnings
     
     def _detect_patterns(self, data: Union[str, Dict[str, Any]], signature_type: SignatureType) -> List[str]:
-        """检测数据模式"""
+        """Detect data patterns"""
         
         patterns = []
         
         if isinstance(data, dict):
-            patterns.append(f"结构化数据，包含 {len(data)} 个字段")
+            patterns.append(f"Structured data, contains {len(data)} fields")
             
             if signature_type == SignatureType.ETH_SIGN_TYPED_DATA_V4:
                 primary_type = data.get("primaryType")
                 if primary_type:
-                    patterns.append(f"EIP-712 主类型: {primary_type}")
+                    patterns.append(f"EIP-712 primary type: {primary_type}")
                 
                 domain = data.get("domain", {})
                 if isinstance(domain, dict) and "name" in domain:
-                    patterns.append(f"协议名称: {domain['name']}")
+                    patterns.append(f"Protocol name: {domain['name']}")
         
         elif isinstance(data, str):
             if data.startswith("0x"):
                 hex_length = len(data) - 2
-                patterns.append(f"十六进制数据，长度: {hex_length} 字符")
+                patterns.append(f"Hexadecimal data, length: {hex_length} characters")
             else:
-                patterns.append(f"文本消息，长度: {len(data)} 字符")
+                patterns.append(f"Text message, length: {len(data)} characters")
         
         return patterns
     
     def get_supported_types(self) -> List[SignatureType]:
-        """获取支持的签名类型列表"""
+        """Get list of supported signature types"""
         return [
             SignatureType.ETH_SEND_TRANSACTION,
             SignatureType.PERSONAL_SIGN,
@@ -362,5 +362,5 @@ class SignatureClassifier:
         ]
     
     def batch_classify(self, data_list: List[Union[str, Dict[str, Any]]]) -> List[ClassificationResult]:
-        """批量分类签名数据"""
+        """Batch classify signature data"""
         return [self.classify(data) for data in data_list] 

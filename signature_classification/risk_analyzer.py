@@ -1,5 +1,5 @@
 """
-风险分析器 - 评估签名安全风险
+Risk Analyzer - Assesses signature security risks
 """
 
 from typing import Dict, List, Any, Union, Optional
@@ -10,16 +10,16 @@ from .signature_types import SignatureType, SecurityLevel
 
 
 class RiskCategory(str, Enum):
-    """风险类别"""
-    FINANCIAL = "financial"  # 财务风险
-    PRIVACY = "privacy"      # 隐私风险
-    PHISHING = "phishing"    # 钓鱼风险
-    TECHNICAL = "technical"  # 技术风险
+    """Risk category"""
+    FINANCIAL = "financial"  # Financial risk
+    PRIVACY = "privacy"      # Privacy risk
+    PHISHING = "phishing"    # Phishing risk
+    TECHNICAL = "technical"  # Technical risk
 
 
 @dataclass
 class RiskFactor:
-    """风险因子"""
+    """Risk factor"""
     category: RiskCategory
     level: SecurityLevel
     description: str
@@ -29,7 +29,7 @@ class RiskFactor:
 
 @dataclass
 class RiskAssessment:
-    """风险评估结果"""
+    """Risk assessment result"""
     overall_risk: SecurityLevel
     risk_score: float  # 0-100
     risk_factors: List[RiskFactor]
@@ -39,16 +39,16 @@ class RiskAssessment:
 
 
 class RiskAnalyzer:
-    """风险分析器"""
+    """Risk analyzer"""
     
     def __init__(self):
-        """初始化风险分析器"""
+        """Initialize risk analyzer"""
         self._init_risk_rules()
     
     def _init_risk_rules(self):
-        """初始化风险规则"""
+        """Initialize risk rules"""
         
-        # 钓鱼关键词
+        # Phishing keywords
         self.phishing_keywords = {
             "urgent": ["urgent", "urgently", "immediately", "asap", "紧急", "立即", "马上"],
             "time_pressure": ["expires", "deadline", "limited time", "act now", "过期", "截止", "限时"],
@@ -57,13 +57,13 @@ class RiskAnalyzer:
             "threat": ["suspend", "block", "disable", "freeze", "暂停", "冻结", "禁用"]
         }
         
-        # 高风险合约地址模式（示例）
+        # High-risk contract address patterns (examples)
         self.high_risk_patterns = {
-            "known_scam_contracts": [],  # 可以添加已知诈骗合约地址
-            "suspicious_domains": ["bit.ly", "tinyurl.com", "t.co"]  # 短链接域名
+            "known_scam_contracts": [],  # Can add known scam contract addresses
+            "suspicious_domains": ["bit.ly", "tinyurl.com", "t.co"]  # Short link domains
         }
         
-        # 财务风险阈值
+        # Financial risk thresholds
         self.financial_thresholds = {
             "high_value_eth": 1000000000000000000,  # 1 ETH in wei
             "high_value_usd": 1000  # $1000 USD
@@ -74,47 +74,47 @@ class RiskAnalyzer:
                     data: Union[str, Dict[str, Any]], 
                     context: Optional[Dict[str, Any]] = None) -> RiskAssessment:
         """
-        分析签名风险
+        Analyze signature risk
         
         Args:
-            signature_type: 签名类型
-            data: 签名数据
-            context: 上下文信息（可选）
+            signature_type: Signature type
+            data: Signature data
+            context: Context information (optional)
             
         Returns:
-            风险评估结果
+            Risk assessment result
         """
         risk_factors = []
         warnings = []
         
-        # 基于签名类型的基础风险评估
+        # Base risk assessment based on signature type
         base_risks = self._assess_base_risks(signature_type)
         risk_factors.extend(base_risks)
         
-        # 数据内容风险分析
+        # Data content risk analysis
         content_risks = self._analyze_content_risks(signature_type, data)
         risk_factors.extend(content_risks)
         
-        # 钓鱼风险检测
+        # Phishing risk detection
         phishing_risks = self._detect_phishing_risks(data)
         risk_factors.extend(phishing_risks)
         
-        # 技术风险评估
+        # Technical risk assessment
         technical_risks = self._assess_technical_risks(signature_type, data)
         risk_factors.extend(technical_risks)
         
-        # 上下文风险分析
+        # Context risk analysis
         if context:
             context_risks = self._analyze_context_risks(context)
             risk_factors.extend(context_risks)
         
-        # 计算总体风险
+        # Calculate overall risk
         overall_risk, risk_score = self._calculate_overall_risk(risk_factors)
         
-        # 生成建议
+        # Generate recommendations
         recommendations = self._generate_recommendations(signature_type, risk_factors, overall_risk)
         
-        # 判断是否应该继续
+        # Determine if should proceed
         should_proceed = self._should_proceed(overall_risk, risk_score)
         
         return RiskAssessment(
@@ -127,56 +127,56 @@ class RiskAnalyzer:
         )
     
     def _assess_base_risks(self, signature_type: SignatureType) -> List[RiskFactor]:
-        """基于签名类型的基础风险评估"""
+        """Base risk assessment based on signature type"""
         risks = []
         
         if signature_type == SignatureType.ETH_SEND_TRANSACTION:
             risks.append(RiskFactor(
                 category=RiskCategory.FINANCIAL,
                 level=SecurityLevel.HIGH_RISK,
-                description="链上交易将直接消耗Gas费用并可能转移资产",
-                impact="可能导致资产损失和不可逆的状态变更",
-                mitigation="仔细检查交易详情，确认接收地址和金额"
+                description="On-chain transaction will directly consume gas fees and may transfer assets",
+                impact="May cause asset loss and irreversible state changes",
+                mitigation="Carefully check transaction details, confirm recipient address and amount"
             ))
         
         elif signature_type == SignatureType.ETH_SIGN:
             risks.append(RiskFactor(
                 category=RiskCategory.TECHNICAL,
                 level=SecurityLevel.HIGH_RISK,
-                description="eth_sign方法存在严重安全漏洞",
-                impact="可能被恶意利用签署任意数据",
-                mitigation="避免使用支持eth_sign的钱包，建议升级到现代钱包"
+                description="eth_sign method has serious security vulnerabilities",
+                impact="May be maliciously exploited to sign arbitrary data",
+                mitigation="Avoid using wallets that support eth_sign, recommend upgrading to modern wallets"
             ))
         
         elif signature_type == SignatureType.PERSONAL_SIGN:
             risks.append(RiskFactor(
                 category=RiskCategory.PHISHING,
                 level=SecurityLevel.MEDIUM_RISK,
-                description="个人签名常被钓鱼网站滥用",
-                impact="可能泄露身份信息或被用于恶意授权",
-                mitigation="确认网站真实性，避免在可疑网站上签名"
+                description="Personal signatures are frequently abused by phishing sites",
+                impact="May leak identity information or be used for malicious authorization",
+                mitigation="Confirm website authenticity, avoid signing on suspicious websites"
             ))
         
         elif signature_type == SignatureType.ETH_SIGN_TYPED_DATA_V4:
             risks.append(RiskFactor(
                 category=RiskCategory.TECHNICAL,
                 level=SecurityLevel.MEDIUM_RISK,
-                description="结构化签名可能包含复杂的授权逻辑",
-                impact="可能授予第三方超出预期的权限",
-                mitigation="仔细阅读签名内容，特别注意授权范围和有效期"
+                description="Structured signatures may contain complex authorization logic",
+                impact="May grant third parties permissions beyond expectations",
+                mitigation="Carefully read signature content, pay special attention to authorization scope and validity period"
             ))
         
         return risks
     
     def _analyze_content_risks(self, signature_type: SignatureType, data: Union[str, Dict[str, Any]]) -> List[RiskFactor]:
-        """分析数据内容风险"""
+        """Analyze data content risks"""
         risks = []
         
         if signature_type == SignatureType.ETH_SIGN_TYPED_DATA_V4 and isinstance(data, dict):
-            # 检查EIP-712数据的风险
+            # Check risks in EIP-712 data
             message = data.get("message", {})
             
-            # 检查授权金额
+            # Check authorization amount
             if isinstance(message, dict):
                 for key, value in message.items():
                     if key.lower() in ["amount", "value"] and isinstance(value, (str, int)):
@@ -186,82 +186,82 @@ class RiskAnalyzer:
                                 risks.append(RiskFactor(
                                     category=RiskCategory.FINANCIAL,
                                     level=SecurityLevel.HIGH_RISK,
-                                    description=f"检测到高额授权金额: {amount}",
-                                    impact="可能导致大额资产损失",
-                                    mitigation="确认授权金额是否合理"
+                                    description=f"Detected high authorization amount: {amount}",
+                                    impact="May cause large asset loss",
+                                    mitigation="Confirm if authorization amount is reasonable"
                                 ))
                         except (ValueError, TypeError):
                             pass
                 
-                # 检查时间相关风险
+                # Check time-related risks
                 time_fields = ["endTime", "deadline", "expiry", "validUntil"]
                 for field in time_fields:
                     if field in message:
                         risks.append(RiskFactor(
                             category=RiskCategory.TECHNICAL,
                             level=SecurityLevel.LOW_RISK,
-                            description=f"签名包含时效限制: {field}",
-                            impact="可能面临时间窗口攻击",
-                            mitigation="注意签名的有效期限制"
+                            description=f"Signature contains time limit: {field}",
+                            impact="May face time window attacks",
+                            mitigation="Pay attention to signature validity period limits"
                         ))
         
         return risks
     
     def _detect_phishing_risks(self, data: Union[str, Dict[str, Any]]) -> List[RiskFactor]:
-        """检测钓鱼风险"""
+        """Detect phishing risks"""
         risks = []
         
-        # 将数据转换为文本进行关键词检测
+        # Convert data to text for keyword detection
         text_data = str(data).lower()
         
-        # 检查钓鱼关键词
+        # Check phishing keywords
         for category, keywords in self.phishing_keywords.items():
             for keyword in keywords:
                 if keyword in text_data:
                     risks.append(RiskFactor(
                         category=RiskCategory.PHISHING,
                         level=SecurityLevel.HIGH_RISK,
-                        description=f"检测到钓鱼相关关键词: '{keyword}' (类别: {category})",
-                        impact="可能是钓鱼攻击尝试",
-                        mitigation="仔细核实网站真实性，避免在可疑环境中签名"
+                        description=f"Detected phishing-related keyword: '{keyword}' (category: {category})",
+                        impact="May be a phishing attack attempt",
+                        mitigation="Carefully verify website authenticity, avoid signing in suspicious environments"
                     ))
         
         return risks
     
     def _assess_technical_risks(self, signature_type: SignatureType, data: Union[str, Dict[str, Any]]) -> List[RiskFactor]:
-        """评估技术风险"""
+        """Assess technical risks"""
         risks = []
         
-        # 检查数据复杂度
+        # Check data complexity
         if isinstance(data, dict):
             depth = self._calculate_dict_depth(data)
             if depth > 3:
                 risks.append(RiskFactor(
                     category=RiskCategory.TECHNICAL,
                     level=SecurityLevel.MEDIUM_RISK,
-                    description=f"数据结构复杂度较高 (嵌套层级: {depth})",
-                    impact="复杂结构可能隐藏恶意内容",
-                    mitigation="仔细检查每个字段的含义"
+                    description=f"Data structure complexity is high (nesting level: {depth})",
+                    impact="Complex structures may hide malicious content",
+                    mitigation="Carefully check the meaning of each field"
                 ))
         
-        # 检查数据大小
+        # Check data size
         data_size = len(str(data))
         if data_size > 10000:  # 10KB
             risks.append(RiskFactor(
                 category=RiskCategory.TECHNICAL,
                 level=SecurityLevel.LOW_RISK,
-                description=f"数据量较大 ({data_size} 字符)",
-                impact="大量数据可能影响审查效率",
-                mitigation="确保有足够时间审查所有内容"
+                description=f"Large data volume ({data_size} characters)",
+                impact="Large amounts of data may affect review efficiency",
+                mitigation="Ensure sufficient time to review all content"
             ))
         
         return risks
     
     def _analyze_context_risks(self, context: Dict[str, Any]) -> List[RiskFactor]:
-        """分析上下文风险"""
+        """Analyze context risks"""
         risks = []
         
-        # 检查来源域名
+        # Check origin domain
         origin = context.get("origin", "")
         if origin:
             for suspicious_domain in self.high_risk_patterns["suspicious_domains"]:
@@ -269,26 +269,26 @@ class RiskAnalyzer:
                     risks.append(RiskFactor(
                         category=RiskCategory.PHISHING,
                         level=SecurityLevel.HIGH_RISK,
-                        description=f"来源域名可疑: {origin}",
-                        impact="可能来自钓鱼网站",
-                        mitigation="验证网站的真实性"
+                        description=f"Suspicious origin domain: {origin}",
+                        impact="May come from phishing website",
+                        mitigation="Verify website authenticity"
                     ))
         
-        # 检查用户代理
+        # Check user agent
         user_agent = context.get("userAgent", "")
         if user_agent and "bot" in user_agent.lower():
             risks.append(RiskFactor(
                 category=RiskCategory.TECHNICAL,
                 level=SecurityLevel.MEDIUM_RISK,
-                description="检测到自动化请求",
-                impact="可能是脚本攻击",
-                mitigation="确认操作是否为用户主动发起"
+                description="Detected automated request",
+                impact="May be a script attack",
+                mitigation="Confirm if operation is user-initiated"
             ))
         
         return risks
     
     def _calculate_dict_depth(self, d: Dict[str, Any], depth: int = 0) -> int:
-        """计算字典嵌套深度"""
+        """Calculate dictionary nesting depth"""
         if not isinstance(d, dict):
             return depth
         
@@ -300,11 +300,11 @@ class RiskAnalyzer:
         return max_depth
     
     def _calculate_overall_risk(self, risk_factors: List[RiskFactor]) -> tuple[SecurityLevel, float]:
-        """计算总体风险级别和分数"""
+        """Calculate overall risk level and score"""
         if not risk_factors:
             return SecurityLevel.MINIMAL_RISK, 0.0
         
-        # 风险级别权重
+        # Risk level weights
         risk_weights = {
             SecurityLevel.HIGH_RISK: 80,
             SecurityLevel.MEDIUM_RISK: 50,
@@ -312,7 +312,7 @@ class RiskAnalyzer:
             SecurityLevel.MINIMAL_RISK: 5
         }
         
-        # 计算风险分数
+        # Calculate risk score
         total_score = 0
         max_risk_level = SecurityLevel.MINIMAL_RISK
         
@@ -320,7 +320,7 @@ class RiskAnalyzer:
             score = risk_weights.get(factor.level, 0)
             total_score += score
             
-            # 更新最高风险级别
+            # Update highest risk level
             if factor.level == SecurityLevel.HIGH_RISK:
                 max_risk_level = SecurityLevel.HIGH_RISK
             elif factor.level == SecurityLevel.MEDIUM_RISK and max_risk_level != SecurityLevel.HIGH_RISK:
@@ -328,10 +328,10 @@ class RiskAnalyzer:
             elif factor.level == SecurityLevel.LOW_RISK and max_risk_level == SecurityLevel.MINIMAL_RISK:
                 max_risk_level = SecurityLevel.LOW_RISK
         
-        # 归一化分数到0-100
+        # Normalize score to 0-100
         normalized_score = min(100, total_score)
         
-        # 根据分数调整风险级别
+        # Adjust risk level based on score
         if normalized_score >= 80:
             overall_risk = SecurityLevel.HIGH_RISK
         elif normalized_score >= 50:
@@ -344,59 +344,59 @@ class RiskAnalyzer:
         return overall_risk, normalized_score
     
     def _generate_recommendations(self, signature_type: SignatureType, risk_factors: List[RiskFactor], overall_risk: SecurityLevel) -> List[str]:
-        """生成安全建议"""
+        """Generate security recommendations"""
         recommendations = []
         
-        # 基于整体风险级别的建议
+        # Recommendations based on overall risk level
         if overall_risk == SecurityLevel.HIGH_RISK:
-            recommendations.append("🚨 建议暂停操作，仔细评估风险后再决定是否继续")
-            recommendations.append("🔍 建议寻求专业人士的意见")
+            recommendations.append("🚨 Recommend pausing operation, carefully assess risks before deciding whether to continue")
+            recommendations.append("🔍 Recommend seeking professional advice")
         elif overall_risk == SecurityLevel.MEDIUM_RISK:
-            recommendations.append("⚠️ 请谨慎操作，确认所有细节无误后再继续")
-            recommendations.append("🔍 建议在测试环境中先行验证")
+            recommendations.append("⚠️ Please proceed with caution, confirm all details are correct before continuing")
+            recommendations.append("🔍 Recommend testing in a test environment first")
         
-        # 基于签名类型的建议
+        # Recommendations based on signature type
         if signature_type == SignatureType.ETH_SEND_TRANSACTION:
-            recommendations.append("💰 仔细检查交易金额和接收地址")
-            recommendations.append("⛽ 注意Gas费用设置是否合理")
+            recommendations.append("💰 Carefully check transaction amount and recipient address")
+            recommendations.append("⛽ Pay attention to whether gas fee settings are reasonable")
         elif signature_type == SignatureType.ETH_SIGN:
-            recommendations.append("🚫 强烈建议避免使用eth_sign方法")
-            recommendations.append("🔄 考虑使用更安全的签名方法")
+            recommendations.append("🚫 Strongly recommend avoiding eth_sign method")
+            recommendations.append("🔄 Consider using safer signature methods")
         elif signature_type == SignatureType.PERSONAL_SIGN:
-            recommendations.append("🌐 确认网站域名和SSL证书")
-            recommendations.append("👁️ 仔细阅读要签名的消息内容")
+            recommendations.append("🌐 Confirm website domain and SSL certificate")
+            recommendations.append("👁️ Carefully read the message content to be signed")
         elif signature_type == SignatureType.ETH_SIGN_TYPED_DATA_V4:
-            recommendations.append("📋 仔细检查结构化数据的每个字段")
-            recommendations.append("⏰ 注意签名的有效期和授权范围")
+            recommendations.append("📋 Carefully check each field of structured data")
+            recommendations.append("⏰ Pay attention to signature validity period and authorization scope")
         
-        # 基于具体风险因子的建议
+        # Recommendations based on specific risk factors
         risk_categories = {factor.category for factor in risk_factors}
         
         if RiskCategory.PHISHING in risk_categories:
-            recommendations.append("🎣 检测到钓鱼风险，请验证网站真实性")
+            recommendations.append("🎣 Phishing risk detected, please verify website authenticity")
         
         if RiskCategory.FINANCIAL in risk_categories:
-            recommendations.append("💸 涉及财务操作，请确认金额和授权范围")
+            recommendations.append("💸 Financial operations involved, please confirm amount and authorization scope")
         
-        # 去重并限制数量
-        recommendations = list(dict.fromkeys(recommendations))  # 去重
-        return recommendations[:8]  # 限制最多8条建议
+        # Deduplicate and limit quantity
+        recommendations = list(dict.fromkeys(recommendations))  # Deduplicate
+        return recommendations[:8]  # Limit to maximum 8 recommendations
     
     def _should_proceed(self, overall_risk: SecurityLevel, risk_score: float) -> bool:
-        """判断是否应该继续操作"""
+        """Determine if operation should proceed"""
         
-        # 高风险情况下不建议继续
+        # Do not recommend continuing in high-risk situations
         if overall_risk == SecurityLevel.HIGH_RISK:
             return False
         
-        # 中等风险情况下需要用户仔细考虑
+        # Medium risk situations require user careful consideration
         if overall_risk == SecurityLevel.MEDIUM_RISK and risk_score > 70:
             return False
         
         return True
     
     def get_risk_summary(self, risk_assessment: RiskAssessment) -> str:
-        """获取风险摘要"""
+        """Get risk summary"""
         
         risk_level_emoji = {
             SecurityLevel.HIGH_RISK: "🔴",
@@ -407,13 +407,13 @@ class RiskAnalyzer:
         
         emoji = risk_level_emoji.get(risk_assessment.overall_risk, "⚪")
         
-        summary = f"{emoji} 风险级别: {risk_assessment.overall_risk}\n"
-        summary += f"风险评分: {risk_assessment.risk_score:.1f}/100\n"
-        summary += f"风险因子数量: {len(risk_assessment.risk_factors)}\n"
+        summary = f"{emoji} Risk level: {risk_assessment.overall_risk}\n"
+        summary += f"Risk score: {risk_assessment.risk_score:.1f}/100\n"
+        summary += f"Number of risk factors: {len(risk_assessment.risk_factors)}\n"
         
         if not risk_assessment.should_proceed:
-            summary += "⚠️ 不建议继续操作"
+            summary += "⚠️ Do not recommend continuing operation"
         else:
-            summary += "✅ 可以谨慎继续"
+            summary += "✅ Can proceed with caution"
         
         return summary 
