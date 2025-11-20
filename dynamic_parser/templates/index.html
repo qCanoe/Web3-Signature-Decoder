@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signature Request - Confirm Transaction</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Left Input Panel -->
+        <div class="input-panel">
+            <div class="panel-header">
+                <h5><i class="fas fa-code"></i> Signature Data Input</h5>
+                <p>Development Testing Panel</p>
+            </div>
+
+            <div class="input-content">
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <button class="btn-action" onclick="loadTestData()">
+                        <i class="fas fa-download"></i>
+                        <span>Load Test Data</span>
+                    </button>
+                    <button class="btn-action" onclick="clearInput()">
+                        <i class="fas fa-trash"></i>
+                        <span>Clear</span>
+                    </button>
+                </div>
+
+                <!-- Test Data Selector -->
+                <select class="form-select" id="testDataSelect" style="display: none;">
+                    <option value="">Select test data...</option>
+                </select>
+
+                <!-- Data Input -->
+                <div class="input-section">
+                    <label>EIP712 JSON Data</label>
+                    <textarea class="form-control" id="eip712Input" rows="20" 
+                              placeholder="Paste EIP712 data..."
+                              spellcheck="false"></textarea>
+                </div>
+
+                <!-- Parse Button -->
+                <button class="btn-parse" onclick="parseSignature()">
+                    <i class="fas fa-play"></i>
+                    Load to Signature Interface
+                </button>
+
+                <!-- Input Status -->
+                <div class="input-status" id="inputStatus">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Please input EIP712 data to sign</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Signature Panel -->
+        <div class="signature-panel">
+            <!-- Wallet Header -->
+            <div class="wallet-header">
+                <div class="wallet-info">
+                    <div class="wallet-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="wallet-details">
+                        <div class="account-name">Account 1</div>
+                        <div class="account-address">0x742d...35Cc</div>
+                    </div>
+                    <div class="network-badge">
+                        <i class="fas fa-circle"></i> Ethereum
+                    </div>
+                </div>
+            </div>
+
+            <!-- Signature Card Container -->
+            <div class="signature-card-container">
+                <div class="signature-card">
+                    <!-- Welcome State -->
+                    <div id="welcomeState" class="state-content">
+                        <div class="state-icon">
+                            <i class="fas fa-signature"></i>
+                        </div>
+                        <h4>Waiting for Signature Data</h4>
+                        <p>Please input or load signature data on the left</p>
+                        <div class="feature-list">
+                            <div class="feature-item">
+                                <i class="fas fa-shield-alt"></i>
+                                <span>AI Smart Risk Analysis</span>
+                            </div>
+                            <div class="feature-item">
+                                <i class="fas fa-search"></i>
+                                <span>Detailed Data Interpretation</span>
+                            </div>
+                            <div class="feature-item">
+                                <i class="fas fa-lock"></i>
+                                <span>Secure Signature Confirmation</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div id="loadingState" class="state-content" style="display: none;">
+                        <div class="loading-spinner"></div>
+                        <h4>Analyzing Signature Data</h4>
+                        <p>AI is parsing signature content and risks for you...</p>
+                        <div class="loading-steps">
+                            <div class="step active">
+                                <i class="fas fa-check"></i> Parse Data Structure
+                            </div>
+                            <div class="step active">
+                                <i class="fas fa-sync fa-spin"></i> AI Security Analysis
+                            </div>
+                            <div class="step">
+                                <i class="fas fa-clock"></i> Generate Risk Report
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Error State -->
+                    <div id="errorState" class="state-content error" style="display: none;">
+                        <div class="state-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <h4>Data Parsing Failed</h4>
+                        <p id="errorMessage">Please check the input data format</p>
+                        <button class="btn-retry" onclick="showWelcomeState()">
+                            Start Over
+                        </button>
+                    </div>
+
+                    <!-- Signature Confirmation State -->
+                    <div id="signatureState" class="signature-confirmation" style="display: none;">
+                        <!-- Request Origin -->
+                        <div class="request-origin" id="requestOrigin" style="display: none;">
+                            <div class="origin-info">
+                                <div class="origin-icon">
+                                    <img src="{{ url_for('static', filename='image.png') }}" alt="App Icon">
+                                </div>
+                                <div class="origin-details">
+                                    <h6 id="originName">Unknown App</h6>
+                                    <span id="originDomain">example.com</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Simplified Risk Assessment -->
+                        <div class="risk-assessment" id="riskAssessment">
+                            <!-- Dynamic risk content -->
+                        </div>
+
+                        <!-- AI Explanation Content -->
+                        <div class="ai-explanation" id="aiExplanation" style="display: none;">
+                            <div class="explanation-header">
+                                <div class="ai-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#6366f1" viewBox="0 0 24 24">
+                                        <path fill-rule="evenodd" d="M6 6a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h3a3 3 0 0 1-3 3H5a1 1 0 1 0 0 2h1a5 5 0 0 0 5-5V8a2 2 0 0 0-2-2H6Zm9 0a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h3a3 3 0 0 1-3 3h-1a1 1 0 1 0 0 2h1a5 5 0 0 0 5-5V8a2 2 0 0 0-2-2h-3Z" clip-rule="evenodd"/>
+                                    </svg>
+                                </div>
+                                <span>Decoder Analysis</span>
+                            </div>
+                            <div class="explanation-content">
+                                <h6 id="aiTitle">Signature Content Analysis</h6>
+                                <p id="aiSummary">AI is explaining the meaning of this signature for you...</p>
+                            </div>
+                        </div>
+
+
+
+                        <!-- Signature Action Buttons -->
+                        <div class="signature-actions">
+                            <button class="btn-reject" onclick="rejectSignature()">
+                                <i class="fas fa-times"></i>
+                                Reject
+                            </button>
+                            <button class="btn-confirm" onclick="confirmSignature()">
+                                <i class="fas fa-check"></i>
+                                Confirm
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Complete State -->
+                    <div id="completeState" class="state-content success" style="display: none;">
+                        <div class="state-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <h4>Signature Completed</h4>
+                        <p>Your signature has been successfully submitted to the blockchain</p>
+                        <button class="btn-new" onclick="resetInterface()">
+                            Sign New Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html> 

@@ -1,38 +1,38 @@
 """
-OpenAI GPT-4.1-mini测试工具
+OpenAI GPT-4.1-mini Test Tool
 
-使用方法：
-python openai_test_demo.py <文件路径>
-例如：python openai_test_demo.py ../data/t2_unlimitedPermit.json
+Usage:
+python openai_test_demo.py <file_path>
+Example: python openai_test_demo.py ../data/t2_unlimitedPermit.json
 """
 
 import sys
 import os
 import json
 
-# 添加父目录到路径
+# Add parent directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from openai_nlp_generator import create_openai_generator, generate_english_with_openai
 
-# 从API密钥文件读取
+# Read from API key file
 def load_api_key():
-    """加载API密钥"""
+    """Load API key"""
     api_key_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "api_key.txt")
     try:
         with open(api_key_path, 'r') as f:
             content = f.read().strip()
-            # 提取OpenAI密钥
+            # Extract OpenAI key
             for line in content.split('\n'):
                 if line.startswith('OpenAI:'):
                     return line.split(':', 1)[1].strip()
     except Exception as e:
-        print(f"❌ 无法读取API密钥: {e}")
+        print(f"❌ Unable to read API key: {e}")
         return None
 
 def find_test_file(file_input):
-    """查找测试文件"""
-    # 如果是绝对路径或相对路径，直接使用
+    """Find test file"""
+    # If it's an absolute or relative path, use it directly
     if os.path.exists(file_input):
         return file_input
     

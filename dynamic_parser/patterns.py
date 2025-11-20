@@ -1,6 +1,6 @@
 """
-动态解析器模式匹配
-包含语义识别模式、类型推断模式和上下文关键词
+Dynamic Parser Pattern Matching
+Contains semantic recognition patterns, type inference patterns and context keywords
 """
 
 from typing import Dict, List, Tuple, Set
@@ -8,7 +8,7 @@ from .field_types import FieldSemantic, FieldType
 
 
 class PatternMatcher:
-    """模式匹配器"""
+    """Pattern matcher"""
     
     def __init__(self):
         self.semantic_patterns = self._init_semantic_patterns()
@@ -16,9 +16,9 @@ class PatternMatcher:
         self.context_keywords = self._init_context_keywords()
     
     def _init_semantic_patterns(self) -> List[Tuple[str, FieldSemantic]]:
-        """初始化语义模式 - 返回 (模式, 语义) 的列表"""
+        """Initialize semantic patterns - returns list of (pattern, semantic)"""
         return [
-            # 精确匹配模式
+            # Exact match patterns
             (r"^tokenid$", FieldSemantic.TOKEN_ID),
             (r"^nonce$", FieldSemantic.NONCE),
             (r"^chainid$", FieldSemantic.CHAIN_ID),
@@ -32,14 +32,14 @@ class PatternMatcher:
             (r"^price$", FieldSemantic.PRICE),
             (r"^fee$", FieldSemantic.FEE),
             
-            # 复合匹配模式
+            # Composite match patterns
             (r".*token.*id.*", FieldSemantic.TOKEN_ID),
             (r".*proposal.*id.*", FieldSemantic.PROPOSAL_ID),
             (r".*chain.*id.*", FieldSemantic.CHAIN_ID),
             (r".*voting.*power.*", FieldSemantic.VOTING_POWER),
             (r".*merkle.*root.*", FieldSemantic.MERKLE_ROOT),
             
-            # 身份相关
+            # Identity related
             (r".*holder.*", FieldSemantic.OWNER),
             (r".*minter.*", FieldSemantic.OWNER),
             (r".*creator.*", FieldSemantic.CREATOR),
@@ -56,7 +56,7 @@ class PatternMatcher:
             (r".*validator.*", FieldSemantic.VALIDATOR),
             (r".*delegate.*", FieldSemantic.DELEGATE),
             
-            # 金额相关
+            # Amount related
             (r".*quantity.*", FieldSemantic.AMOUNT),
             (r".*cost.*", FieldSemantic.FEE),
             (r".*reward.*", FieldSemantic.REWARD),
@@ -73,7 +73,7 @@ class PatternMatcher:
             (r".*yield.*", FieldSemantic.YIELD),
             (r".*royalty.*", FieldSemantic.ROYALTY),
             
-            # 时间相关
+            # Time related
             (r".*expiry.*", FieldSemantic.DEADLINE),
             (r".*expires.*", FieldSemantic.DEADLINE),
             (r".*time.*", FieldSemantic.TIMESTAMP),
@@ -83,7 +83,7 @@ class PatternMatcher:
             (r".*delay.*", FieldSemantic.DELAY),
             (r".*period.*", FieldSemantic.PERIOD),
             
-            # 标识相关
+            # Identifier related
             (r".*salt.*", FieldSemantic.SALT),
             (r".*index.*", FieldSemantic.INDEX),
             (r".*counter.*", FieldSemantic.COUNTER),
@@ -91,7 +91,7 @@ class PatternMatcher:
             (r"^id$", FieldSemantic.ID),
             (r".*_id$", FieldSemantic.ID),
             
-            # 数据相关
+            # Data related
             (r".*data.*", FieldSemantic.DATA),
             (r".*payload.*", FieldSemantic.DATA),
             (r".*hash.*", FieldSemantic.HASH),
@@ -99,54 +99,54 @@ class PatternMatcher:
             (r".*proof.*", FieldSemantic.PROOF),
             (r".*metadata.*", FieldSemantic.METADATA),
             
-            # 配置相关
+            # Configuration related
             (r".*version.*", FieldSemantic.VERSION),
             (r".*type.*", FieldSemantic.TYPE),
             (r".*status.*", FieldSemantic.STATUS),
             (r".*flag.*", FieldSemantic.FLAG),
             (r".*option.*", FieldSemantic.OPTION),
             
-            # 治理相关
+            # Governance related
             (r".*vote.*type.*", FieldSemantic.VOTE_TYPE),
             (r".*support.*", FieldSemantic.VOTE_TYPE),
             
-            # NFT相关
+            # NFT related
             (r".*collection.*", FieldSemantic.COLLECTION),
             (r".*pool.*", FieldSemantic.POOL),
         ]
     
     def _init_type_patterns(self) -> List[Tuple[str, str, FieldType]]:
-        """初始化类型推断模式 - 返回 (字段名模式, 类型模式, 推断类型) 的列表"""
+        """Initialize type inference patterns - returns list of (field name pattern, type pattern, inferred type)"""
         return [
-            # 金额类型
+            # Amount type
             (r".*amount.*|.*value.*|.*price.*|.*fee.*|.*cost.*|.*quantity.*", r"uint.*", FieldType.AMOUNT),
             (r".*balance.*|.*allowance.*|.*reward.*|.*penalty.*", r"uint.*", FieldType.AMOUNT),
             (r".*liquidity.*|.*slippage.*|.*rate.*|.*yield.*", r"uint.*", FieldType.AMOUNT),
             
-            # 时间戳类型
+            # Timestamp type
             (r".*time.*|.*deadline.*|.*expiry.*|.*expires.*|.*timestamp.*", r"uint.*", FieldType.TIMESTAMP),
             (r".*duration.*|.*delay.*|.*period.*", r"uint.*", FieldType.TIMESTAMP),
             
-            # 随机数类型
+            # Nonce type
             (r".*nonce.*", r"uint.*", FieldType.NONCE),
             (r".*counter.*|.*index.*", r"uint.*", FieldType.NONCE),
             
-            # 地址类型
+            # Address type
             (r".*token.*|.*erc20.*|.*erc721.*|.*erc1155.*", r"address", FieldType.TOKEN_ADDRESS),
             (r".*contract.*|.*verifying.*", r"address", FieldType.CONTRACT_ADDRESS),
             
-            # 哈希类型
+            # Hash type
             (r".*hash.*|.*root.*|.*digest.*", r"bytes32", FieldType.HASH),
             
-            # 签名类型
+            # Signature type
             (r".*signature.*|.*sig.*", r"bytes.*", FieldType.SIGNATURE),
             
-            # 百分比类型
+            # Percentage type
             (r".*percent.*|.*ratio.*|.*bps.*", r"uint.*", FieldType.PERCENTAGE),
         ]
     
     def _init_context_keywords(self) -> Dict[str, Set[str]]:
-        """初始化上下文关键词"""
+        """Initialize context keywords"""
         return {
             "permit": {"spender", "owner", "value", "deadline", "nonce"},
             "order": {"offerer", "offer", "consideration", "orderType", "startTime", "endTime"},
@@ -161,7 +161,7 @@ class PatternMatcher:
         }
     
     def infer_semantic(self, field_name: str) -> FieldSemantic:
-        """根据字段名推断语义"""
+        """Infer semantic based on field name"""
         import re
         
         field_name_lower = field_name.lower()
@@ -173,7 +173,7 @@ class PatternMatcher:
         return None
     
     def infer_field_type(self, field_name: str, type_name: str) -> FieldType:
-        """根据字段名和类型推断字段类型"""
+        """Infer field type based on field name and type"""
         import re
         
         field_name_lower = field_name.lower()
@@ -183,7 +183,7 @@ class PatternMatcher:
             if re.match(name_pattern, field_name_lower) and re.match(type_pattern, type_name_lower):
                 return field_type
         
-        # 基于类型的基本推断
+        # Basic inference based on type
         if type_name_lower == "address":
             return FieldType.ADDRESS
         elif "uint" in type_name_lower:
@@ -198,16 +198,16 @@ class PatternMatcher:
         return FieldType.UNKNOWN
     
     def detect_context(self, struct_name: str, field_names: List[str]) -> str:
-        """检测结构体上下文"""
+        """Detect struct context"""
         struct_name_lower = struct_name.lower()
         field_names_lower = [name.lower() for name in field_names]
         
-        # 直接匹配结构体名称
+        # Direct match with struct name
         for context_name in self.context_keywords:
             if context_name in struct_name_lower:
                 return context_name
         
-        # 根据字段名匹配
+        # Match based on field names
         context_scores = {}
         for context_name, keywords in self.context_keywords.items():
             score = len(keywords.intersection(set(field_names_lower)))

@@ -1,6 +1,6 @@
 """
-动态解析器核心模块
-包含主要的解析逻辑、字段推断和结构体解析功能
+Dynamic Parser Core Module
+Contains main parsing logic, field inference and struct parsing functionality
 """
 
 import re
@@ -16,15 +16,15 @@ from .nlp_natural_language_generator import create_nlp_generator, NaturalLanguag
 
 
 class DynamicEIP712Parser:
-    """动态 EIP712 解析器核心类"""
+    """Dynamic EIP712 Parser Core Class"""
     
     def __init__(self, enable_nlp: bool = False, nlp_config: Optional[Dict[str, Any]] = None):
         """
-        初始化动态EIP712解析器
+        Initialize dynamic EIP712 parser
         
         Args:
-            enable_nlp: 是否启用NLP自然语言生成功能
-            nlp_config: NLP配置字典
+            enable_nlp: Whether to enable NLP natural language generation
+            nlp_config: NLP configuration dictionary
         """
         self.types: Dict[str, List[Dict[str, str]]] = {}
         self.pattern_matcher = PatternMatcher()
@@ -32,36 +32,36 @@ class DynamicEIP712Parser:
         self.description_formatter = DescriptionFormatter()
         self.result_formatter = ResultFormatter()
         
-        # NLP自然语言生成功能
+        # NLP natural language generation functionality
         self.enable_nlp = enable_nlp
         self.nlp_generator = None
         if enable_nlp:
             try:
                 self.nlp_generator = create_nlp_generator()
-                print("🔤 NLP自然语言生成器已启用")
+                print("🔤 NLP natural language generator enabled")
             except Exception as e:
-                print(f"⚠️ NLP自然语言生成器初始化失败: {e}")
+                print(f"⚠️ NLP natural language generator initialization failed: {e}")
                 self.enable_nlp = False
     
     def parse(self, eip712_data: Dict[str, Any]) -> EIP712ParseResult:
         """
-        解析 EIP712 数据
+        Parse EIP712 data
         
         Args:
-            eip712_data: EIP712 格式的数据
+            eip712_data: EIP712 format data
             
         Returns:
-            解析结果
+            Parsing result
         """
         if not self._validate_eip712_data(eip712_data):
-            raise ValueError("无效的 EIP712 数据格式")
+            raise ValueError("Invalid EIP712 data format")
         
         self.types = eip712_data['types']
         
-        # 解析域信息
+        # Parse domain information
         domain_struct = self._parse_struct("EIP712Domain", eip712_data['domain'])
         
-        # 解析主要消息
+        # Parse primary message
         primary_type = eip712_data['primaryType']
         message_struct = self._parse_struct(primary_type, eip712_data['message'])
         
@@ -73,7 +73,7 @@ class DynamicEIP712Parser:
         )
     
     def _validate_eip712_data(self, data: Dict[str, Any]) -> bool:
-        """验证 EIP712 数据格式"""
+        """Validate EIP712 data format"""
         required_fields = ['types', 'domain', 'primaryType', 'message']
         
         for field in required_fields:
@@ -90,22 +90,22 @@ class DynamicEIP712Parser:
     
     def _parse_struct(self, struct_name: str, struct_data: Dict[str, Any]) -> StructInfo:
         """
-        解析结构体（增强版）
+        Parse struct (enhanced version)
         
         Args:
-            struct_name: 结构体名称
-            struct_data: 结构体数据
+            struct_name: Struct name
+            struct_data: Struct data
             
         Returns:
-            结构体信息
+            Struct information
         """
         if struct_name not in self.types:
-            raise ValueError(f"未找到结构体定义: {struct_name}")
+            raise ValueError(f"Struct definition not found: {struct_name}")
         
         struct_definition = self.types[struct_name]
         field_names = [field_def['name'] for field_def in struct_definition]
         
-        # 检测结构体上下文类型
+        # Detect struct context type
         struct_context = self._detect_struct_context(struct_name, field_names)
         
         fields = []
@@ -130,18 +130,18 @@ class DynamicEIP712Parser:
     
     def _parse_field(self, field_name: str, field_type: str, field_value: Any, struct_context: Optional[str] = None) -> FieldInfo:
         """
-        解析字段（增强版）
+        Parse field (enhanced version)
         
         Args:
-            field_name: 字段名
-            field_type: 字段类型
-            field_value: 字段值
-            struct_context: 结构体上下文
+            field_name: Field name
+            field_type: Field type
+            field_value: Field value
+            struct_context: Struct context
             
         Returns:
-            字段信息
+            Field information
         """
-        # 解析类型
+        # Parse type
         is_array = field_type.endswith('[]')
         array_element_type = None
         base_type = field_type
@@ -150,13 +150,13 @@ class DynamicEIP712Parser:
             base_type = field_type[:-2]
             array_element_type = base_type
         
-        # 推断字段类型
+        # Infer field type
         inferred_type = self._infer_field_type(field_name, base_type, field_value)
         
-        # 推断语义
+        # Infer semantic
         semantic = self._infer_semantic(field_name, base_type, field_value, struct_context)
         
-        # 处理子结构
+        # Handle child structures
         children = []
         if base_type in self.types and field_value is not None:
             if is_array and isinstance(field_value, list):
@@ -169,7 +169,7 @@ class DynamicEIP712Parser:
                             field_type=FieldType.STRUCT,
                             semantic=None,
                             value=item,
-                            description=f"数组元素 {i}",
+                            description=f"Array element {i}",
                             children=[FieldInfo(
                                 name=child.name,
                                 type_name=child.type_name,
@@ -191,12 +191,12 @@ class DynamicEIP712Parser:
                     description=child.description
                 ) for child in child_struct.fields]
         
-        # 收集上下文提示
+        # Collect context hints
         context_hints = []
         if struct_context:
-            context_hints.append(f"结构体类型: {struct_context}")
+            context_hints.append(f"Struct type: {struct_context}")
         
-        # 生成描述
+        # Generate description
         description = self.description_formatter.generate_field_description(
             field_name, inferred_type, semantic, field_value
         )
@@ -215,26 +215,26 @@ class DynamicEIP712Parser:
         )
     
     def _detect_struct_context(self, struct_name: str, field_names: List[str]) -> Optional[str]:
-        """检测结构体上下文类型"""
+        """Detect struct context type"""
         return self.pattern_matcher.detect_context(struct_name, field_names)
     
     def _infer_field_type(self, field_name: str, field_type: str, field_value: Any) -> FieldType:
-        """推断字段类型（增强版）"""
+        """Infer field type (enhanced version)"""
         field_name_lower = field_name.lower()
         
-        # 首先使用值分析器
+        # First use value analyzer
         result = self.value_analyzer.analyze_value(field_name, field_type, field_value)
         if result:
             return result[0]
         
-        # 使用类型模式匹配
+        # Use type pattern matching
         inferred_type = self.pattern_matcher.infer_field_type(field_name, field_type)
         if inferred_type != FieldType.UNKNOWN:
             return inferred_type
         
-        # 基于字段类型的默认推断
+        # Default inference based on field type
         if field_type.startswith('uint') or field_type.startswith('int'):
-            # 进一步推断是否为金额、时间戳等
+            # Further infer if it's amount, timestamp, etc.
             if any(keyword in field_name_lower for keyword in ['amount', 'value', 'price', 'fee', 'cost', 'quantity']):
                 return FieldType.AMOUNT
             elif any(keyword in field_name_lower for keyword in ['time', 'deadline', 'expiry', 'expires', 'timestamp']):
@@ -245,7 +245,7 @@ class DynamicEIP712Parser:
                 return FieldType.UINT if field_type.startswith('uint') else FieldType.INT
         
         elif field_type == 'address':
-            # 根据字段名推断地址类型
+            # Infer address type based on field name
             if any(keyword in field_name_lower for keyword in ['token', 'erc20', 'erc721', 'erc1155']):
                 return FieldType.TOKEN_ADDRESS
             elif any(keyword in field_name_lower for keyword in ['contract', 'verifying']):
@@ -274,16 +274,16 @@ class DynamicEIP712Parser:
             return FieldType.ARRAY
         
         else:
-            return FieldType.STRING  # 默认类型
+            return FieldType.STRING  # Default type
     
     def _infer_semantic(self, field_name: str, field_type: str, field_value: Any, struct_context: Optional[str] = None) -> Optional[FieldSemantic]:
-        """推断字段语义"""
-        # 首先使用值分析器
+        """Infer field semantic"""
+        # First use value analyzer
         result = self.value_analyzer.analyze_value(field_name, field_type, field_value)
         if result and result[1]:
             return result[1]
         
-        # 使用语义模式匹配
+        # Use semantic pattern matching
         semantic = self.pattern_matcher.infer_semantic(field_name)
         if semantic:
             return semantic
@@ -291,51 +291,51 @@ class DynamicEIP712Parser:
         return None
     
     def format_result(self, result: EIP712ParseResult) -> str:
-        """格式化解析结果为可读文本"""
+        """Format parsing result as readable text"""
         return self.result_formatter.format_result(result)
     
     def analyze_eip712(self, eip712_data: Dict[str, Any]) -> dict:
-        """分析EIP712数据并返回结构化结果"""
+        """Analyze EIP712 data and return structured result"""
         result = self.parse(eip712_data)
         return self.result_formatter.format_structured_analysis(result)
     
     def parse_and_format(self, eip712_data: Dict[str, Any]) -> str:
-        """解析并格式化EIP712数据"""
+        """Parse and format EIP712 data"""
         result = self.parse(eip712_data)
         return self.format_result(result)
     
     def generate_natural_language(self, eip712_data: Dict[str, Any]) -> NaturalLanguageOutput:
         """
-        生成自然语言描述
+        Generate natural language description
         
         Args:
-            eip712_data: EIP712格式数据
+            eip712_data: EIP712 format data
             
         Returns:
-            NaturalLanguageOutput: 自然语言输出结果
+            NaturalLanguageOutput: Natural language output result
             
         Raises:
-            ValueError: 如果NLP功能未启用
+            ValueError: If NLP functionality is not enabled
         """
         if not self.enable_nlp or not self.nlp_generator:
-            raise ValueError("NLP自然语言生成功能未启用。请在初始化时设置 enable_nlp=True")
+            raise ValueError("NLP natural language generation is not enabled. Please set enable_nlp=True during initialization")
         
         return self.nlp_generator.convert_to_natural_language(eip712_data)
     
     def analyze_with_natural_language(self, eip712_data: Dict[str, Any]) -> dict:
         """
-        结合传统分析和自然语言生成的完整分析
+        Complete analysis combining traditional analysis and natural language generation
         
         Args:
-            eip712_data: EIP712格式数据
+            eip712_data: EIP712 format data
             
         Returns:
-            dict: 包含传统分析结果和自然语言描述的完整分析
+            dict: Complete analysis including traditional analysis results and natural language description
         """
-        # 进行传统分析
+        # Perform traditional analysis
         traditional_result = self.analyze_eip712(eip712_data)
         
-        # 如果启用了NLP功能，添加自然语言描述
+        # If NLP is enabled, add natural language description
         natural_language_result = None
         if self.enable_nlp and self.nlp_generator:
             try:
@@ -349,7 +349,7 @@ class DynamicEIP712Parser:
                     "action_summary": nl_output.action_summary
                 }
             except Exception as e:
-                print(f"⚠️ 自然语言生成失败: {e}")
+                print(f"⚠️ Natural language generation failed: {e}")
         
         return {
             "traditional_analysis": traditional_result,

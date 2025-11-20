@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-EIP712 签名解析器 Web UI 演示脚本
-展示如何使用Web UI进行签名解析
+EIP712 Signature Parser Web UI Demo Script
+Demonstrates how to use the Web UI for signature parsing
 """
 
 import json
@@ -10,74 +10,74 @@ from pathlib import Path
 from examples.test_data import ALL_TEST_DATA
 
 def print_banner():
-    """打印横幅"""
+    """Print banner"""
     print("=" * 60)
-    print("🚀 EIP712 签名解析器 Web UI 演示")
+    print("🚀 EIP712 Signature Parser Web UI Demo")
     print("=" * 60)
     print()
 
 def show_test_data():
-    """显示测试数据"""
-    print("📋 可用的测试数据:")
+    """Show test data"""
+    print("📋 Available test data:")
     print("-" * 30)
     
     for i, (name, data) in enumerate(ALL_TEST_DATA.items(), 1):
         print(f"{i}. {name}")
-        print(f"   类型: {data.get('primaryType', 'Unknown')}")
-        print(f"   域名: {data.get('domain', {}).get('name', 'Unknown')}")
+        print(f"   Type: {data.get('primaryType', 'Unknown')}")
+        print(f"   Domain: {data.get('domain', {}).get('name', 'Unknown')}")
         print()
 
 def demo_usage():
-    """演示使用方法"""
-    print("🎯 使用方法:")
+    """Demo usage"""
+    print("🎯 Usage:")
     print("-" * 30)
     
-    print("1. 启动Web UI:")
+    print("1. Start Web UI:")
     print("   python run_ui.py")
     print()
     
-    print("2. 访问浏览器:")
+    print("2. Visit browser:")
     print("   http://localhost:5000")
     print()
     
-    print("3. 输入测试数据:")
-    print("   点击'加载测试数据'按钮")
-    print("   选择一个测试数据样本")
+    print("3. Input test data:")
+    print("   Click 'Load Test Data' button")
+    print("   Select a test data sample")
     print()
     
-    print("4. 解析签名:")
-    print("   点击'解析签名'按钮")
-    print("   查看解析结果")
+    print("4. Parse signature:")
+    print("   Click 'Parse Signature' button")
+    print("   View parsing results")
     print()
 
 def show_sample_data():
-    """显示示例数据"""
-    print("📄 示例数据 (ERC20 Permit):")
+    """Show sample data"""
+    print("📄 Sample data (ERC20 Permit):")
     print("-" * 30)
     
     sample_data = ALL_TEST_DATA.get('ERC20_PERMIT', {})
     if sample_data:
         print(json.dumps(sample_data, indent=2, ensure_ascii=False))
     else:
-        print("未找到示例数据")
+        print("Sample data not found")
     print()
 
 def show_features():
-    """显示功能特性"""
-    print("✨ 功能特性:")
+    """Show features"""
+    print("✨ Features:")
     print("-" * 30)
     
     features = [
-        "直观的用户界面",
-        "实时解析EIP712签名",
-        "智能字段类型识别",
-        "NLP自然语言生成",
-        "多种测试数据样本",
-        "详细的结构体展示",
-        "格式化结果显示",
-        "错误处理和调试信息",
-        "响应式设计",
-        "键盘快捷键支持"
+        "Intuitive user interface",
+        "Real-time EIP712 signature parsing",
+        "Smart field type recognition",
+        "NLP natural language generation",
+        "Multiple test data samples",
+        "Detailed struct display",
+        "Formatted result display",
+        "Error handling and debug info",
+        "Responsive design",
+        "Keyboard shortcut support"
     ]
     
     for feature in features:
@@ -85,19 +85,19 @@ def show_features():
     print()
 
 def show_tips():
-    """显示使用技巧"""
-    print("💡 使用技巧:")
+    """Show tips"""
+    print("💡 Tips:")
     print("-" * 30)
     
     tips = [
-        "使用 Ctrl+Enter 快速解析签名",
-        "使用 Ctrl+K 快速清空输入",
-        "启用NLP功能获得自然语言描述",
-        "查看'结构详情'标签页了解字段类型",
-        "使用'导出结果'功能保存解析结果",
-        "在移动设备上也能完美使用",
-        "支持复制解析结果到剪贴板",
-        "查看详细错误信息进行调试"
+        "Use Ctrl+Enter to quickly parse signature",
+        "Use Ctrl+K to quickly clear input",
+        "Enable NLP feature for natural language description",
+        "View 'Structure Details' tab to understand field types",
+        "Use 'Export Results' feature to save parsing results",
+        "Works perfectly on mobile devices",
+        "Supports copying parsing results to clipboard",
+        "View detailed error information for debugging"
     ]
     
     for tip in tips:
@@ -105,25 +105,25 @@ def show_tips():
     print()
 
 def main():
-    """主函数"""
+    """Main function"""
     print_banner()
     
-    # 显示功能特性
+    # Show features
     show_features()
     
-    # 显示使用方法
+    # Show usage
     demo_usage()
     
-    # 显示测试数据
+    # Show test data
     show_test_data()
     
-    # 显示使用技巧
+    # Show tips
     show_tips()
     
-    # 显示示例数据
+    # Show sample data
     show_sample_data()
     
-    print("🎉 准备好了！现在运行 `python run_ui.py` 启动Web UI")
+    print("🎉 Ready! Now run `python run_ui.py` to start Web UI")
     print("=" * 60)
 
 if __name__ == "__main__":

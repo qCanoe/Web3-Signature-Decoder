@@ -1,9 +1,9 @@
 """
-测试数据
-包含各种类型的 EIP712 签名数据用于测试动态解析器
+Test Data
+Contains various types of EIP712 signature data for testing the dynamic parser
 """
 
-# Seaport NFT 订单数据
+# Seaport NFT order data
 SEAPORT_ORDER = {
     "types": {
         "EIP712Domain": [
@@ -86,7 +86,7 @@ SEAPORT_ORDER = {
     }
 }
 
-# ERC20 Permit 授权数据
+# ERC20 Permit authorization data
 ERC20_PERMIT = {
     "types": {
         "EIP712Domain": [
@@ -119,7 +119,7 @@ ERC20_PERMIT = {
     }
 }
 
-# DAO 治理投票数据
+# DAO governance vote data
 DAO_VOTE = {
     "types": {
         "EIP712Domain": [
@@ -152,7 +152,7 @@ DAO_VOTE = {
     }
 }
 
-# 自定义复杂结构数据
+# Custom complex structure data
 CUSTOM_TRANSACTION = {
     "types": {
         "EIP712Domain": [
@@ -202,7 +202,7 @@ CUSTOM_TRANSACTION = {
     }
 }
 
-# LazyNFT Mint 数据
+# LazyNFT Mint data
 LAZY_NFT_MINT = {
     "types": {
         "EIP712Domain": [
@@ -237,7 +237,7 @@ LAZY_NFT_MINT = {
     }
 }
 
-# Snapshot 投票数据
+# Snapshot vote data
 SNAPSHOT_VOTE = {
     "types": {
         "EIP712Domain": [
@@ -272,7 +272,7 @@ SNAPSHOT_VOTE = {
     }
 }
 
-# 所有测试数据
+# All test data
 ALL_TEST_DATA = {
     "seaport_order": SEAPORT_ORDER,
     "erc20_permit": ERC20_PERMIT,

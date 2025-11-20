@@ -1,6 +1,6 @@
 """
-NLP自然语言生成器
-使用模板系统将结构化数据转换为流畅的中文描述
+NLP Natural Language Generator
+Uses template system to convert structured data into fluent English descriptions
 """
 
 import json
@@ -11,99 +11,99 @@ from dataclasses import dataclass
 
 @dataclass
 class NaturalLanguageOutput:
-    """自然语言输出结果"""
-    title: str  # 标题描述
-    summary: str  # 简要总结
-    detailed_description: str  # 详细描述
-    field_descriptions: List[str]  # 字段描述列表
-    context: str  # 上下文说明
-    action_summary: str  # 操作总结
+    """Natural language output result"""
+    title: str  # Title description
+    summary: str  # Brief summary
+    detailed_description: str  # Detailed description
+    field_descriptions: List[str]  # Field description list
+    context: str  # Context explanation
+    action_summary: str  # Action summary
 
 
 class StructuredDataToNLConverter:
-    """结构化数据到自然语言转换器"""
+    """Structured data to natural language converter"""
     
     def __init__(self):
         """
-        初始化NLP生成器
+        Initialize NLP generator
         """
-        # 初始化模板和映射
+        # Initialize templates and mappings
         self._init_templates()
         self._init_semantic_mappings()
     
 
     
     def _init_templates(self):
-        """初始化自然语言模板"""
+        """Initialize natural language templates"""
         self.action_templates = {
-            "permit": "这是一个代币授权操作，{owner}正在授权{spender}可以代表其花费最多{value}个代币，授权有效期至{deadline}。",
-            "order": "这是一个市场订单，{offerer}正在出售{offer_items}，期望获得{consideration_items}作为交换。",
-            "vote": "这是一个治理投票，{voter}对提案{proposal}投出了{support}票。",
-            "transfer": "这是一个转账操作，将{amount}从{from}转移到{to}。",
-            "mint": "这是一个铸币操作，为{recipient}铸造{amount}个代币。",
-            "burn": "这是一个销毁操作，销毁{amount}个代币。",
-            "swap": "这是一个代币交换操作，用{input_amount}个{input_token}兑换{output_amount}个{output_token}。"
+            "permit": "This is a token authorization operation, {owner} is authorizing {spender} to spend up to {value} tokens on their behalf, authorization valid until {deadline}.",
+            "order": "This is a marketplace order, {offerer} is selling {offer_items}, expecting to receive {consideration_items} in exchange.",
+            "vote": "This is a governance vote, {voter} voted {support} on proposal {proposal}.",
+            "transfer": "This is a transfer operation, transferring {amount} from {from} to {to}.",
+            "mint": "This is a minting operation, minting {amount} tokens for {recipient}.",
+            "burn": "This is a burn operation, burning {amount} tokens.",
+            "swap": "This is a token swap operation, exchanging {input_amount} {input_token} for {output_amount} {output_token}."
         }
         
         self.context_descriptions = {
-            "permit": "代币授权许可",
-            "order": "市场交易订单", 
-            "vote": "治理投票决策",
-            "transfer": "资产转移",
-            "mint": "代币铸造",
-            "burn": "代币销毁",
-            "swap": "代币交换",
-            "governance": "治理操作",
-            "auction": "拍卖竞价",
-            "liquidity": "流动性操作"
+            "permit": "Token authorization permit",
+            "order": "Marketplace trading order", 
+            "vote": "Governance voting decision",
+            "transfer": "Asset transfer",
+            "mint": "Token minting",
+            "burn": "Token burning",
+            "swap": "Token swap",
+            "governance": "Governance operation",
+            "auction": "Auction bidding",
+            "liquidity": "Liquidity operation"
         }
     
     def _init_semantic_mappings(self):
-        """初始化语义映射"""
+        """Initialize semantic mappings"""
         self.field_semantic_map = {
-            "owner": "代币持有者",
-            "spender": "授权支出者", 
-            "recipient": "接收者",
-            "offerer": "出价者",
-            "bidder": "竞拍者",
-            "voter": "投票者",
-            "value": "数量",
-            "amount": "金额",
-            "price": "价格",
-            "fee": "手续费",
-            "deadline": "截止时间",
-            "timestamp": "时间戳",
-            "startTime": "开始时间",
-            "endTime": "结束时间",
-            "nonce": "防重放随机数",
-            "chainId": "区块链网络ID",
-            "verifyingContract": "验证合约地址",
-            "token": "代币合约地址",
-            "tokenId": "代币ID",
-            "salt": "盐值",
-            "counter": "计数器"
+            "owner": "Token holder",
+            "spender": "Authorized spender", 
+            "recipient": "Recipient",
+            "offerer": "Offerer",
+            "bidder": "Bidder",
+            "voter": "Voter",
+            "value": "Amount",
+            "amount": "Amount",
+            "price": "Price",
+            "fee": "Fee",
+            "deadline": "Deadline",
+            "timestamp": "Timestamp",
+            "startTime": "Start time",
+            "endTime": "End time",
+            "nonce": "Anti-replay nonce",
+            "chainId": "Blockchain network ID",
+            "verifyingContract": "Verifying contract address",
+            "token": "Token contract address",
+            "tokenId": "Token ID",
+            "salt": "Salt value",
+            "counter": "Counter"
         }
     
     def convert_to_natural_language(self, eip712_data: Dict[str, Any]) -> NaturalLanguageOutput:
         """
-        将EIP712结构化数据转换为自然语言描述
+        Convert EIP712 structured data to natural language description
         
         Args:
-            eip712_data: EIP712格式的结构化数据
+            eip712_data: Structured data in EIP712 format
             
         Returns:
-            NaturalLanguageOutput: 自然语言输出结果
+            NaturalLanguageOutput: Natural language output result
         """
-        # 分析数据结构
+        # Analyze data structure
         primary_type = eip712_data.get("primaryType", "")
         domain = eip712_data.get("domain", {})
         message = eip712_data.get("message", {})
         types = eip712_data.get("types", {})
         
-        # 推断操作类型
+        # Infer operation type
         operation_type = self._infer_operation_type(primary_type, message, types)
         
-        # 生成各部分描述
+        # Generate descriptions for each part
         title = self._generate_title(operation_type, primary_type, domain)
         summary = self._generate_summary(operation_type, message, domain)
         detailed_description = self._generate_detailed_description(operation_type, message, types)
@@ -121,10 +121,10 @@ class StructuredDataToNLConverter:
         )
     
     def _infer_operation_type(self, primary_type: str, message: Dict, types: Dict) -> str:
-        """推断操作类型"""
+        """Infer operation type"""
         primary_lower = primary_type.lower()
         
-        # 基于主类型推断
+        # Infer based on primary type
         if "permit" in primary_lower:
             return "permit"
         elif "order" in primary_lower or "offer" in str(message):
@@ -140,7 +140,7 @@ class StructuredDataToNLConverter:
         elif "swap" in primary_lower:
             return "swap"
         
-        # 基于字段推断
+        # Infer based on fields
         message_fields = set(message.keys())
         if {"owner", "spender", "value"}.issubset(message_fields):
             return "permit"
@@ -152,54 +152,54 @@ class StructuredDataToNLConverter:
         return "general"
     
     def _generate_title(self, operation_type: str, primary_type: str, domain: Dict) -> str:
-        """生成标题"""
-        app_name = domain.get("name", "未知应用")
-        context_name = self.context_descriptions.get(operation_type, "数据结构")
+        """Generate title"""
+        app_name = domain.get("name", "Unknown App")
+        context_name = self.context_descriptions.get(operation_type, "Data Structure")
         return f"{app_name} - {context_name} ({primary_type})"
     
     def _generate_summary(self, operation_type: str, message: Dict, domain: Dict) -> str:
-        """生成摘要"""
-        app_name = domain.get("name", "应用")
+        """Generate summary"""
+        app_name = domain.get("name", "App")
         
         if operation_type == "permit":
             owner = self._format_address(message.get("owner", ""))
             spender = self._format_address(message.get("spender", ""))
             value = self._format_amount(message.get("value", ""))
-            return f"在{app_name}中，地址{owner}授权地址{spender}可以代表其使用最多{value}的代币。"
+            return f"In {app_name}, address {owner} authorizes address {spender} to use up to {value} tokens on their behalf."
         
         elif operation_type == "order":
             offerer = self._format_address(message.get("offerer", ""))
-            return f"在{app_name}中，地址{offerer}创建了一个市场交易订单。"
+            return f"In {app_name}, address {offerer} created a marketplace trading order."
         
         elif operation_type == "vote":
             voter = self._format_address(message.get("voter", ""))
-            return f"在{app_name}治理系统中，地址{voter}进行了投票操作。"
+            return f"In {app_name} governance system, address {voter} performed a voting operation."
         
         else:
-            return f"在{app_name}中进行的{self.context_descriptions.get(operation_type, '数据')}操作。"
+            return f"{self.context_descriptions.get(operation_type, 'Data')} operation performed in {app_name}."
     
     def _generate_detailed_description(self, operation_type: str, message: Dict, types: Dict) -> str:
-        """生成详细描述"""
+        """Generate detailed description"""
         return self._generate_template_description(operation_type, message)
     
     def _generate_template_description(self, operation_type: str, message: Dict) -> str:
-        """基于模板生成描述"""
+        """Generate description based on template"""
         if operation_type == "permit":
             owner = self._format_address(message.get("owner"))
             spender = self._format_address(message.get("spender"))
             value = self._format_amount(message.get("value"))
             deadline = self._format_timestamp(message.get("deadline"))
-            nonce = message.get("nonce", "未指定")
+            nonce = message.get("nonce", "Not specified")
             
-            return f"""这是一个ERC-20代币授权许可操作。具体详情如下：
+            return f"""This is an ERC-20 token authorization permit operation. Details are as follows:
 
-授权方：{owner}
-被授权方：{spender}  
-授权金额：{value}
-授权截止时间：{deadline}
-防重放随机数：{nonce}
+Authorizer: {owner}
+Authorized: {spender}  
+Authorization Amount: {value}
+Authorization Deadline: {deadline}
+Anti-replay Nonce: {nonce}
 
-该授权允许被授权方在截止时间之前，代表授权方花费指定数量的代币，常用于DeFi协议中的代币交换和流动性操作。"""
+This authorization allows the authorized party to spend the specified amount of tokens on behalf of the authorizer before the deadline, commonly used in DeFi protocols for token swaps and liquidity operations."""
 
         elif operation_type == "order":
             offerer = self._format_address(message.get("offerer"))
@@ -208,27 +208,27 @@ class StructuredDataToNLConverter:
             start_time = self._format_timestamp(message.get("startTime"))
             end_time = self._format_timestamp(message.get("endTime"))
             
-            offer_desc = self._describe_items(offer, "出售")
-            consideration_desc = self._describe_items(consideration, "期望获得")
+            offer_desc = self._describe_items(offer, "selling")
+            consideration_desc = self._describe_items(consideration, "expecting to receive")
             
-            return f"""这是一个NFT/代币市场交易订单。具体详情如下：
+            return f"""This is an NFT/Token marketplace trading order. Details are as follows:
 
-出价者：{offerer}
+Offerer: {offerer}
 {offer_desc}
 {consideration_desc}
-订单生效时间：{start_time}
-订单截止时间：{end_time}
+Order Start Time: {start_time}
+Order End Time: {end_time}
 
-该订单定义了一个去中心化市场中的交易意向，任何人都可以在有效期内执行此订单完成交易。"""
+This order defines a trading intent in a decentralized marketplace, anyone can execute this order within the validity period to complete the transaction."""
 
         else:
             field_count = len(message)
-            return f"这是一个包含{field_count}个字段的区块链数据结构，用于在去中心化应用中执行特定的操作或记录重要信息。"
+            return f"This is a blockchain data structure containing {field_count} fields, used to execute specific operations or record important information in decentralized applications."
     
 
     
     def _generate_field_descriptions(self, message: Dict, type_fields: List[Dict]) -> List[str]:
-        """生成字段描述列表"""
+        """Generate field description list"""
         descriptions = []
         
         for field_def in type_fields:
@@ -244,61 +244,61 @@ class StructuredDataToNLConverter:
         return descriptions
     
     def _generate_context_description(self, operation_type: str, domain: Dict) -> str:
-        """生成上下文描述"""
-        app_name = domain.get("name", "未知应用")
+        """Generate context description"""
+        app_name = domain.get("name", "Unknown App")
         version = domain.get("version", "")
         chain_id = domain.get("chainId", "")
         
         chain_name = self._get_chain_name(chain_id)
         version_text = f"v{version}" if version else ""
         
-        return f"此操作发生在{chain_name}网络上的{app_name}{version_text}应用中。"
+        return f"This operation occurs in {app_name}{version_text} application on the {chain_name} network."
     
     def _generate_action_summary(self, operation_type: str, message: Dict) -> str:
-        """生成操作总结"""
+        """Generate action summary"""
         if operation_type == "permit":
-            return f"授权代币使用权限给第三方地址"
+            return f"Authorize token usage permission to third-party address"
         elif operation_type == "order":
-            return f"创建去中心化市场交易订单"
+            return f"Create decentralized marketplace trading order"
         elif operation_type == "vote":
-            return f"参与去中心化治理投票"
+            return f"Participate in decentralized governance voting"
         elif operation_type == "transfer":
-            return f"执行资产转移操作"
+            return f"Execute asset transfer operation"
         else:
-            return f"执行{self.context_descriptions.get(operation_type, '区块链')}操作"
+            return f"Execute {self.context_descriptions.get(operation_type, 'blockchain')} operation"
     
     def _format_address(self, address: str) -> str:
-        """格式化地址显示"""
+        """Format address display"""
         if not address or len(address) < 10:
             return address
         return f"{address[:6]}...{address[-4:]}"
     
     def _format_amount(self, amount: Any) -> str:
-        """格式化金额显示"""
+        """Format amount display"""
         try:
             amount_int = int(amount)
-            # 假设是18位小数的代币
-            if amount_int > 10**15:  # 大于0.001个代币
+            # Assume 18 decimal places for tokens
+            if amount_int > 10**15:  # Greater than 0.001 tokens
                 eth_amount = amount_int / 10**18
-                return f"{eth_amount:.6f} 代币"
+                return f"{eth_amount:.6f} tokens"
             else:
-                return f"{amount_int} 单位"
+                return f"{amount_int} units"
         except:
             return str(amount)
     
     def _format_timestamp(self, timestamp: Any) -> str:
-        """格式化时间戳"""
+        """Format timestamp"""
         try:
             ts = int(timestamp)
-            if ts > 1000000000:  # Unix时间戳
+            if ts > 1000000000:  # Unix timestamp
                 dt = datetime.datetime.fromtimestamp(ts)
-                return dt.strftime("%Y年%m月%d日 %H:%M:%S")
+                return dt.strftime("%Y-%m-%d %H:%M:%S")
         except:
             pass
         return str(timestamp)
     
     def _format_field_value(self, field_name: str, value: Any, field_type: str) -> str:
-        """格式化字段值"""
+        """Format field value"""
         if "address" in field_type.lower() or field_name.lower().endswith(("er", "to", "from")):
             return self._format_address(str(value))
         elif field_name.lower() in ["deadline", "timestamp", "starttime", "endtime"]:
@@ -306,16 +306,16 @@ class StructuredDataToNLConverter:
         elif field_name.lower() in ["value", "amount", "price"] and isinstance(value, (int, str)):
             return self._format_amount(value)
         elif isinstance(value, list):
-            return f"包含{len(value)}个项目的数组"
+            return f"Array containing {len(value)} items"
         elif isinstance(value, dict):
-            return f"包含{len(value)}个字段的对象"
+            return f"Object containing {len(value)} fields"
         else:
             return str(value)
     
     def _describe_items(self, items: List[Dict], action: str) -> str:
-        """描述物品列表"""
+        """Describe item list"""
         if not items:
-            return f"{action}：无"
+            return f"{action}: None"
         
         descriptions = []
         for i, item in enumerate(items):
@@ -329,36 +329,36 @@ class StructuredDataToNLConverter:
             elif item_type == 1:  # ERC20
                 token_addr = self._format_address(token)
                 formatted_amount = self._format_amount(amount)
-                descriptions.append(f"  {i+1}. {formatted_amount} (代币: {token_addr})")
+                descriptions.append(f"  {i+1}. {formatted_amount} (Token: {token_addr})")
             elif item_type == 2:  # ERC721
                 token_id = item.get("identifierOrCriteria", "")
                 token_addr = self._format_address(token)
-                descriptions.append(f"  {i+1}. NFT #{token_id} (合约: {token_addr})")
+                descriptions.append(f"  {i+1}. NFT #{token_id} (Contract: {token_addr})")
             else:
-                descriptions.append(f"  {i+1}. 其他类型物品")
+                descriptions.append(f"  {i+1}. Other type item")
         
-        return f"{action}：\n" + "\n".join(descriptions)
+        return f"{action}:\n" + "\n".join(descriptions)
     
     def _get_chain_name(self, chain_id: Any) -> str:
-        """获取链名称"""
+        """Get chain name"""
         chain_names = {
-            1: "以太坊主网",
-            5: "Goerli测试网", 
-            11155111: "Sepolia测试网",
-            137: "Polygon主网",
-            56: "BSC主网"
+            1: "Ethereum Mainnet",
+            5: "Goerli Testnet", 
+            11155111: "Sepolia Testnet",
+            137: "Polygon Mainnet",
+            56: "BSC Mainnet"
         }
         try:
-            return chain_names.get(int(chain_id), f"链ID {chain_id}")
+            return chain_names.get(int(chain_id), f"Chain ID {chain_id}")
         except:
-            return "未知网络"
+            return "Unknown Network"
 
 
 def create_nlp_generator() -> StructuredDataToNLConverter:
     """
-    创建NLP自然语言生成器实例
+    Create NLP natural language generator instance
     
     Returns:
-        StructuredDataToNLConverter: 生成器实例
+        StructuredDataToNLConverter: Generator instance
     """
     return StructuredDataToNLConverter() 

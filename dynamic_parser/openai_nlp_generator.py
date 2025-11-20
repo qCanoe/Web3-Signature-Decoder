@@ -1,6 +1,6 @@
 """
-OpenAI GPT-4.1-mini集成的NLP生成器
-基于参数提取的英文自然语言生成
+OpenAI GPT-4.1-mini integrated NLP generator
+English natural language generation based on parameter extraction
 """
 
 import openai
@@ -13,7 +13,7 @@ import hashlib
 
 @dataclass
 class EnglishNLOutput:
-    """英文自然语言输出结果"""
+    """English natural language output result"""
     title: str
     summary: str
     detailed_description: str
@@ -23,24 +23,24 @@ class EnglishNLOutput:
     risk_explanation: str
 
 class OpenAINLPGenerator:
-    """基于OpenAI GPT-4.1-mini的英文NLP生成器"""
+    """English NLP generator based on OpenAI GPT-4.1-mini"""
     
     def __init__(self, api_key: str):
-        """初始化OpenAI客户端"""
+        """Initialize OpenAI client"""
         self.client = openai.OpenAI(api_key=api_key)
         self.model = "gpt-4-1106-preview"  # GPT-4.1-mini
         
-        # 成本跟踪
+        # Cost tracking
         self.total_cost = 0.0
         self.request_count = 0
     
     def extract_key_parameters(self, eip712_data: Dict[str, Any]) -> Dict[str, Any]:
-        """从EIP712数据中提取关键参数"""
+        """Extract key parameters from EIP712 data"""
         primary_type = eip712_data.get("primaryType", "")
         domain = eip712_data.get("domain", {})
         message = eip712_data.get("message", {})
         
-        # 提取核心信息
+        # Extract core information
         extracted = {
             "operation_type": primary_type.lower(),
             "app_name": domain.get("name", "Unknown App"),
@@ -49,7 +49,7 @@ class OpenAINLPGenerator:
             "contract": domain.get("verifyingContract", "")[:10] + "..." if domain.get("verifyingContract") else "",
         }
         
-        # 根据操作类型提取特定字段
+        # Extract specific fields based on operation type
         if "permit" in primary_type.lower():
             extracted.update({
                 "owner": self._format_address(message.get("owner", "")),
@@ -74,14 +74,14 @@ class OpenAINLPGenerator:
                 "reason": message.get("reason", "")[:50] + "..." if len(message.get("reason", "")) > 50 else message.get("reason", "")
             })
         elif "mint" in primary_type.lower() or "voucher" in primary_type.lower():
-            # NFT mint 操作
+            # NFT mint operation
             extracted.update({
                 "recipient": self._format_address(message.get("to", message.get("recipient", message.get("redeemer", "")))),
                 "token_id": message.get("tokenId", message.get("minPrice", "")),
                 "amount": message.get("amount", "1")
             })
         elif "bridge" in primary_type.lower() or "destinationchainid" in str(message).lower():
-            # Bridge/跨链桥 操作
+            # Bridge/Cross-chain bridge operation
             token_address = message.get("token", "")
             token_symbol = self._get_token_symbol(token_address)
             amount_raw = message.get("amount", message.get("value", 0))
@@ -98,13 +98,13 @@ class OpenAINLPGenerator:
                 "deadline": self._format_timestamp(message.get("deadline", 0))
             })
         elif "intent" in primary_type.lower() or "relay" in primary_type.lower() or "metatx" in primary_type.lower():
-            # Meta Transaction / Relay 操作
+            # Meta Transaction / Relay operation
             extracted.update({
                 "from": self._format_address(message.get("from", "")),
                 "to": self._format_address(message.get("to", "")),
                 "value": self._format_amount(message.get("value", 0)),
                 "has_calldata": bool(message.get("callData") or message.get("data")),
-                "calldata_length": len(str(message.get("callData", message.get("data", "0x")))) - 2,  # 减去 0x
+                "calldata_length": len(str(message.get("callData", message.get("data", "0x")))) - 2,  # Remove 0x prefix
                 "gas_fee": self._format_amount(message.get("gasFee", message.get("fee", 0))),
                 "deadline": self._format_timestamp(message.get("deadline", 0)),
                 "note": message.get("note", "")[:50] + "..." if len(message.get("note", "")) > 50 else message.get("note", "")
@@ -114,10 +114,10 @@ class OpenAINLPGenerator:
     
     @lru_cache(maxsize=50)
     def generate_english_description(self, params_hash: str, params_json: str) -> EnglishNLOutput:
-        """生成英文描述（带缓存）"""
+        """Generate English description (with cache)"""
         params = json.loads(params_json)
         
-        # 构建精简的提示词
+        # Build concise prompt
         prompt = self._build_prompt(params)
         
         try:
@@ -136,11 +136,11 @@ class OpenAINLPGenerator:
                     }
                 ],
                 temperature=0.3,
-                max_tokens=100,  # 增加到100，避免描述被截断
+                max_tokens=100,  # Increased to 100 to avoid truncation
                 timeout=15
             )
             
-            # 计算成本
+            # Calculate cost
             usage = response.usage
             cost = self._calculate_cost(usage.prompt_tokens, usage.completion_tokens)
             self.total_cost += cost
@@ -149,25 +149,25 @@ class OpenAINLPGenerator:
             response_time = time.time() - start_time
             print(f"✅ OpenAI API call completed in {response_time:.2f}s, Cost: {cost:.6f}")
             
-            # 解析响应
+            # Parse response
             return self._parse_response(response.choices[0].message.content, params)
             
         except Exception as e:
             print(f"❌ OpenAI API error: {e}")
-            # 降级到模板生成
+            # Fallback to template generation
             return self._fallback_template_generation(params)
     
     def _build_prompt(self, params: Dict[str, Any]) -> str:
-        """构建优化的提示词"""
+        """Build optimized prompt"""
         operation_type = params.get("operation_type", "operation")
         app_name = params.get("app_name", "Unknown")
         
-        # 构建简洁的核心信息
+        # Build concise core information
         if operation_type == "permit":
             amount = params.get("amount", "tokens")
             deadline = params.get("deadline", "")
             
-            # 格式化deadline信息
+            # Format deadline information
             deadline_text = ""
             if deadline:
                 try:
@@ -178,7 +178,7 @@ class OpenAINLPGenerator:
                 except:
                     deadline_text = f" until deadline {deadline}"
             
-            # 特别处理无限授权
+            # Special handling for unlimited approval
             if "UNLIMITED" in str(amount):
                 return f"User is signing a permit for UNLIMITED spending authorization in {app_name}{deadline_text}. This is an infinite approval that allows spending any amount. Explain this clearly including the unlimited nature and deadline:"
             else:
@@ -205,7 +205,7 @@ class OpenAINLPGenerator:
             value = params.get("value", "0")
             gas_fee = params.get("gas_fee", "unknown")
             
-            # 检测可疑地址
+            # Detect suspicious address
             is_suspicious = "9999" in to_address or "0000" in to_address
             
             if has_calldata:
@@ -219,23 +219,23 @@ class OpenAINLPGenerator:
             return f"User is signing a {operation_type} operation in {app_name}. Explain in 1 simple sentence what they are authorizing:"
     
     def _parse_response(self, response_text: str, params: Dict[str, Any]) -> EnglishNLOutput:
-        """解析GPT响应为结构化输出"""
+        """Parse GPT response into structured output"""
         operation_type = params.get("operation_type", "operation")
         app_name = params.get("app_name", "Unknown App")
         
-        # 生成标题
+        # Generate title
         title = f"{app_name} - {operation_type.title()} Operation"
         
-        # 使用GPT响应作为主要描述
+        # Use GPT response as main description
         description = response_text.strip()
         
-        # 生成技术细节
+        # Generate technical details
         tech_details = self._generate_technical_details(params)
         
-        # 生成上下文
+        # Generate context
         context = self._generate_context(params)
         
-        # 评估风险等级和解释
+        # Assess risk level and explanation
         risk_level, risk_explanation = self._assess_risk_level(params)
         
         return EnglishNLOutput(
@@ -249,7 +249,7 @@ class OpenAINLPGenerator:
         )
     
     def _fallback_template_generation(self, params: Dict[str, Any]) -> EnglishNLOutput:
-        """API失败时的模板生成"""
+        """Template generation when API fails"""
         operation_type = params.get("operation_type", "operation")
         app_name = params.get("app_name", "Unknown App")
         
@@ -273,18 +273,18 @@ class OpenAINLPGenerator:
         )
     
     def _calculate_cost(self, input_tokens: int, output_tokens: int) -> float:
-        """计算API调用成本"""
+        """Calculate API call cost"""
         # GPT-4.1-mini pricing: $0.40/1M input, $1.60/1M output
         input_cost = (input_tokens / 1_000_000) * 0.40
         output_cost = (output_tokens / 1_000_000) * 1.60
         return input_cost + output_cost
     
     def _get_token_symbol(self, token_address: str) -> str:
-        """根据合约地址识别常见 token"""
+        """Identify common token by contract address"""
         if not token_address or not isinstance(token_address, str):
             return "tokens"
         
-        # 常见的 token 地址（以太坊主网）
+        # Common token addresses (Ethereum mainnet)
         KNOWN_TOKENS = {
             "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48": "USDC",
             "0xdac17f958d2ee523a2206206994597c13d831ec7": "USDT",
@@ -298,31 +298,31 @@ class OpenAINLPGenerator:
         return KNOWN_TOKENS.get(token_address.lower(), "tokens")
     
     def _format_token_amount(self, amount: Any, token_symbol: str = "tokens") -> str:
-        """根据 token 类型格式化金额"""
+        """Format amount by token type"""
         try:
             amount_int = int(amount)
             
-            # 根据 token 类型使用不同的小数位
+            # Use different decimal places based on token type
             if token_symbol in ["USDC", "USDT"]:
-                # 6位小数
+                # 6 decimal places
                 token_amount = amount_int / 10**6
                 if token_amount >= 1:
                     return f"{token_amount:,.2f} {token_symbol}"
                 else:
                     return f"{token_amount:.6f} {token_symbol}"
             elif token_symbol in ["WBTC"]:
-                # 8位小数
+                # 8 decimal places
                 token_amount = amount_int / 10**8
                 return f"{token_amount:.8f} {token_symbol}".rstrip('0').rstrip('.')
             elif token_symbol in ["DAI", "WETH", "LINK", "UNI"]:
-                # 18位小数
+                # 18 decimal places
                 token_amount = amount_int / 10**18
                 if token_amount >= 1:
                     return f"{token_amount:,.4f} {token_symbol}"
                 else:
                     return f"{token_amount:.6f} {token_symbol}"
             else:
-                # 默认显示为 units（无法确定小数位）
+                # Default display as units (unable to determine decimal places)
                 if amount_int >= 1000:
                     return f"{amount_int:,} units"
                 else:
@@ -331,50 +331,50 @@ class OpenAINLPGenerator:
             return str(amount)
     
     def _format_address(self, address: str) -> str:
-        """格式化地址"""
+        """Format address"""
         if not address or len(address) < 10:
             return address
         return f"{address[:6]}...{address[-4:]}"
     
     def _format_amount(self, amount: Any) -> str:
-        """格式化金额，识别无限授权"""
+        """Format amount, detect unlimited approval"""
         try:
             amount_int = int(amount)
             
-            # 检测无限授权 (常见的无限授权值)
+            # Detect unlimited approval (common unlimited approval values)
             # uint256 max: 2^256 - 1
-            # 也检测常见的"近似无限"值，如 2^255, 2^128 等
+            # Also detect common "near infinite" values like 2^255, 2^128, etc.
             MAX_UINT256 = 2**256 - 1
-            NEAR_MAX_THRESHOLD = MAX_UINT256 - 10**15  # 允许一些浮动
+            NEAR_MAX_THRESHOLD = MAX_UINT256 - 10**15  # Allow some floating
             
-            # 常见的"无限授权"模式
+            # Common "unlimited approval" patterns
             COMMON_UNLIMITED_VALUES = [
-                MAX_UINT256,  # 完整的 uint256 最大值
-                2**255 - 1,   # 一些协议使用的值
-                2**128 - 1,   # 更保守的无限值
+                MAX_UINT256,  # Full uint256 maximum value
+                2**255 - 1,   # Values used by some protocols
+                2**128 - 1,   # More conservative infinite value
             ]
             
-            # 检查是否为无限授权
-            # 1. 检查是否接近 uint256 最大值
+            # Check if unlimited approval
+            # 1. Check if close to uint256 maximum
             if amount_int >= NEAR_MAX_THRESHOLD:
                 return "UNLIMITED (infinite approval)"
-            # 2. 检查是否是常见的无限授权值
+            # 2. Check if common unlimited approval value
             elif amount_int in COMMON_UNLIMITED_VALUES:
                 return "UNLIMITED (infinite approval)"
-            # 3. 任何超过 10^50 的值都视为"实质上的无限"（比所有可能的代币供应量都大）
+            # 3. Any value over 10^50 is considered "effectively infinite" (larger than all possible token supplies)
             elif amount_int > 10**50:
                 return "UNLIMITED (infinite approval)"
-            # 4. 正常的代币金额
-            elif amount_int >= 10**18:  # 18位小数 (ETH, DAI, etc.)
+            # 4. Normal token amount
+            elif amount_int >= 10**18:  # 18 decimal places (ETH, DAI, etc.)
                 eth_amount = amount_int / 10**18
                 return f"{eth_amount:,.6f} tokens".rstrip('0').rstrip('.')
-            elif amount_int >= 10**6:  # 6位小数 (USDC, USDT)
+            elif amount_int >= 10**6:  # 6 decimal places (USDC, USDT)
                 token_amount = amount_int / 10**6
                 if token_amount >= 1:
                     return f"{token_amount:,.2f} tokens"
                 else:
                     return f"{token_amount:.6f} tokens"
-            elif amount_int >= 1000:  # 大数字，添加千分位
+            elif amount_int >= 1000:  # Large numbers, add thousand separators
                 return f"{amount_int:,} units"
             else:
                 return f"{amount_int} units"
@@ -382,7 +382,7 @@ class OpenAINLPGenerator:
             return str(amount)
     
     def _get_chain_name(self, chain_id: Any) -> str:
-        """获取链名称"""
+        """Get chain name"""
         try:
             chain_id_str = str(chain_id)
             chain_names = {
@@ -400,7 +400,7 @@ class OpenAINLPGenerator:
             return str(chain_id)
     
     def _format_timestamp(self, timestamp: Any) -> str:
-        """格式化时间戳"""
+        """Format timestamp"""
         try:
             ts = int(timestamp)
             if ts > 1000000000:
@@ -412,15 +412,15 @@ class OpenAINLPGenerator:
         return str(timestamp)
     
     def _generate_technical_details(self, params: Dict[str, Any]) -> str:
-        """生成技术细节"""
+        """Generate technical details"""
         details = []
         for key, value in params.items():
             if value and key != "operation_type":
                 details.append(f"{key.replace('_', ' ').title()}: {value}")
-        return " | ".join(details[:5])  # 限制长度
+        return " | ".join(details[:5])  # Limit length
     
     def _generate_context(self, params: Dict[str, Any]) -> str:
-        """生成执行上下文"""
+        """Generate execution context"""
         app_name = params.get("app_name", "Unknown")
         chain_id = params.get("chain_id", "")
         
@@ -435,9 +435,9 @@ class OpenAINLPGenerator:
         return f"Executed on {chain_name} via {app_name}"
     
     def _assess_risk_level(self, params: Dict[str, Any]) -> tuple[str, str]:
-        """使用GPT评估风险等级和解释"""
+        """Assess risk level and explanation using GPT"""
         try:
-            # 构建风险评估提示词
+            # Build risk assessment prompt
             risk_prompt = self._build_risk_assessment_prompt(params)
             
             response = self.client.chat.completions.create(
@@ -459,18 +459,18 @@ class OpenAINLPGenerator:
             
             risk_response = response.choices[0].message.content.strip()
             
-            # 解析风险等级和解释
+            # Parse risk level and explanation
             if "Risk:" in risk_response and "-" in risk_response:
                 parts = risk_response.split("Risk:", 1)[1].split("-", 1)
                 if len(parts) == 2:
                     risk_level = parts[0].strip()
                     risk_explanation = parts[1].strip()
                     
-                    # 验证风险等级
+                    # Validate risk level
                     if risk_level in ["Low", "Medium", "High"]:
                         return risk_level, risk_explanation
             
-            # 解析失败，使用默认值
+            # Parsing failed, use default values
             return "High", "Unlimited approval"
                 
         except Exception as e:
@@ -478,21 +478,21 @@ class OpenAINLPGenerator:
             return "Medium", "Check needed"
     
     def _build_risk_assessment_prompt(self, params: Dict[str, Any]) -> str:
-        """构建风险评估提示词"""
+        """Build risk assessment prompt"""
         operation_type = params.get("operation_type", "unknown")
         app_name = params.get("app_name", "Unknown")
         
         prompt_parts = [f"Operation: {operation_type} in {app_name}"]
         
-        # 根据操作类型添加特定风险考虑因素
+        # Add specific risk considerations based on operation type
         if operation_type == "permit":
             amount = params.get("amount", "unknown")
             deadline = params.get("deadline", "unknown")
             
-            # 检查是否为无限授权
+            # Check if unlimited approval
             is_unlimited = "UNLIMITED" in str(amount)
             
-            # 计算deadline的具体时长
+            # Calculate specific duration of deadline
             duration_info = "unknown duration"
             try:
                 if deadline != "unknown":
@@ -500,7 +500,7 @@ class OpenAINLPGenerator:
                     deadline_timestamp = int(deadline)
                     current_time = datetime.datetime.now().timestamp()
                     time_diff = deadline_timestamp - current_time
-                    days = int(time_diff / 86400)  # 转换为天数
+                    days = int(time_diff / 86400)  # Convert to days
                     
                     if days > 365:
                         years = days // 365
@@ -541,7 +541,7 @@ class OpenAINLPGenerator:
             ])
         
         elif "mint" in operation_type or "voucher" in operation_type:
-            # NFT mint 操作 - 通常是低风险
+            # NFT mint operation - usually low risk
             prompt_parts.extend([
                 "This is an NFT minting operation",
                 "✅ Minting is typically LOW risk - user is creating/claiming NFTs",
@@ -549,7 +549,7 @@ class OpenAINLPGenerator:
             ])
         
         elif "bridge" in operation_type:
-            # Bridge/跨链桥 操作 - 特定风险
+            # Bridge/Cross-chain bridge operation - specific risks
             amount = params.get("amount", "unknown")
             dest_chain = params.get("destination_chain", "unknown")
             bridge_fee = params.get("bridge_fee", "unknown")
@@ -562,7 +562,7 @@ class OpenAINLPGenerator:
                 f"Bridge fee: {bridge_fee}",
             ])
             
-            # Bridge 特定风险分析（简化版）
+            # Bridge-specific risk analysis (simplified)
             prompt_parts.extend([
                 "\n⚠️ KEY BRIDGE RISKS:",
                 "- Irreversible cross-chain transfer",
@@ -570,10 +570,10 @@ class OpenAINLPGenerator:
                 "- Verify recipient address for target chain"
             ])
             
-            # 评估金额大小
+            # Evaluate amount size
             try:
                 amount_num = float(str(amount).replace(" USDC", "").replace(" tokens", "").replace(" units", "").replace(",", ""))
-                if amount_num > 10000:  # 大额转账
+                if amount_num > 10000:  # Large transfer
                     prompt_parts.extend([
                         "\n⚠️ LARGE AMOUNT: Significant cross-chain transfer!",
                         "Risk level: MEDIUM-HIGH"
@@ -586,7 +586,7 @@ class OpenAINLPGenerator:
             prompt_parts.append("Risk explanation: Use ONLY 2-3 words like 'Cross-chain bridge' or 'Bridge transfer', DO NOT add extra warnings")
         
         elif "intent" in operation_type or "relay" in operation_type or "metatx" in operation_type:
-            # Meta Transaction / Relay 操作 - 考虑隐藏风险维度
+            # Meta Transaction / Relay operation - consider hidden risk dimensions
             has_calldata = params.get("has_calldata", False)
             calldata_length = params.get("calldata_length", 0)
             gas_fee = params.get("gas_fee", "unknown")
@@ -601,11 +601,11 @@ class OpenAINLPGenerator:
                 f"Target address: {to_address}",
             ])
             
-            # 分析隐藏风险维度
+            # Analyze hidden risk dimensions
             risk_factors = []
             
             if has_calldata and calldata_length > 0:
-                # ① 隐式调用风险 (Hidden Call Risk)
+                # ① Hidden Call Risk
                 prompt_parts.extend([
                     f"⚠️ CRITICAL: Contains callData ({calldata_length} chars) - ARBITRARY contract execution!",
                     "⚠️ HIDDEN CALL RISK: callData can execute ANY operation:",
@@ -617,10 +617,10 @@ class OpenAINLPGenerator:
                 ])
                 risk_factors.append("arbitrary execution")
             else:
-                # 即使没有 callData，仍需警惕
+                # Even without callData, still be vigilant
                 prompt_parts.append("⚠️ WARNING: Even with empty callData, value=0 can be misleading")
             
-            # ② 恶意地址风险 (Phishing Target)
+            # ② Phishing Target Risk
             is_suspicious_address = False
             if "9999" in to_address or "0000" in to_address or to_address == "unknown":
                 prompt_parts.extend([
@@ -631,10 +631,10 @@ class OpenAINLPGenerator:
                 risk_factors.append("suspicious address")
                 is_suspicious_address = True
             
-            # ③ 签名绑定风险 (Linked Authorization)
+            # ③ Linked Authorization Risk
             prompt_parts.append("⚠️ LINKED SIGNATURE RISK: This signature may enable follow-up malicious transactions")
             
-            # ④ 社会工程风险 (Trust Heuristic)
+            # ④ Social Engineering Risk (Trust Heuristic)
             is_zero_value_trap = False
             if value == "0" or value == "0 ETH":
                 prompt_parts.extend([
@@ -645,7 +645,7 @@ class OpenAINLPGenerator:
                 risk_factors.append("zero-value deception")
                 is_zero_value_trap = True
             
-            # 综合风险评估 - 根据风险因素组合给出精准描述
+            # Comprehensive risk assessment - provide precise description based on risk factor combination
             if has_calldata and calldata_length > 0:
                 prompt_parts.append("\n⚠️ OVERALL: HIGH risk - Multiple hidden dangers, potential asset loss")
                 if is_suspicious_address:
@@ -653,7 +653,7 @@ class OpenAINLPGenerator:
                 else:
                     prompt_parts.append("Risk explanation: 'Hidden contract call' or 'Arbitrary execution'")
             else:
-                # 没有 callData 但仍有其他风险因素
+                # No callData but still has other risk factors
                 if is_suspicious_address and is_zero_value_trap:
                     prompt_parts.append("\n⚠️ OVERALL: HIGH risk - Suspicious address + Zero-value trap + Relay authorization")
                     prompt_parts.append("Risk explanation: 'Suspicious relay address' or 'Phishing relay risk' or 'Unknown relay + Zero trap'")
@@ -671,7 +671,7 @@ class OpenAINLPGenerator:
         return "\n".join(prompt_parts)
     
     def get_cost_summary(self) -> Dict[str, Any]:
-        """获取成本统计"""
+        """Get cost statistics"""
         return {
             "total_requests": self.request_count,
             "total_cost": round(self.total_cost, 6),
@@ -679,22 +679,22 @@ class OpenAINLPGenerator:
             "estimated_1000_requests": round((self.total_cost / max(1, self.request_count)) * 1000, 2)
         }
 
-# 便捷函数
+# Convenience functions
 def create_openai_generator(api_key: str) -> OpenAINLPGenerator:
-    """创建OpenAI NLP生成器"""
+    """Create OpenAI NLP generator"""
     return OpenAINLPGenerator(api_key)
 
-# 集成到现有系统的包装函数
+# Wrapper function for integration into existing system
 def generate_english_with_openai(eip712_data: Dict[str, Any], api_key: str) -> EnglishNLOutput:
-    """单次生成英文描述"""
+    """Generate English description in one call"""
     generator = create_openai_generator(api_key)
     
-    # 提取参数
+    # Extract parameters
     params = generator.extract_key_parameters(eip712_data)
     
-    # 生成缓存键
+    # Generate cache key
     params_json = json.dumps(params, sort_keys=True)
     params_hash = hashlib.md5(params_json.encode()).hexdigest()
     
-    # 生成描述
+    # Generate description
     return generator.generate_english_description(params_hash, params_json) 
