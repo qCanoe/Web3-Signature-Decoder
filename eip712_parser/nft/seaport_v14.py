@@ -1,5 +1,5 @@
 """
-Seaport v1.4 NFT 市场解析器
+Seaport v1.4 NFT marketplace parser
 """
 
 from typing import List
@@ -8,28 +8,28 @@ from .seaport import Seaport
 
 
 class SeaportV14(Seaport):
-    """Seaport v1.4 NFT 市场解析器"""
+    """Seaport v1.4 NFT marketplace parser"""
     
     @staticmethod
     def parse(typed_data: EIP712Like) -> NFTMessage:
         """
-        解析 Seaport v1.4 EIP712 消息
+        Parse Seaport v1.4 EIP712 message
         
         Args:
-            typed_data: EIP712 格式的数据
+            typed_data: EIP712 format data
             
         Returns:
-            解析后的 NFT 消息
+            Parsed NFT message
             
         Raises:
-            ValueError: 当数据格式不正确时
+            ValueError: When data format is incorrect
         """
-        # 检查版本
+        # Check version
         domain = typed_data.get('domain', {})
         version = domain.get('version', '')
         
         if version != '1.4':
-            raise ValueError("不是 Seaport v1.4 消息格式")
+            raise ValueError("Not a Seaport v1.4 message format")
         
-        # 使用父类的解析逻辑，但可以根据需要进行版本特定的修改
+        # Use parent class parsing logic, but can make version-specific modifications as needed
         return super().parse(typed_data) 

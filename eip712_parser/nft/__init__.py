@@ -1,5 +1,5 @@
 """
-NFT 相关解析器
+NFT-related parsers
 """
 
 from .seaport import Seaport
@@ -12,7 +12,7 @@ from typing import Optional, List
 from ..types import EIP712Like, ParsedMessage
 
 
-# 所有可用的解析器适配器
+# All available parser adapters
 ALL_ADAPTERS = [
     Seaport,
     Blur,
@@ -24,13 +24,13 @@ ALL_ADAPTERS = [
 
 def parse_request(request: EIP712Like) -> Optional[ParsedMessage]:
     """
-    解析 NFT 相关的 EIP712 请求
+    Parse NFT-related EIP712 requests
     
     Args:
-        request: EIP712 格式的请求数据
+        request: EIP712 format request data
         
     Returns:
-        解析后的消息，如果无法解析则返回 None
+        Parsed message, returns None if unable to parse
     """
     for adapter in ALL_ADAPTERS:
         try:
@@ -40,7 +40,7 @@ def parse_request(request: EIP712Like) -> Optional[ParsedMessage]:
                 detail=parsed_detail
             )
         except Exception:
-            # 跳过解析错误，尝试下一个适配器
+            # Skip parsing errors, try next adapter
             continue
     
     return None

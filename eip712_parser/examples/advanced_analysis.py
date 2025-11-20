@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """
-EIP712解析器高级分析示例
-展示详细的签名分析和模块化参数拆解
+EIP712 Parser Advanced Analysis Example
+Demonstrates detailed signature analysis and modular parameter breakdown
 """
 
 import json
 import sys
 import os
 
-# 添加父目录到路径以导入模块
+# Add parent directory to path to import modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from eip712_parser import parse_request
@@ -18,38 +18,38 @@ from eip712_parser.types import OrderType, NFTProtocolType
 
 def analyze_eip712_signature(eip712_data, signature_name=""):
     """
-    详细分析EIP712签名
+    Detailed analysis of EIP712 signature
     
     Args:
-        eip712_data: EIP712格式的数据
-        signature_name: 签名名称（用于显示）
+        eip712_data: Data in EIP712 format
+        signature_name: Signature name (for display)
     """
     print(f"\n{'='*60}")
-    print(f"分析 {signature_name} EIP712 签名")
+    print(f"Analyzing {signature_name} EIP712 Signature")
     print(f"{'='*60}")
     
-    # 1. 基本信息分析
-    print(" 基本信息:")
-    print(f"   主类型: {eip712_data.get('primaryType', 'Unknown')}")
-    print(f"   域名: {eip712_data.get('domain', {}).get('name', 'Unknown')}")
-    print(f"   版本: {eip712_data.get('domain', {}).get('version', 'Unknown')}")
-    print(f"   链ID: {eip712_data.get('domain', {}).get('chainId', 'Unknown')}")
-    print(f"   验证合约: {eip712_data.get('domain', {}).get('verifyingContract', 'Unknown')}")
+    # 1. Basic information analysis
+    print(" Basic Information:")
+    print(f"   Primary type: {eip712_data.get('primaryType', 'Unknown')}")
+    print(f"   Domain name: {eip712_data.get('domain', {}).get('name', 'Unknown')}")
+    print(f"   Version: {eip712_data.get('domain', {}).get('version', 'Unknown')}")
+    print(f"   Chain ID: {eip712_data.get('domain', {}).get('chainId', 'Unknown')}")
+    print(f"   Verifying contract: {eip712_data.get('domain', {}).get('verifyingContract', 'Unknown')}")
     
-    # 2. 类型结构分析
-    print("\n🏗️  类型结构:")
+    # 2. Type structure analysis
+    print("\n🏗️  Type Structure:")
     types = eip712_data.get('types', {})
     for type_name, type_fields in types.items():
         print(f"   {type_name}:")
         for field in type_fields:
             print(f"     - {field['name']}: {field['type']}")
     
-    # 3. 消息内容分析
-    print("\n📦 消息内容:")
+    # 3. Message content analysis
+    print("\n📦 Message Content:")
     message = eip712_data.get('message', {})
     for key, value in message.items():
         if isinstance(value, list):
-            print(f"   {key}: [数组, 长度: {len(value)}]")
+            print(f"   {key}: [Array, length: {len(value)}]")
             for i, item in enumerate(value):
                 if isinstance(item, dict):
                     print(f"     [{i}]:")
@@ -58,127 +58,127 @@ def analyze_eip712_signature(eip712_data, signature_name=""):
                 else:
                     print(f"     [{i}]: {item}")
         elif isinstance(value, dict):
-            print(f"   {key}: [对象]")
+            print(f"   {key}: [Object]")
             for k, v in value.items():
                 print(f"     {k}: {v}")
         else:
             print(f"   {key}: {value}")
     
-    # 4. 解析分析
-    print("\n 解析分析:")
+    # 4. Parsing analysis
+    print("\n Parsing Analysis:")
     try:
         parsed_message = parse_request(eip712_data)
         
         if parsed_message:
-            print(f"   ✅ 解析成功 - 类型: {parsed_message.kind}")
+            print(f"   ✅ Parsing successful - Type: {parsed_message.kind}")
             
             if parsed_message.kind == "nft":
                 analyze_nft_message(parsed_message.detail)
             elif parsed_message.kind == "permit":
                 analyze_permit_message(parsed_message.detail)
                 
-            # 5. 安全分析
-            print("\n  安全分析:")
+            # 5. Security analysis
+            print("\n  Security Analysis:")
             security_checker = SecurityChecker(price_threshold=0.1)
             security_result = security_checker.check_message_security(parsed_message)
             
             if security_result["is_safe"]:
-                print("   ✅ 未发现安全风险")
+                print("   ✅ No security risks found")
             else:
-                print("   ⚠️  发现潜在风险:")
+                print("   ⚠️  Potential risks found:")
                 for warning in security_result.get("warnings", []):
                     print(f"     - {warning}")
                 for error in security_result.get("errors", []):
-                    print(f"     - 错误: {error}")
+                    print(f"     - Error: {error}")
             
-            # 显示详细检查结果
+            # Display detailed check results
             checks = security_result.get("checks", {})
             if "price" in checks:
                 price_check = checks["price"]
                 if "price_analysis" in price_check:
                     analysis = price_check["price_analysis"]
-                    print(f"\n💰 价格分析:")
-                    print(f"   NFT数量: {analysis.get('nft_count', 0)}")
-                    print(f"   总价格: {analysis.get('total_price_eth', 0):.6f} ETH")
-                    print(f"   总价格 (Wei): {analysis.get('total_price_wei', '0')}")
+                    print(f"\n💰 Price Analysis:")
+                    print(f"   NFT count: {analysis.get('nft_count', 0)}")
+                    print(f"   Total price: {analysis.get('total_price_eth', 0):.6f} ETH")
+                    print(f"   Total price (Wei): {analysis.get('total_price_wei', '0')}")
             
             if "balance" in checks:
                 balance_check = checks["balance"]
-                print(f"\n📊 余额变化分析:")
-                print(f"   涉及地址数: {balance_check.get('addresses', 0)}")
-                print(f"   总变化数: {balance_check.get('total_changes', 0)}")
+                print(f"\n📊 Balance Change Analysis:")
+                print(f"   Addresses involved: {balance_check.get('addresses', 0)}")
+                print(f"   Total changes: {balance_check.get('total_changes', 0)}")
                 
                 for addr, details in balance_check.get("address_details", {}).items():
-                    print(f"   地址 {addr[:10]}...:")
-                    print(f"     变化项目数: {details['change_count']}")
+                    print(f"   Address {addr[:10]}...:")
+                    print(f"     Change items: {details['change_count']}")
                     for key_id, amount in details["changes"].items():
                         print(f"     {key_id}: {amount}")
         else:
-            print("   ❌ 无法解析此签名格式")
+            print("   ❌ Unable to parse this signature format")
     
     except Exception as e:
-        print(f"   ❌ 解析出错: {e}")
+        print(f"   ❌ Parsing error: {e}")
 
 
 def analyze_nft_message(nft_message):
-    """分析NFT消息详情"""
-    print(f"   协议: {nft_message.type.value}")
-    print(f"   订单类型: {nft_message.order_type.value}")
-    print(f"   发起者: {nft_message.offerer}")
-    print(f"   开始时间: {nft_message.start_time}")
-    print(f"   结束时间: {nft_message.end_time}")
+    """Analyze NFT message details"""
+    print(f"   Protocol: {nft_message.type.value}")
+    print(f"   Order type: {nft_message.order_type.value}")
+    print(f"   Initiator: {nft_message.offerer}")
+    print(f"   Start time: {nft_message.start_time}")
+    print(f"   End time: {nft_message.end_time}")
     
-    print(f"\n    提供项目 ({len(nft_message.offer)}):")
+    print(f"\n     Offer Items ({len(nft_message.offer)}):")
     for i, item in enumerate(nft_message.offer):
         if item.kind == "nft":
             detail = item.detail
             print(f"     [{i+1}] NFT: {detail.collection}")
             print(f"         Token ID: {detail.token_id}")
-            print(f"         数量: {detail.amount}")
+            print(f"         Amount: {detail.amount}")
             if detail.type:
-                print(f"         类型: {detail.type}")
+                print(f"         Type: {detail.type}")
         elif item.kind == "token":
             detail = item.detail
             eth_amount = float(detail.amount) / (10**18) if detail.type == "native" else detail.amount
-            print(f"     [{i+1}] 代币: {detail.currency}")
-            print(f"         数量: {eth_amount if detail.type == 'native' else detail.amount}")
+            print(f"     [{i+1}] Token: {detail.currency}")
+            print(f"         Amount: {eth_amount if detail.type == 'native' else detail.amount}")
             if detail.type:
-                print(f"         类型: {detail.type}")
+                print(f"         Type: {detail.type}")
     
-    print(f"\n    期望项目 ({len(nft_message.consideration)}):")
+    print(f"\n     Consideration Items ({len(nft_message.consideration)}):")
     for i, item in enumerate(nft_message.consideration):
         if item.kind == "nft":
             detail = item.detail
             print(f"     [{i+1}] NFT: {detail.collection}")
             print(f"         Token ID: {detail.token_id}")
-            print(f"         数量: {detail.amount}")
+            print(f"         Amount: {detail.amount}")
         elif item.kind == "token":
             detail = item.detail
             eth_amount = float(detail.amount) / (10**18) if detail.type == "native" else detail.amount
-            print(f"     [{i+1}] 代币: {detail.currency}")
-            print(f"         数量: {eth_amount if detail.type == 'native' else detail.amount}")
+            print(f"     [{i+1}] Token: {detail.currency}")
+            print(f"         Amount: {eth_amount if detail.type == 'native' else detail.amount}")
 
 
 def analyze_permit_message(permit_message):
-    """分析Permit消息详情"""
-    print(f"   授权数量: {len(permit_message.permits)}")
+    """Analyze Permit message details"""
+    print(f"   Authorization count: {len(permit_message.permits)}")
     
     for i, permit in enumerate(permit_message.permits):
-        print(f"\n   📝 授权 [{i+1}]:")
-        print(f"     授权给: {permit.spender}")
-        print(f"     数量: {permit.amount}")
-        print(f"     随机数: {permit.nonce}")
-        print(f"     过期时间: {permit.expiration}")
+        print(f"\n   📝 Authorization [{i+1}]:")
+        print(f"     Authorized to: {permit.spender}")
+        print(f"     Amount: {permit.amount}")
+        print(f"     Nonce: {permit.nonce}")
+        print(f"     Expiration: {permit.expiration}")
         if permit.owner:
-            print(f"     拥有者: {permit.owner}")
+            print(f"     Owner: {permit.owner}")
         if permit.token:
-            print(f"     代币: {permit.token}")
+            print(f"     Token: {permit.token}")
 
 
 def main():
-    """主函数"""
+    """Main function"""
     
-    # Seaport 列表示例
+    # Seaport listing example
     seaport_listing = {
         "types": {
             "EIP712Domain": [
@@ -255,7 +255,7 @@ def main():
         }
     }
     
-    # Permit 示例
+    # Permit example
     permit_example = {
         "types": {
             "EIP712Domain": [
@@ -288,12 +288,12 @@ def main():
         }
     }
     
-    # 分析示例
-    analyze_eip712_signature(seaport_listing, "Seaport NFT 列表")
-    analyze_eip712_signature(permit_example, "ERC20 Permit 授权")
+    # Analyze examples
+    analyze_eip712_signature(seaport_listing, "Seaport NFT Listing")
+    analyze_eip712_signature(permit_example, "ERC20 Permit Authorization")
     
     print(f"\n{'='*60}")
-    print("分析完成! 🎉")
+    print("Analysis complete! 🎉")
     print(f"{'='*60}")
 
 

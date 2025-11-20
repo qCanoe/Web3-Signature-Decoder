@@ -1,5 +1,5 @@
 """
-LooksRare NFT 市场解析器
+LooksRare NFT marketplace parser
 """
 
 from typing import List
@@ -7,40 +7,40 @@ from ..types import EIP712Like, NFTMessage, TransactionLike
 
 
 class LooksRare:
-    """LooksRare NFT 市场解析器"""
+    """LooksRare NFT marketplace parser"""
     
     @staticmethod
     def parse(typed_data: EIP712Like) -> NFTMessage:
         """
-        解析 LooksRare EIP712 消息
+        Parse LooksRare EIP712 message
         
         Args:
-            typed_data: EIP712 格式的数据
+            typed_data: EIP712 format data
             
         Returns:
-            解析后的 NFT 消息
+            Parsed NFT message
             
         Raises:
-            ValueError: 当数据格式不正确时
+            ValueError: When data format is incorrect
         """
-        # 检查是否为 LooksRare 消息格式
+        # Check if it's a LooksRare message format
         primary_type = typed_data.get('primaryType', '')
         if 'MakerOrder' not in primary_type:
-            raise ValueError("不是有效的 LooksRare 消息格式")
+            raise ValueError("Not a valid LooksRare message format")
         
-        # TODO: 实现 LooksRare 特定的解析逻辑
-        raise NotImplementedError("LooksRare 解析器尚未实现")
+        # TODO: Implement LooksRare specific parsing logic
+        raise NotImplementedError("LooksRare parser not yet implemented")
     
     @staticmethod
     def parse_from_transaction(transaction: TransactionLike) -> List[NFTMessage]:
         """
-        从交易数据中解析 LooksRare 消息
+        Parse LooksRare messages from transaction data
         
         Args:
-            transaction: 交易数据
+            transaction: Transaction data
             
         Returns:
-            解析后的 NFT 消息列表
+            List of parsed NFT messages
         """
-        # TODO: 实现从交易解析的逻辑
+        # TODO: Implement transaction parsing logic
         return [] 

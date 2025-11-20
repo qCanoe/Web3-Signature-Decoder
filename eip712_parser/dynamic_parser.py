@@ -1,6 +1,6 @@
 """
-动态 EIP712 解析器
-能够解析任意 EIP712 签名结构和语义的通用工具
+Dynamic EIP712 Parser
+A universal tool capable of parsing arbitrary EIP712 signature structures and semantics
 """
 
 from typing import Dict, List, Any, Optional, Union, Set, Tuple
@@ -11,8 +11,8 @@ import datetime
 
 
 class FieldType(str, Enum):
-    """字段类型枚举"""
-    # 基础类型
+    """Field type enumeration"""
+    # Basic types
     UINT = "uint"
     INT = "int"
     BOOL = "bool"
@@ -20,11 +20,11 @@ class FieldType(str, Enum):
     STRING = "string"
     ADDRESS = "address"
     
-    # 复合类型
+    # Composite types
     ARRAY = "array"
     STRUCT = "struct"
     
-    # 特殊类型（根据语义推断）
+    # Special types (inferred from semantics)
     TOKEN_ADDRESS = "token_address"
     USER_ADDRESS = "user_address"
     CONTRACT_ADDRESS = "contract_address"
@@ -39,8 +39,8 @@ class FieldType(str, Enum):
 
 
 class FieldSemantic(str, Enum):
-    """字段语义枚举"""
-    # 身份相关
+    """Field semantic enumeration"""
+    # Identity related
     OWNER = "owner"
     SPENDER = "spender"
     RECIPIENT = "recipient"
@@ -52,7 +52,7 @@ class FieldSemantic(str, Enum):
     VALIDATOR = "validator"
     DELEGATE = "delegate"
     
-    # 金额相关
+    # Amount related
     VALUE = "value"
     AMOUNT = "amount"
     PRICE = "price"
@@ -64,7 +64,7 @@ class FieldSemantic(str, Enum):
     MINIMUM = "minimum"
     MAXIMUM = "maximum"
     
-    # 时间相关
+    # Time related
     TIMESTAMP = "timestamp"
     DEADLINE = "deadline"
     START_TIME = "start_time"
@@ -73,7 +73,7 @@ class FieldSemantic(str, Enum):
     DELAY = "delay"
     PERIOD = "period"
     
-    # 标识相关
+    # Identifier related
     TOKEN_ID = "token_id"
     NONCE = "nonce"
     SALT = "salt"
@@ -82,14 +82,14 @@ class FieldSemantic(str, Enum):
     KEY = "key"
     COUNTER = "counter"
     
-    # 数据相关
+    # Data related
     DATA = "data"
     HASH = "hash"
     SIGNATURE = "signature"
     PROOF = "proof"
     MERKLE_ROOT = "merkle_root"
     
-    # 配置相关
+    # Configuration related
     VERSION = "version"
     CHAIN_ID = "chain_id"
     TYPE = "type"
@@ -97,18 +97,18 @@ class FieldSemantic(str, Enum):
     FLAG = "flag"
     OPTION = "option"
     
-    # 治理相关
+    # Governance related
     PROPOSAL_ID = "proposal_id"
     VOTE_TYPE = "vote_type"
     VOTING_POWER = "voting_power"
     
-    # NFT相关
+    # NFT related
     COLLECTION = "collection"
     CREATOR = "creator"
     ROYALTY = "royalty"
     METADATA = "metadata"
     
-    # DeFi相关
+    # DeFi related
     LIQUIDITY = "liquidity"
     SLIPPAGE = "slippage"
     POOL = "pool"
@@ -118,40 +118,40 @@ class FieldSemantic(str, Enum):
 
 @dataclass
 class FieldInfo:
-    """字段信息"""
-    name: str                           # 字段名
-    type_name: str                      # 原始类型名
-    field_type: FieldType              # 推断的字段类型
-    semantic: Optional[FieldSemantic]   # 语义标注
-    value: Any                         # 字段值
-    description: str                   # 字段描述
-    confidence: float = 0.0            # 识别置信度 (0-1)
-    is_array: bool = False             # 是否为数组
-    array_element_type: Optional[str] = None  # 数组元素类型
-    children: List['FieldInfo'] = field(default_factory=list)  # 子字段（用于结构体）
-    context_hints: List[str] = field(default_factory=list)  # 上下文提示
+    """Field information"""
+    name: str                           # Field name
+    type_name: str                      # Original type name
+    field_type: FieldType              # Inferred field type
+    semantic: Optional[FieldSemantic]   # Semantic annotation
+    value: Any                         # Field value
+    description: str                   # Field description
+    confidence: float = 0.0            # Recognition confidence (0-1)
+    is_array: bool = False             # Whether it's an array
+    array_element_type: Optional[str] = None  # Array element type
+    children: List['FieldInfo'] = field(default_factory=list)  # Child fields (for structs)
+    context_hints: List[str] = field(default_factory=list)  # Context hints
 
 
 @dataclass
 class StructInfo:
-    """结构体信息"""
-    name: str                          # 结构体名称
-    fields: List[FieldInfo]            # 字段列表
-    description: str                   # 结构体描述
-    struct_type: Optional[str] = None  # 结构体类型分类
+    """Struct information"""
+    name: str                          # Struct name
+    fields: List[FieldInfo]            # Field list
+    description: str                   # Struct description
+    struct_type: Optional[str] = None  # Struct type classification
 
 
 @dataclass
 class EIP712ParseResult:
-    """EIP712解析结果"""
-    domain: StructInfo                 # 域信息
-    primary_type: str                  # 主要类型
-    message: StructInfo                # 消息结构
-    raw_data: Dict[str, Any]          # 原始数据
+    """EIP712 parsing result"""
+    domain: StructInfo                 # Domain information
+    primary_type: str                  # Primary type
+    message: StructInfo                # Message structure
+    raw_data: Dict[str, Any]          # Raw data
 
 
 class DynamicEIP712Parser:
-    """动态 EIP712 解析器"""
+    """Dynamic EIP712 parser"""
     
     def __init__(self):
         self.types: Dict[str, List[Dict[str, str]]] = {}
@@ -161,9 +161,9 @@ class DynamicEIP712Parser:
         self.value_analyzers = self._init_value_analyzers()
     
     def _init_semantic_patterns(self) -> List[Tuple[str, FieldSemantic, float]]:
-        """初始化语义模式 - 返回 (模式, 语义, 置信度) 的列表"""
+        """Initialize semantic patterns - returns list of (pattern, semantic, confidence)"""
         return [
-            # 高置信度模式 (0.9+)
+            # High confidence patterns (0.9+)
             (r"^tokenid$", FieldSemantic.TOKEN_ID, 0.95),
             (r"^nonce$", FieldSemantic.NONCE, 0.95),
             (r"^chainid$", FieldSemantic.CHAIN_ID, 0.95),
@@ -177,14 +177,14 @@ class DynamicEIP712Parser:
             (r"^price$", FieldSemantic.PRICE, 0.95),
             (r"^fee$", FieldSemantic.FEE, 0.95),
             
-            # 中高置信度模式 (0.8+)
+            # Medium-high confidence patterns (0.8+)
             (r".*token.*id.*", FieldSemantic.TOKEN_ID, 0.85),
             (r".*proposal.*id.*", FieldSemantic.PROPOSAL_ID, 0.85),
             (r".*chain.*id.*", FieldSemantic.CHAIN_ID, 0.85),
             (r".*voting.*power.*", FieldSemantic.VOTING_POWER, 0.85),
             (r".*merkle.*root.*", FieldSemantic.MERKLE_ROOT, 0.85),
             
-            # 身份相关 (0.7+)
+            # Identity related (0.7+)
             (r".*holder.*", FieldSemantic.OWNER, 0.8),
             (r".*minter.*", FieldSemantic.OWNER, 0.8),
             (r".*creator.*", FieldSemantic.CREATOR, 0.8),
@@ -201,7 +201,7 @@ class DynamicEIP712Parser:
             (r".*validator.*", FieldSemantic.VALIDATOR, 0.8),
             (r".*delegate.*", FieldSemantic.DELEGATE, 0.8),
             
-            # 金额相关 (0.7+)
+            # Amount related (0.7+)
             (r".*quantity.*", FieldSemantic.AMOUNT, 0.8),
             (r".*cost.*", FieldSemantic.FEE, 0.75),
             (r".*reward.*", FieldSemantic.REWARD, 0.8),
@@ -218,7 +218,7 @@ class DynamicEIP712Parser:
             (r".*yield.*", FieldSemantic.YIELD, 0.8),
             (r".*royalty.*", FieldSemantic.ROYALTY, 0.8),
             
-            # 时间相关 (0.7+)
+            # Time related (0.7+)
             (r".*expiry.*", FieldSemantic.DEADLINE, 0.85),
             (r".*expires.*", FieldSemantic.DEADLINE, 0.85),
             (r".*time.*", FieldSemantic.TIMESTAMP, 0.7),
@@ -228,7 +228,7 @@ class DynamicEIP712Parser:
             (r".*delay.*", FieldSemantic.DELAY, 0.8),
             (r".*period.*", FieldSemantic.PERIOD, 0.8),
             
-            # 标识相关 (0.7+)
+            # Identifier related (0.7+)
             (r".*salt.*", FieldSemantic.SALT, 0.9),
             (r".*index.*", FieldSemantic.INDEX, 0.8),
             (r".*counter.*", FieldSemantic.COUNTER, 0.8),
@@ -236,7 +236,7 @@ class DynamicEIP712Parser:
             (r"^id$", FieldSemantic.ID, 0.8),
             (r".*_id$", FieldSemantic.ID, 0.75),
             
-            # 数据相关 (0.7+)
+            # Data related (0.7+)
             (r".*data.*", FieldSemantic.DATA, 0.75),
             (r".*payload.*", FieldSemantic.DATA, 0.8),
             (r".*hash.*", FieldSemantic.HASH, 0.8),
@@ -244,54 +244,54 @@ class DynamicEIP712Parser:
             (r".*proof.*", FieldSemantic.PROOF, 0.8),
             (r".*metadata.*", FieldSemantic.METADATA, 0.8),
             
-            # 配置相关 (0.7+)
+            # Configuration related (0.7+)
             (r".*version.*", FieldSemantic.VERSION, 0.8),
             (r".*type.*", FieldSemantic.TYPE, 0.7),
             (r".*status.*", FieldSemantic.STATUS, 0.8),
             (r".*flag.*", FieldSemantic.FLAG, 0.75),
             (r".*option.*", FieldSemantic.OPTION, 0.75),
             
-            # 治理相关 (0.7+)
+            # Governance related (0.7+)
             (r".*vote.*type.*", FieldSemantic.VOTE_TYPE, 0.85),
             (r".*support.*", FieldSemantic.VOTE_TYPE, 0.8),
             
-            # NFT相关 (0.7+)
+            # NFT related (0.7+)
             (r".*collection.*", FieldSemantic.COLLECTION, 0.8),
             (r".*pool.*", FieldSemantic.POOL, 0.75),
         ]
     
     def _init_type_patterns(self) -> List[Tuple[str, str, FieldType, float]]:
-        """初始化类型推断模式 - 返回 (字段名模式, 类型模式, 推断类型, 置信度) 的列表"""
+        """Initialize type inference patterns - returns list of (field name pattern, type pattern, inferred type, confidence)"""
         return [
-            # 金额类型
+            # Amount type
             (r".*amount.*|.*value.*|.*price.*|.*fee.*|.*cost.*|.*quantity.*", r"uint.*", FieldType.AMOUNT, 0.9),
             (r".*balance.*|.*allowance.*|.*reward.*|.*penalty.*", r"uint.*", FieldType.AMOUNT, 0.85),
             (r".*liquidity.*|.*slippage.*|.*rate.*|.*yield.*", r"uint.*", FieldType.AMOUNT, 0.8),
             
-            # 时间戳类型
+            # Timestamp type
             (r".*time.*|.*deadline.*|.*expiry.*|.*expires.*|.*timestamp.*", r"uint.*", FieldType.TIMESTAMP, 0.9),
             (r".*duration.*|.*delay.*|.*period.*", r"uint.*", FieldType.TIMESTAMP, 0.8),
             
-            # 随机数类型
+            # Nonce type
             (r".*nonce.*", r"uint.*", FieldType.NONCE, 0.95),
             (r".*counter.*|.*index.*", r"uint.*", FieldType.NONCE, 0.8),
             
-            # 地址类型
+            # Address type
             (r".*token.*|.*erc20.*|.*erc721.*|.*erc1155.*", r"address", FieldType.TOKEN_ADDRESS, 0.9),
             (r".*contract.*|.*verifying.*", r"address", FieldType.CONTRACT_ADDRESS, 0.85),
             
-            # 哈希类型
+            # Hash type
             (r".*hash.*|.*root.*|.*digest.*", r"bytes32", FieldType.HASH, 0.9),
             
-            # 签名类型
+            # Signature type
             (r".*signature.*|.*sig.*", r"bytes.*", FieldType.SIGNATURE, 0.9),
             
-            # 百分比类型
+            # Percentage type
             (r".*percent.*|.*ratio.*|.*bps.*", r"uint.*", FieldType.PERCENTAGE, 0.85),
         ]
     
     def _init_context_keywords(self) -> Dict[str, Set[str]]:
-        """初始化上下文关键词"""
+        """Initialize context keywords"""
         return {
             "permit": {"spender", "owner", "value", "deadline", "nonce"},
             "order": {"offerer", "offer", "consideration", "orderType", "startTime", "endTime"},
@@ -306,7 +306,7 @@ class DynamicEIP712Parser:
         }
     
     def _init_value_analyzers(self) -> List[callable]:
-        """初始化值分析器"""
+        """Initialize value analyzers"""
         return [
             self._analyze_timestamp_value,
             self._analyze_amount_value,
@@ -317,23 +317,23 @@ class DynamicEIP712Parser:
     
     def parse(self, eip712_data: Dict[str, Any]) -> EIP712ParseResult:
         """
-        解析 EIP712 数据
+        Parse EIP712 data
         
         Args:
-            eip712_data: EIP712 格式的数据
+            eip712_data: EIP712 format data
             
         Returns:
-            解析结果
+            Parsing result
         """
         if not self._validate_eip712_data(eip712_data):
-            raise ValueError("无效的 EIP712 数据格式")
+            raise ValueError("Invalid EIP712 data format")
         
         self.types = eip712_data['types']
         
-        # 解析域信息
+        # Parse domain information
         domain_struct = self._parse_struct("EIP712Domain", eip712_data['domain'])
         
-        # 解析主要消息
+        # Parse primary message
         primary_type = eip712_data['primaryType']
         message_struct = self._parse_struct(primary_type, eip712_data['message'])
         
@@ -345,7 +345,7 @@ class DynamicEIP712Parser:
         )
     
     def _validate_eip712_data(self, data: Dict[str, Any]) -> bool:
-        """验证 EIP712 数据格式"""
+        """Validate EIP712 data format"""
         required_fields = ['types', 'domain', 'primaryType', 'message']
         
         for field in required_fields:
@@ -362,22 +362,22 @@ class DynamicEIP712Parser:
     
     def _parse_struct(self, struct_name: str, struct_data: Dict[str, Any]) -> StructInfo:
         """
-        解析结构体（增强版）
+        Parse struct (enhanced version)
         
         Args:
-            struct_name: 结构体名称
-            struct_data: 结构体数据
+            struct_name: Struct name
+            struct_data: Struct data
             
         Returns:
-            结构体信息
+            Struct information
         """
         if struct_name not in self.types:
-            raise ValueError(f"未找到结构体定义: {struct_name}")
+            raise ValueError(f"Struct definition not found: {struct_name}")
         
         struct_definition = self.types[struct_name]
         field_names = [field_def['name'] for field_def in struct_definition]
         
-        # 检测结构体上下文类型
+        # Detect struct context type
         struct_context = self._detect_struct_context(struct_name, field_names)
         
         fields = []
@@ -400,18 +400,18 @@ class DynamicEIP712Parser:
     
     def _parse_field(self, field_name: str, field_type: str, field_value: Any, struct_context: Optional[str] = None) -> FieldInfo:
         """
-        解析字段（增强版）
+        Parse field (enhanced version)
         
         Args:
-            field_name: 字段名
-            field_type: 字段类型
-            field_value: 字段值
-            struct_context: 结构体上下文
+            field_name: Field name
+            field_type: Field type
+            field_value: Field value
+            struct_context: Struct context
             
         Returns:
-            字段信息
+            Field information
         """
-        # 解析类型
+        # Parse type
         is_array = field_type.endswith('[]')
         array_element_type = None
         base_type = field_type
@@ -420,13 +420,13 @@ class DynamicEIP712Parser:
             base_type = field_type[:-2]
             array_element_type = base_type
         
-        # 推断字段类型
+        # Infer field type
         inferred_type = self._infer_field_type(field_name, base_type, field_value)
         
-        # 推断语义（带置信度）
+        # Infer semantic (with confidence)
         semantic, confidence = self._infer_semantic(field_name, base_type, field_value, struct_context)
         
-        # 处理子结构
+        # Handle child structures
         children = []
         if base_type in self.types and field_value is not None:
             if is_array and isinstance(field_value, list):
@@ -439,7 +439,7 @@ class DynamicEIP712Parser:
                             field_type=FieldType.STRUCT,
                             semantic=None,
                             value=item,
-                            description=f"数组元素 {i}",
+                            description=f"Array element {i}",
                             confidence=0.9,
                             children=[FieldInfo(
                                 name=child.name,
@@ -464,14 +464,14 @@ class DynamicEIP712Parser:
                     confidence=child.confidence
                 ) for child in child_struct.fields]
         
-        # 收集上下文提示
+        # Collect context hints
         context_hints = []
         if struct_context:
-            context_hints.append(f"结构体类型: {struct_context}")
+            context_hints.append(f"Struct type: {struct_context}")
         if confidence >= 0.8:
-            context_hints.append(f"高置信度识别")
+            context_hints.append(f"High confidence recognition")
         
-        # 生成描述
+        # Generate description
         description = self._generate_field_description(field_name, inferred_type, semantic, field_value, confidence)
         
         return FieldInfo(
@@ -489,16 +489,16 @@ class DynamicEIP712Parser:
         )
     
     def _analyze_timestamp_value(self, field_name: str, field_type: str, field_value: Any) -> Optional[Tuple[FieldType, FieldSemantic, float]]:
-        """分析时间戳值"""
+        """Analyze timestamp value"""
         if not isinstance(field_value, (int, str)):
             return None
         
         try:
             timestamp = int(field_value)
-            # 检查是否是合理的时间戳范围 (2000年 - 2100年)
+            # Check if it's a reasonable timestamp range (2000 - 2100)
             if 946684800 <= timestamp <= 4102444800:
                 confidence = 0.8
-                # 检查是否是截止时间
+                # Check if it's a deadline
                 if any(keyword in field_name.lower() for keyword in ['deadline', 'expiry', 'expires']):
                     return (FieldType.DEADLINE, FieldSemantic.DEADLINE, confidence + 0.1)
                 else:
@@ -509,7 +509,7 @@ class DynamicEIP712Parser:
         return None
     
     def _analyze_amount_value(self, field_name: str, field_type: str, field_value: Any) -> Optional[Tuple[FieldType, FieldSemantic, float]]:
-        """分析金额值"""
+        """Analyze amount value"""
         if not isinstance(field_value, (int, str)) or not field_type.startswith(('uint', 'int')):
             return None
         
@@ -517,8 +517,8 @@ class DynamicEIP712Parser:
             amount = int(field_value)
             field_name_lower = field_name.lower()
             
-            # 检查是否是典型的ERC20金额 (18位小数)
-            if amount > 10**15:  # 大于 0.001 ETH
+            # Check if it's a typical ERC20 amount (18 decimal places)
+            if amount > 10**15:  # Greater than 0.001 ETH
                 confidence = 0.8
                 if any(keyword in field_name_lower for keyword in ['amount', 'value', 'quantity']):
                     return (FieldType.AMOUNT, FieldSemantic.AMOUNT, confidence + 0.1)
@@ -534,22 +534,22 @@ class DynamicEIP712Parser:
         return None
     
     def _analyze_address_value(self, field_name: str, field_type: str, field_value: Any) -> Optional[Tuple[FieldType, FieldSemantic, float]]:
-        """分析地址值"""
+        """Analyze address value"""
         if field_type != 'address' or not isinstance(field_value, str):
             return None
         
-        # 检查是否是有效的以太坊地址
+        # Check if it's a valid Ethereum address
         if not (field_value.startswith('0x') and len(field_value) == 42):
             return None
         
         field_name_lower = field_name.lower()
         confidence = 0.8
         
-        # 检查是否是零地址
+        # Check if it's zero address
         if field_value == '0x0000000000000000000000000000000000000000':
             confidence = 0.6
         
-        # 根据字段名推断地址类型
+        # Infer address type based on field name
         if any(keyword in field_name_lower for keyword in ['token', 'erc20', 'erc721', 'erc1155']):
             return (FieldType.TOKEN_ADDRESS, FieldSemantic.COLLECTION, confidence + 0.1)
         elif any(keyword in field_name_lower for keyword in ['contract', 'verifying']):
@@ -558,7 +558,7 @@ class DynamicEIP712Parser:
             return (FieldType.USER_ADDRESS, None, confidence)
     
     def _analyze_percentage_value(self, field_name: str, field_type: str, field_value: Any) -> Optional[Tuple[FieldType, FieldSemantic, float]]:
-        """分析百分比值"""
+        """Analyze percentage value"""
         if not isinstance(field_value, (int, str)) or not field_type.startswith(('uint', 'int')):
             return None
         
@@ -566,7 +566,7 @@ class DynamicEIP712Parser:
             value = int(field_value)
             field_name_lower = field_name.lower()
             
-            # 检查是否是百分比（0-100或0-10000的范围）
+            # Check if it's a percentage (range 0-100 or 0-10000)
             if (0 <= value <= 100 and any(keyword in field_name_lower for keyword in ['percent', 'ratio'])) or \
                (0 <= value <= 10000 and 'bps' in field_name_lower):
                 return (FieldType.PERCENTAGE, FieldSemantic.RATE, 0.85)
@@ -576,7 +576,7 @@ class DynamicEIP712Parser:
         return None
     
     def _analyze_enum_value(self, field_name: str, field_type: str, field_value: Any) -> Optional[Tuple[FieldType, FieldSemantic, float]]:
-        """分析枚举值"""
+        """Analyze enum value"""
         if not isinstance(field_value, (int, str)) or not field_type.startswith(('uint', 'int')):
             return None
         
@@ -584,7 +584,7 @@ class DynamicEIP712Parser:
             value = int(field_value)
             field_name_lower = field_name.lower()
             
-            # 检查是否是小范围的整数（可能是枚举）
+            # Check if it's a small range integer (might be an enum)
             if 0 <= value <= 20:
                 if any(keyword in field_name_lower for keyword in ['type', 'kind', 'status', 'state', 'mode']):
                     return (FieldType.ENUM_VALUE, FieldSemantic.TYPE, 0.75)
@@ -596,43 +596,43 @@ class DynamicEIP712Parser:
         return None
     
     def _detect_struct_context(self, struct_name: str, field_names: List[str]) -> Optional[str]:
-        """检测结构体上下文类型"""
+        """Detect struct context type"""
         field_names_lower = [name.lower() for name in field_names]
         field_set = set(field_names_lower)
         
-        # 计算每种上下文的匹配度
+        # Calculate match score for each context
         context_scores = {}
         for context_type, keywords in self.context_keywords.items():
             match_count = len(keywords.intersection(field_set))
             if match_count > 0:
                 context_scores[context_type] = match_count / len(keywords)
         
-        # 返回匹配度最高的上下文
+        # Return context with highest match score
         if context_scores:
             best_context = max(context_scores, key=context_scores.get)
-            if context_scores[best_context] >= 0.5:  # 至少50%匹配
+            if context_scores[best_context] >= 0.5:  # At least 50% match
                 return best_context
         
         return None
     
     def _infer_field_type(self, field_name: str, field_type: str, field_value: Any) -> FieldType:
-        """推断字段类型（增强版）"""
+        """Infer field type (enhanced version)"""
         field_name_lower = field_name.lower()
         
-        # 首先使用值分析器
+        # First use value analyzers
         for analyzer in self.value_analyzers:
             result = analyzer(field_name, field_type, field_value)
             if result:
                 return result[0]
         
-        # 使用类型模式匹配
+        # Use type pattern matching
         for name_pattern, type_pattern, inferred_type, confidence in self.type_patterns:
             if re.match(name_pattern, field_name_lower) and re.match(type_pattern, field_type):
                 return inferred_type
         
-        # 基于字段类型的默认推断
+        # Default inference based on field type
         if field_type.startswith('uint') or field_type.startswith('int'):
-            # 进一步推断是否为金额、时间戳等
+            # Further infer if it's amount, timestamp, etc.
             if any(keyword in field_name_lower for keyword in ['amount', 'value', 'price', 'fee', 'cost', 'quantity']):
                 return FieldType.AMOUNT
             elif any(keyword in field_name_lower for keyword in ['time', 'deadline', 'expiry', 'expires', 'timestamp']):
@@ -643,7 +643,7 @@ class DynamicEIP712Parser:
                 return FieldType.UINT if field_type.startswith('uint') else FieldType.INT
         
         elif field_type == 'address':
-            # 根据字段名推断地址类型
+            # Infer address type based on field name
             if any(keyword in field_name_lower for keyword in ['token', 'erc20', 'erc721', 'erc1155']):
                 return FieldType.TOKEN_ADDRESS
             elif any(keyword in field_name_lower for keyword in ['contract', 'verifying']):
@@ -672,28 +672,28 @@ class DynamicEIP712Parser:
             return FieldType.ARRAY
         
         else:
-            return FieldType.STRING  # 默认类型
+            return FieldType.STRING  # Default type
     
     def _infer_semantic(self, field_name: str, field_type: str, field_value: Any, struct_context: Optional[str] = None) -> Tuple[Optional[FieldSemantic], float]:
-        """推断字段语义（增强版）"""
+        """Infer field semantic (enhanced version)"""
         field_name_lower = field_name.lower()
         best_semantic = None
         best_confidence = 0.0
         
-        # 首先使用值分析器
+        # First use value analyzers
         for analyzer in self.value_analyzers:
             result = analyzer(field_name, field_type, field_value)
             if result and result[1] and result[2] > best_confidence:
                 best_semantic = result[1]
                 best_confidence = result[2]
         
-        # 使用语义模式匹配
+        # Use semantic pattern matching
         for pattern, semantic, confidence in self.semantic_patterns:
             if re.match(pattern, field_name_lower) and confidence > best_confidence:
                 best_semantic = semantic
                 best_confidence = confidence
         
-        # 上下文增强
+        # Context enhancement
         if struct_context and best_semantic:
             context_boost = self._get_context_boost(best_semantic, struct_context)
             best_confidence = min(0.95, best_confidence + context_boost)
@@ -701,7 +701,7 @@ class DynamicEIP712Parser:
         return (best_semantic, best_confidence)
     
     def _get_context_boost(self, semantic: FieldSemantic, struct_context: str) -> float:
-        """根据结构体上下文计算语义置信度提升"""
+        """Calculate semantic confidence boost based on struct context"""
         context_boosts = {
             "permit": {
                 FieldSemantic.OWNER: 0.1,
@@ -753,125 +753,125 @@ class DynamicEIP712Parser:
         return context_boosts.get(struct_context, {}).get(semantic, 0.0)
     
     def _generate_field_description(self, field_name: str, field_type: FieldType, semantic: Optional[FieldSemantic], field_value: Any, confidence: float = 0.0) -> str:
-        """生成字段描述"""
-        base_desc = f"字段 '{field_name}'"
+        """Generate field description"""
+        base_desc = f"Field '{field_name}'"
         
-        # 添加语义描述
+        # Add semantic description
         if semantic:
             semantic_desc = {
-                # 身份相关
-                FieldSemantic.OWNER: "拥有者地址",
-                FieldSemantic.SPENDER: "授权花费者地址", 
-                FieldSemantic.RECIPIENT: "接收者地址",
-                FieldSemantic.TRADER: "交易者地址",
-                FieldSemantic.OFFERER: "报价者地址",
-                FieldSemantic.BIDDER: "竞拍者地址",
-                FieldSemantic.SELLER: "卖方地址",
-                FieldSemantic.BUYER: "买方地址",
-                FieldSemantic.VALIDATOR: "验证者地址",
-                FieldSemantic.DELEGATE: "委托者地址",
-                FieldSemantic.CREATOR: "创建者地址",
+                # Identity related
+                FieldSemantic.OWNER: "Owner address",
+                FieldSemantic.SPENDER: "Authorized spender address", 
+                FieldSemantic.RECIPIENT: "Recipient address",
+                FieldSemantic.TRADER: "Trader address",
+                FieldSemantic.OFFERER: "Offerer address",
+                FieldSemantic.BIDDER: "Bidder address",
+                FieldSemantic.SELLER: "Seller address",
+                FieldSemantic.BUYER: "Buyer address",
+                FieldSemantic.VALIDATOR: "Validator address",
+                FieldSemantic.DELEGATE: "Delegate address",
+                FieldSemantic.CREATOR: "Creator address",
                 
-                # 金额相关
-                FieldSemantic.VALUE: "数值",
-                FieldSemantic.AMOUNT: "金额",
-                FieldSemantic.PRICE: "价格",
-                FieldSemantic.FEE: "手续费",
-                FieldSemantic.REWARD: "奖励金额",
-                FieldSemantic.PENALTY: "惩罚金额",
-                FieldSemantic.BALANCE: "余额",
-                FieldSemantic.ALLOWANCE: "授权额度",
-                FieldSemantic.MINIMUM: "最小值",
-                FieldSemantic.MAXIMUM: "最大值",
-                FieldSemantic.LIQUIDITY: "流动性",
-                FieldSemantic.SLIPPAGE: "滑点",
-                FieldSemantic.RATE: "比率",
-                FieldSemantic.YIELD: "收益率",
-                FieldSemantic.ROYALTY: "版税",
+                # Amount related
+                FieldSemantic.VALUE: "Value",
+                FieldSemantic.AMOUNT: "Amount",
+                FieldSemantic.PRICE: "Price",
+                FieldSemantic.FEE: "Fee",
+                FieldSemantic.REWARD: "Reward amount",
+                FieldSemantic.PENALTY: "Penalty amount",
+                FieldSemantic.BALANCE: "Balance",
+                FieldSemantic.ALLOWANCE: "Allowance",
+                FieldSemantic.MINIMUM: "Minimum value",
+                FieldSemantic.MAXIMUM: "Maximum value",
+                FieldSemantic.LIQUIDITY: "Liquidity",
+                FieldSemantic.SLIPPAGE: "Slippage",
+                FieldSemantic.RATE: "Rate",
+                FieldSemantic.YIELD: "Yield",
+                FieldSemantic.ROYALTY: "Royalty",
                 
-                # 时间相关
-                FieldSemantic.TIMESTAMP: "时间戳",
-                FieldSemantic.DEADLINE: "截止时间",
-                FieldSemantic.START_TIME: "开始时间",
-                FieldSemantic.END_TIME: "结束时间",
-                FieldSemantic.DURATION: "持续时间",
-                FieldSemantic.DELAY: "延迟时间",
-                FieldSemantic.PERIOD: "周期",
+                # Time related
+                FieldSemantic.TIMESTAMP: "Timestamp",
+                FieldSemantic.DEADLINE: "Deadline",
+                FieldSemantic.START_TIME: "Start time",
+                FieldSemantic.END_TIME: "End time",
+                FieldSemantic.DURATION: "Duration",
+                FieldSemantic.DELAY: "Delay",
+                FieldSemantic.PERIOD: "Period",
                 
-                # 标识相关
-                FieldSemantic.TOKEN_ID: "代币ID",
-                FieldSemantic.NONCE: "随机数",
-                FieldSemantic.SALT: "盐值",
-                FieldSemantic.INDEX: "索引",
-                FieldSemantic.ID: "标识符",
-                FieldSemantic.KEY: "键值",
-                FieldSemantic.COUNTER: "计数器",
+                # Identifier related
+                FieldSemantic.TOKEN_ID: "Token ID",
+                FieldSemantic.NONCE: "Nonce",
+                FieldSemantic.SALT: "Salt",
+                FieldSemantic.INDEX: "Index",
+                FieldSemantic.ID: "Identifier",
+                FieldSemantic.KEY: "Key",
+                FieldSemantic.COUNTER: "Counter",
                 
-                # 数据相关
-                FieldSemantic.DATA: "数据",
-                FieldSemantic.HASH: "哈希值",
-                FieldSemantic.SIGNATURE: "签名",
-                FieldSemantic.PROOF: "证明",
-                FieldSemantic.MERKLE_ROOT: "默克尔根",
-                FieldSemantic.METADATA: "元数据",
+                # Data related
+                FieldSemantic.DATA: "Data",
+                FieldSemantic.HASH: "Hash value",
+                FieldSemantic.SIGNATURE: "Signature",
+                FieldSemantic.PROOF: "Proof",
+                FieldSemantic.MERKLE_ROOT: "Merkle root",
+                FieldSemantic.METADATA: "Metadata",
                 
-                # 配置相关
-                FieldSemantic.VERSION: "版本号",
-                FieldSemantic.CHAIN_ID: "链ID",
-                FieldSemantic.TYPE: "类型",
-                FieldSemantic.STATUS: "状态",
-                FieldSemantic.FLAG: "标志",
-                FieldSemantic.OPTION: "选项",
+                # Configuration related
+                FieldSemantic.VERSION: "Version",
+                FieldSemantic.CHAIN_ID: "Chain ID",
+                FieldSemantic.TYPE: "Type",
+                FieldSemantic.STATUS: "Status",
+                FieldSemantic.FLAG: "Flag",
+                FieldSemantic.OPTION: "Option",
                 
-                # 治理相关
-                FieldSemantic.PROPOSAL_ID: "提案ID",
-                FieldSemantic.VOTE_TYPE: "投票类型",
-                FieldSemantic.VOTING_POWER: "投票权重",
+                # Governance related
+                FieldSemantic.PROPOSAL_ID: "Proposal ID",
+                FieldSemantic.VOTE_TYPE: "Vote type",
+                FieldSemantic.VOTING_POWER: "Voting power",
                 
-                # NFT相关
-                FieldSemantic.COLLECTION: "合集地址",
-                FieldSemantic.POOL: "资金池",
+                # NFT related
+                FieldSemantic.COLLECTION: "Collection address",
+                FieldSemantic.POOL: "Pool",
             }.get(semantic, semantic.value)
             
-            # 添加置信度显示（高置信度时显示）
+            # Add confidence display (shown when high confidence)
             confidence_str = ""
             if confidence >= 0.8:
-                confidence_str = f" [{confidence:.0%}置信度]"
+                confidence_str = f" [{confidence:.0%} confidence]"
             
             base_desc += f" ({semantic_desc}{confidence_str})"
         
-        # 添加类型描述
+        # Add type description
         type_desc = {
-            FieldType.TOKEN_ADDRESS: "代币合约地址",
-            FieldType.USER_ADDRESS: "用户地址", 
-            FieldType.CONTRACT_ADDRESS: "合约地址",
-            FieldType.AMOUNT: "金额数值",
-            FieldType.TIMESTAMP: "时间戳",
-            FieldType.NONCE: "随机数",
-            FieldType.HASH: "哈希值",
-            FieldType.SIGNATURE: "签名数据",
+            FieldType.TOKEN_ADDRESS: "Token contract address",
+            FieldType.USER_ADDRESS: "User address", 
+            FieldType.CONTRACT_ADDRESS: "Contract address",
+            FieldType.AMOUNT: "Amount value",
+            FieldType.TIMESTAMP: "Timestamp",
+            FieldType.NONCE: "Nonce",
+            FieldType.HASH: "Hash value",
+            FieldType.SIGNATURE: "Signature data",
         }.get(field_type)
         
         if type_desc:
             base_desc += f" - {type_desc}"
         
-        # 添加值描述
+        # Add value description
         if field_value is not None:
             if field_type == FieldType.TIMESTAMP and isinstance(field_value, (int, str)):
                 try:
                     timestamp = int(field_value)
-                    if timestamp > 1000000000:  # 看起来像时间戳
+                    if timestamp > 1000000000:  # Looks like a timestamp
                         dt = datetime.datetime.fromtimestamp(timestamp)
-                        base_desc += f" (时间: {dt.strftime('%Y-%m-%d %H:%M:%S')})"
+                        base_desc += f" (Time: {dt.strftime('%Y-%m-%d %H:%M:%S')})"
                 except:
                     pass
             elif field_type in [FieldType.TOKEN_ADDRESS, FieldType.USER_ADDRESS, FieldType.CONTRACT_ADDRESS]:
                 base_desc += f" ({field_value})"
             elif field_type == FieldType.AMOUNT and isinstance(field_value, (int, str)):
                 try:
-                    # 尝试转换为 ETH 单位显示
+                    # Try to convert to ETH unit for display
                     amount = int(field_value)
-                    if amount > 10**15:  # 如果大于 0.001 ETH
+                    if amount > 10**15:  # If greater than 0.001 ETH
                         eth_amount = amount / 10**18
                         base_desc += f" ({eth_amount:.6f} ETH)"
                 except:
@@ -882,65 +882,65 @@ class DynamicEIP712Parser:
         return base_desc
     
     def _generate_struct_description(self, struct_name: str, fields: List[FieldInfo], struct_context: Optional[str] = None) -> str:
-        """生成结构体描述（增强版）"""
-        # 根据结构体名称和字段推断用途
+        """Generate struct description (enhanced version)"""
+        # Infer purpose based on struct name and fields
         if struct_name == "EIP712Domain":
-            return "EIP712 域信息 - 定义签名的域和验证上下文"
+            return "EIP712 domain information - defines the domain and verification context of the signature"
         
-        # 使用检测到的上下文
+        # Use detected context
         if struct_context:
             context_descriptions = {
-                "permit": f"授权许可结构 '{struct_name}' - 允许第三方代表用户操作代币",
-                "order": f"市场订单结构 '{struct_name}' - 定义交易的报价条件和期望",
-                "vote": f"治理投票结构 '{struct_name}' - 记录对提案的投票决策",
-                "transfer": f"转账结构 '{struct_name}' - 定义资产转移的详细信息",
-                "mint": f"铸造结构 '{struct_name}' - 定义新代币的创建参数",
-                "burn": f"销毁结构 '{struct_name}' - 定义代币销毁的操作",
-                "governance": f"治理结构 '{struct_name}' - 定义治理提案和执行参数",
-                "auction": f"拍卖结构 '{struct_name}' - 定义拍卖的竞价和条件",
-                "swap": f"交换结构 '{struct_name}' - 定义代币交换的参数",
-                "liquidity": f"流动性结构 '{struct_name}' - 定义流动性操作的参数",
+                "permit": f"Authorization permit structure '{struct_name}' - allows third parties to operate tokens on behalf of users",
+                "order": f"Market order structure '{struct_name}' - defines offer conditions and expectations for transactions",
+                "vote": f"Governance voting structure '{struct_name}' - records voting decisions on proposals",
+                "transfer": f"Transfer structure '{struct_name}' - defines detailed information for asset transfers",
+                "mint": f"Mint structure '{struct_name}' - defines parameters for creating new tokens",
+                "burn": f"Burn structure '{struct_name}' - defines token burning operations",
+                "governance": f"Governance structure '{struct_name}' - defines governance proposal and execution parameters",
+                "auction": f"Auction structure '{struct_name}' - defines bidding and conditions for auctions",
+                "swap": f"Swap structure '{struct_name}' - defines parameters for token swaps",
+                "liquidity": f"Liquidity structure '{struct_name}' - defines parameters for liquidity operations",
             }
             
             if struct_context in context_descriptions:
                 return context_descriptions[struct_context]
         
-        # 根据字段推断结构体用途（后备方案）
+        # Infer struct purpose based on fields (fallback)
         field_names = [field.name.lower() for field in fields]
         high_confidence_fields = [field for field in fields if field.confidence >= 0.8]
         
         if any(name in field_names for name in ['offerer', 'offer', 'consideration']):
-            return f"市场订单结构 '{struct_name}' - 包含交易报价和期望条件"
+            return f"Market order structure '{struct_name}' - contains transaction offers and expected conditions"
         elif any(name in field_names for name in ['spender', 'value', 'deadline']):
-            return f"授权许可结构 '{struct_name}' - 包含代币授权信息"
+            return f"Authorization permit structure '{struct_name}' - contains token authorization information"
         elif any(name in field_names for name in ['to', 'value', 'data']):
-            return f"交易结构 '{struct_name}' - 包含交易目标和数据"
+            return f"Transaction structure '{struct_name}' - contains transaction target and data"
         elif any(name in field_names for name in ['voter', 'proposal', 'support']):
-            return f"治理投票结构 '{struct_name}' - 包含投票决策信息"
+            return f"Governance voting structure '{struct_name}' - contains voting decision information"
         else:
-            confidence_desc = f" (其中 {len(high_confidence_fields)} 个高置信度字段)" if high_confidence_fields else ""
-            return f"数据结构 '{struct_name}' - 包含 {len(fields)} 个字段{confidence_desc}"
+            confidence_desc = f" (with {len(high_confidence_fields)} high-confidence fields)" if high_confidence_fields else ""
+            return f"Data structure '{struct_name}' - contains {len(fields)} fields{confidence_desc}"
     
     def format_result(self, result: EIP712ParseResult) -> str:
-        """格式化解析结果为可读文本"""
+        """Format parsing result as readable text"""
         lines = []
         
         lines.append("=" * 60)
-        lines.append("EIP712 签名结构解析结果")
+        lines.append("EIP712 Signature Structure Parsing Result")
         lines.append("=" * 60)
         
-        # 域信息
-        lines.append(f"\n域信息 ({result.domain.name}):")
-        lines.append(f"   描述: {result.domain.description}")
+        # Domain information
+        lines.append(f"\nDomain Information ({result.domain.name}):")
+        lines.append(f"   Description: {result.domain.description}")
         for field in result.domain.fields:
             lines.append(f"   • {field.description}")
         
-        # 主要消息
-        lines.append(f"\n主要消息 ({result.primary_type}):")
-        lines.append(f"   描述: {result.message.description}")
-        lines.append(f"   字段数量: {len(result.message.fields)}")
+        # Primary message
+        lines.append(f"\nPrimary Message ({result.primary_type}):")
+        lines.append(f"   Description: {result.message.description}")
+        lines.append(f"   Field count: {len(result.message.fields)}")
         
-        lines.append(f"\n消息结构树:")
+        lines.append(f"\nMessage Structure Tree:")
         self._format_struct_tree(result.message, lines, indent="   ")
         
         lines.append("\n" + "=" * 60)
@@ -948,7 +948,7 @@ class DynamicEIP712Parser:
         return "\n".join(lines)
     
     def _format_struct_tree(self, struct: StructInfo, lines: List[str], indent: str = ""):
-        """格式化结构体树"""
+        """Format struct tree"""
         for i, field in enumerate(struct.fields):
             is_last = i == len(struct.fields) - 1
             tree_char = "└── " if is_last else "├── "
@@ -956,7 +956,7 @@ class DynamicEIP712Parser:
             
             lines.append(f"{indent}{tree_char}{field.description}")
             
-            # 递归显示子字段
+            # Recursively display child fields
             if field.children:
                 for j, child in enumerate(field.children):
                     child_is_last = j == len(field.children) - 1

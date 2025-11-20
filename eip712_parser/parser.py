@@ -1,5 +1,5 @@
 """
-EIP712 主解析器 - 支持协议特定解析和通用动态解析
+EIP712 Main Parser - Supports protocol-specific parsing and universal dynamic parsing
 """
 
 from typing import Optional, Union, Dict, Any
@@ -11,20 +11,20 @@ from . import permit
 
 def parse_request(request: EIP712Like) -> Optional[ParsedMessage]:
     """
-    解析 EIP712 请求 - 协议特定解析
+    Parse EIP712 request - protocol-specific parsing
     
     Args:
-        request: EIP712 格式的请求数据
+        request: EIP712 format request data
         
     Returns:
-        解析后的消息，如果无法解析则返回 None
+        Parsed message, returns None if unable to parse
     """
-    # 尝试解析 NFT 相关请求
+    # Try to parse NFT-related requests
     nft_result = nft.parse_request(request)
     if nft_result:
         return nft_result
     
-    # 尝试解析 Permit 相关请求
+    # Try to parse Permit-related requests
     permit_result = permit.parse_permit_from_request(request)
     if permit_result:
         return permit_result
@@ -34,13 +34,13 @@ def parse_request(request: EIP712Like) -> Optional[ParsedMessage]:
 
 def parse_dynamic(eip712_data: Union[EIP712Like, Dict[str, Any]]) -> EIP712ParseResult:
     """
-    动态解析任意 EIP712 签名结构
+    Dynamically parse arbitrary EIP712 signature structures
     
     Args:
-        eip712_data: EIP712 格式的数据
+        eip712_data: EIP712 format data
         
     Returns:
-        动态解析结果，包含完整的结构树和语义标注
+        Dynamic parsing result, containing complete structure tree and semantic annotations
     """
     parser = DynamicEIP712Parser()
     return parser.parse(eip712_data)
@@ -48,13 +48,13 @@ def parse_dynamic(eip712_data: Union[EIP712Like, Dict[str, Any]]) -> EIP712Parse
 
 def parse_and_format(eip712_data: Union[EIP712Like, Dict[str, Any]]) -> str:
     """
-    解析并格式化 EIP712 数据为可读文本
+    Parse and format EIP712 data as readable text
     
     Args:
-        eip712_data: EIP712 格式的数据
+        eip712_data: EIP712 format data
         
     Returns:
-        格式化的可读文本
+        Formatted readable text
     """
     parser = DynamicEIP712Parser()
     result = parser.parse(eip712_data)
@@ -63,13 +63,13 @@ def parse_and_format(eip712_data: Union[EIP712Like, Dict[str, Any]]) -> str:
 
 def analyze_eip712(eip712_data: Union[EIP712Like, Dict[str, Any]]) -> Dict[str, Any]:
     """
-    分析 EIP712 数据并返回结构化分析结果
+    Analyze EIP712 data and return structured analysis result
     
     Args:
-        eip712_data: EIP712 格式的数据
+        eip712_data: EIP712 format data
         
     Returns:
-        分析结果字典
+        Analysis result dictionary
     """
     parser = DynamicEIP712Parser()
     result = parser.parse(eip712_data)

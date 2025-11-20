@@ -1,5 +1,5 @@
 """
-Blur NFT 市场解析器
+Blur NFT marketplace parser
 """
 
 from typing import List
@@ -7,40 +7,40 @@ from ..types import EIP712Like, NFTMessage, TransactionLike
 
 
 class Blur:
-    """Blur NFT 市场解析器"""
+    """Blur NFT marketplace parser"""
     
     @staticmethod
     def parse(typed_data: EIP712Like) -> NFTMessage:
         """
-        解析 Blur EIP712 消息
+        Parse Blur EIP712 message
         
         Args:
-            typed_data: EIP712 格式的数据
+            typed_data: EIP712 format data
             
         Returns:
-            解析后的 NFT 消息
+            Parsed NFT message
             
         Raises:
-            ValueError: 当数据格式不正确时
+            ValueError: When data format is incorrect
         """
-        # 检查是否为 Blur 消息格式
+        # Check if it's a Blur message format
         primary_type = typed_data.get('primaryType', '')
         if 'Order' not in primary_type:
-            raise ValueError("不是有效的 Blur 消息格式")
+            raise ValueError("Not a valid Blur message format")
         
-        # TODO: 实现 Blur 特定的解析逻辑
-        raise NotImplementedError("Blur 解析器尚未实现")
+        # TODO: Implement Blur specific parsing logic
+        raise NotImplementedError("Blur parser not yet implemented")
     
     @staticmethod
     def parse_from_transaction(transaction: TransactionLike) -> List[NFTMessage]:
         """
-        从交易数据中解析 Blur 消息
+        Parse Blur messages from transaction data
         
         Args:
-            transaction: 交易数据
+            transaction: Transaction data
             
         Returns:
-            解析后的 NFT 消息列表
+            List of parsed NFT messages
         """
-        # TODO: 实现从交易解析的逻辑
+        # TODO: Implement transaction parsing logic
         return [] 

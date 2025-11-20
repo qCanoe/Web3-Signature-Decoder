@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 """
-EIP712解析器基本使用示例
+EIP712 Parser Basic Usage Example
 """
 
 import json
 import sys
 import os
 
-# 添加父目录到路径以导入模块
+# Add parent directory to path to import modules
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from eip712_parser import parse_request
 from eip712_parser.security import SecurityChecker
 
-# Seaport 列表示例数据
+# Seaport listing example data
 seaport_listing_example = {
     "types": {
         "EIP712Domain": [
@@ -92,66 +92,66 @@ seaport_listing_example = {
 
 
 def main():
-    """主函数"""
-    print("=== EIP712 解析器示例 ===\n")
+    """Main function"""
+    print("=== EIP712 Parser Example ===\n")
     
-    # 解析 EIP712 消息
-    print("1. 解析 Seaport 列表消息...")
+    # Parse EIP712 message
+    print("1. Parsing Seaport listing message...")
     try:
         parsed_message = parse_request(seaport_listing_example)
         
         if parsed_message:
-            print(f"✅ 解析成功!")
-            print(f"   消息类型: {parsed_message.kind}")
+            print(f"✅ Parsing successful!")
+            print(f"   Message type: {parsed_message.kind}")
             
             if parsed_message.kind == "nft":
                 nft_detail = parsed_message.detail
-                print(f"   协议类型: {nft_detail.type}")
-                print(f"   订单类型: {nft_detail.order_type}")
-                print(f"   发起者: {nft_detail.offerer}")
-                print(f"   提供项目数量: {len(nft_detail.offer)}")
-                print(f"   期望项目数量: {len(nft_detail.consideration)}")
+                print(f"   Protocol type: {nft_detail.type}")
+                print(f"   Order type: {nft_detail.order_type}")
+                print(f"   Initiator: {nft_detail.offerer}")
+                print(f"   Offer items count: {len(nft_detail.offer)}")
+                print(f"   Consideration items count: {len(nft_detail.consideration)}")
                 
-                # 显示提供的NFT
+                # Display offered NFTs
                 for i, item in enumerate(nft_detail.offer):
                     if item.kind == "nft":
                         print(f"   NFT {i+1}: {item.detail.collection} #{item.detail.token_id}")
                 
-                # 显示期望的代币
+                # Display expected tokens
                 for i, item in enumerate(nft_detail.consideration):
                     if item.kind == "token":
                         eth_amount = float(item.detail.amount) / (10**18)
-                        print(f"   代币 {i+1}: {eth_amount:.4f} ETH")
+                        print(f"   Token {i+1}: {eth_amount:.4f} ETH")
             
             print()
             
-            # 安全检查
-            print("2. 执行安全检查...")
-            security_checker = SecurityChecker(price_threshold=1.0)  # 1 ETH 阈值
+            # Security check
+            print("2. Performing security check...")
+            security_checker = SecurityChecker(price_threshold=1.0)  # 1 ETH threshold
             security_result = security_checker.check_message_security(parsed_message)
             
             if security_result["is_safe"]:
-                print("✅ 安全检查通过")
+                print("✅ Security check passed")
             else:
-                print("⚠️  发现安全风险:")
+                print("⚠️  Security risks found:")
                 for warning in security_result["warnings"]:
                     print(f"   - {warning}")
                 for error in security_result["errors"]:
-                    print(f"   - 错误: {error}")
+                    print(f"   - Error: {error}")
             
-            # 显示价格分析
+            # Display price analysis
             if "price" in security_result["checks"]:
                 price_analysis = security_result["checks"]["price"].get("price_analysis", {})
                 if price_analysis:
-                    print(f"\n3. 价格分析:")
-                    print(f"   NFT数量: {price_analysis.get('nft_count', 0)}")
-                    print(f"   总价格: {price_analysis.get('total_price_eth', 0):.4f} ETH")
+                    print(f"\n3. Price Analysis:")
+                    print(f"   NFT count: {price_analysis.get('nft_count', 0)}")
+                    print(f"   Total price: {price_analysis.get('total_price_eth', 0):.4f} ETH")
             
         else:
-            print("❌ 无法解析该消息")
+            print("❌ Unable to parse this message")
             
     except Exception as e:
-        print(f"❌ 解析过程中发生错误: {e}")
+        print(f"❌ Error occurred during parsing: {e}")
 
 
 if __name__ == "__main__":

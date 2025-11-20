@@ -1,5 +1,5 @@
 """
-ETH Transaction 解析器的数据模型
+ETH Transaction Parser Data Models
 """
 
 from typing import Dict, List, Optional, Union, Any
@@ -9,21 +9,21 @@ import re
 
 
 class TransactionType(str, Enum):
-    """交易类型枚举"""
-    ETH_TRANSFER = "eth_transfer"           # ETH转账
-    TOKEN_TRANSFER = "token_transfer"       # 代币转账
-    TOKEN_APPROVAL = "token_approval"       # 代币授权
-    CONTRACT_DEPLOY = "contract_deploy"     # 合约部署
-    CONTRACT_CALL = "contract_call"         # 合约调用
-    NFT_TRANSFER = "nft_transfer"          # NFT转移
-    NFT_APPROVAL = "nft_approval"          # NFT授权
-    DEFI_SWAP = "defi_swap"                # DeFi交换
-    DEFI_LIQUIDITY = "defi_liquidity"      # DeFi流动性
-    UNKNOWN = "unknown"                     # 未知类型
+    """Transaction type enumeration"""
+    ETH_TRANSFER = "eth_transfer"           # ETH transfer
+    TOKEN_TRANSFER = "token_transfer"       # Token transfer
+    TOKEN_APPROVAL = "token_approval"       # Token approval
+    CONTRACT_DEPLOY = "contract_deploy"     # Contract deployment
+    CONTRACT_CALL = "contract_call"         # Contract call
+    NFT_TRANSFER = "nft_transfer"          # NFT transfer
+    NFT_APPROVAL = "nft_approval"          # NFT approval
+    DEFI_SWAP = "defi_swap"                # DeFi swap
+    DEFI_LIQUIDITY = "defi_liquidity"      # DeFi liquidity
+    UNKNOWN = "unknown"                     # Unknown type
 
 
 class RiskLevel(str, Enum):
-    """风险级别枚举"""
+    """Risk level enumeration"""
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -32,12 +32,12 @@ class RiskLevel(str, Enum):
 
 @dataclass
 class ContractCallInfo:
-    """合约调用信息"""
-    function_selector: Optional[str] = None      # 函数选择器
-    function_name: Optional[str] = None          # 函数名称
-    function_signature: Optional[str] = None     # 函数签名
-    parameters: Dict[str, Any] = None            # 解析的参数
-    raw_data: Optional[str] = None               # 原始calldata
+    """Contract call information"""
+    function_selector: Optional[str] = None      # Function selector
+    function_name: Optional[str] = None          # Function name
+    function_signature: Optional[str] = None     # Function signature
+    parameters: Dict[str, Any] = None            # Parsed parameters
+    raw_data: Optional[str] = None               # Raw calldata
     
     def __post_init__(self):
         if self.parameters is None:
@@ -46,37 +46,37 @@ class ContractCallInfo:
 
 @dataclass
 class TokenInfo:
-    """代币信息"""
-    address: Optional[str] = None                # 代币合约地址
-    symbol: Optional[str] = None                 # 代币符号
-    name: Optional[str] = None                   # 代币名称
-    decimals: Optional[int] = None               # 精度
-    amount: Optional[str] = None                 # 数量
-    amount_formatted: Optional[str] = None       # 格式化后的数量
+    """Token information"""
+    address: Optional[str] = None                # Token contract address
+    symbol: Optional[str] = None                 # Token symbol
+    name: Optional[str] = None                   # Token name
+    decimals: Optional[int] = None               # Decimals
+    amount: Optional[str] = None                 # Amount
+    amount_formatted: Optional[str] = None       # Formatted amount
 
 
 @dataclass
 class EthTransaction:
-    """ETH交易数据"""
-    # 基本交易字段
-    from_address: Optional[str] = None           # 发送方地址
-    to_address: Optional[str] = None             # 接收方地址
-    value: Optional[str] = None                  # 转账金额 (wei)
-    gas: Optional[str] = None                    # Gas限制
-    gas_price: Optional[str] = None              # Gas价格
-    max_fee_per_gas: Optional[str] = None        # EIP-1559 最大费用
-    max_priority_fee_per_gas: Optional[str] = None  # EIP-1559 优先费用
+    """ETH transaction data"""
+    # Basic transaction fields
+    from_address: Optional[str] = None           # Sender address
+    to_address: Optional[str] = None             # Recipient address
+    value: Optional[str] = None                  # Transfer amount (wei)
+    gas: Optional[str] = None                    # Gas limit
+    gas_price: Optional[str] = None              # Gas price
+    max_fee_per_gas: Optional[str] = None        # EIP-1559 max fee
+    max_priority_fee_per_gas: Optional[str] = None  # EIP-1559 priority fee
     nonce: Optional[str] = None                  # Nonce
-    data: Optional[str] = None                   # 交易数据
+    data: Optional[str] = None                   # Transaction data
     
-    # 解析后的信息
-    value_eth: Optional[float] = None            # ETH金额
-    gas_fee_eth: Optional[float] = None          # 预估Gas费用(ETH)
-    is_contract_call: bool = False               # 是否为合约调用
-    is_value_transfer: bool = False              # 是否包含ETH转账
+    # Parsed information
+    value_eth: Optional[float] = None            # ETH amount
+    gas_fee_eth: Optional[float] = None          # Estimated gas fee (ETH)
+    is_contract_call: bool = False               # Whether it's a contract call
+    is_value_transfer: bool = False              # Whether it contains ETH transfer
     
     def __post_init__(self):
-        # 计算ETH金额
+        # Calculate ETH amount
         if self.value and self.value != "0x0":
             try:
                 value_wei = int(self.value, 16) if self.value.startswith("0x") else int(self.value)
@@ -84,20 +84,20 @@ class EthTransaction:
             except (ValueError, TypeError):
                 self.value_eth = 0.0
         
-        # 判断是否为合约调用
+        # Determine if it's a contract call
         self.is_contract_call = bool(self.data and len(self.data) > 2)
         
-        # 判断是否包含价值转移
+        # Determine if it contains value transfer
         self.is_value_transfer = bool(self.value_eth and self.value_eth > 0)
 
 
 @dataclass
 class TransactionAnalysis:
-    """交易分析结果"""
-    # 原始交易
+    """Transaction analysis result"""
+    # Original transaction
     transaction: EthTransaction
     
-    # 分析结果
+    # Analysis result
     transaction_type: TransactionType
     confidence: float                            # 置信度 0-1
     

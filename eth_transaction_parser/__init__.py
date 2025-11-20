@@ -1,6 +1,6 @@
 """
-ETH Transaction 解析器
-用于解析和分析 eth_sendTransaction 交易数据
+ETH Transaction Parser
+Used to parse and analyze eth_sendTransaction transaction data
 """
 
 from .parser import EthTransactionParser

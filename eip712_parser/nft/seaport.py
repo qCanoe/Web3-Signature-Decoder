@@ -1,5 +1,5 @@
 """
-Seaport NFT 市场解析器
+Seaport NFT marketplace parser
 """
 
 from typing import Dict, List, Optional, Union, Any
@@ -34,7 +34,7 @@ class Fulfillment:
 @dataclass
 class CriteriaResolver:
     order_index: int
-    side: int  # 0 | 1
+    side: int  # 0 | 1 (0 = offer, 1 = consideration)
     index: int
     identifier: str
     criteria_proof: List[str]
@@ -105,24 +105,24 @@ class AdvancedOrder:
 
 
 class Seaport:
-    """Seaport NFT 市场解析器"""
+    """Seaport NFT marketplace parser"""
     
-    # 匹配订单的方法签名
+    # Method signature for matching orders
     MATCH_ORDERS_SIGNATURES = ["0xa8174404"]
     
     @staticmethod
     def parse_order(item: Union[OfferItem, ConsiderationItem]) -> ParsedDetail:
         """
-        解析订单项
+        Parse order item
         
         Args:
-            item: 要解析的订单项
+            item: Order item to parse
             
         Returns:
-            解析后的详情
+            Parsed details
         """
         if item.item_type <= 1:
-            # 代币类型 (0: native, 1: erc20)
+            # Token type (0: native, 1: erc20)
             return ParsedDetail(
                 kind="token",
                 detail=FTDetail(
@@ -132,7 +132,7 @@ class Seaport:
                 )
             )
         else:
-            # NFT类型 (2: erc721, 3: erc1155)
+            # NFT type (2: erc721, 3: erc1155)
             return ParsedDetail(
                 kind="nft",
                 detail=NFTDetail(
@@ -145,7 +145,7 @@ class Seaport:
     
     @staticmethod
     def _convert_to_offer_items(offer_data: List[Dict[str, Any]]) -> List[OfferItem]:
-        """将字典数据转换为OfferItem对象"""
+        """Convert dictionary data to OfferItem objects"""
         offer_items = []
         for item_data in offer_data:
             offer_items.append(OfferItem(
@@ -159,7 +159,7 @@ class Seaport:
     
     @staticmethod
     def _convert_to_consideration_items(consideration_data: List[Dict[str, Any]]) -> List[ConsiderationItem]:
-        """将字典数据转换为ConsiderationItem对象"""
+        """Convert dictionary data to ConsiderationItem objects"""
         consideration_items = []
         for item_data in consideration_data:
             consideration_items.append(ConsiderationItem(
@@ -175,53 +175,53 @@ class Seaport:
     @staticmethod
     def parse(typed_data: EIP712Like) -> NFTMessage:
         """
-        解析 Seaport EIP712 消息
+        Parse Seaport EIP712 message
         
         Args:
-            typed_data: EIP712 格式的数据
+            typed_data: Data in EIP712 format
             
         Returns:
-            解析后的 NFT 消息
+            Parsed NFT message
             
         Raises:
-            ValueError: 当数据格式不正确时
+            ValueError: When data format is incorrect
         """
         message = typed_data['message']
         
-        # 检查是否为 Seaport 消息
+        # Check if it's a Seaport message
         if 'offerer' not in message or 'offer' not in message or 'consideration' not in message:
-            raise ValueError("不是有效的 Seaport 消息格式")
+            raise ValueError("Not a valid Seaport message format")
         
         offerer = message['offerer']
         offer_data = message['offer']
         consideration_data = message['consideration']
         
-        # 转换数据格式
+        # Convert data format
         offer_items = Seaport._convert_to_offer_items(offer_data)
         consideration_items = Seaport._convert_to_consideration_items(consideration_data)
         
-        # 解析 offer 项目
+        # Parse offer items
         parsed_offers = [Seaport.parse_order(item) for item in offer_items]
         
-        # 解析 consideration 项目中属于 offerer 的部分
+        # Parse consideration items that belong to offerer
         received_consideration = [
             Seaport.parse_order(item) 
             for item in consideration_items 
             if item.recipient.lower() == offerer.lower()
         ]
         
-        # 计算余额变化
+        # Calculate balance changes
         balance_change: BalanceChange = {}
         
-        # 计算 offerer 发出的项目
+        # Calculate items sent by offerer
         for item in parsed_offers:
             calculate_balance_change(balance_change, offerer, item, False)
         
-        # 计算 offerer 收到的项目
+        # Calculate items received by offerer
         for item in received_consideration:
             calculate_balance_change(balance_change, offerer, item, True)
         
-        # 计算其他接收者的余额变化
+        # Calculate balance changes for other recipients
         other_recipients = set()
         for item in consideration_items:
             if item.recipient.lower() != offerer.lower():
@@ -236,7 +236,7 @@ class Seaport:
             for item in matched_items:
                 calculate_balance_change(balance_change, recipient, item, True)
         
-        # 确定订单类型
+        # Determine order type
         total_nfts = sum(1 for item in parsed_offers if item.kind == "nft")
         order_type = OrderType.LISTING if total_nfts > 0 else OrderType.OFFER
         
@@ -254,13 +254,13 @@ class Seaport:
     @staticmethod
     def parse_from_transaction(transaction: TransactionLike) -> List[NFTMessage]:
         """
-        从交易数据中解析 Seaport 消息
+        Parse Seaport messages from transaction data
         
         Args:
-            transaction: 交易数据
+            transaction: Transaction data
             
         Returns:
-            解析后的 NFT 消息列表
+            List of parsed NFT messages
         """
         if not transaction.data:
             return []
@@ -269,9 +269,9 @@ class Seaport:
         all_orders: List[NFTMessage] = []
         
         if transaction.to and sign_hash in Seaport.MATCH_ORDERS_SIGNATURES:
-            # 这里需要实现 ABI 解码功能
-            # 由于没有完整的 ABI 解码器，这里先返回空列表
-            # 在实际使用中需要使用 web3.py 的 ABI 解码功能
+            # Need to implement ABI decoding functionality here
+            # Since there's no complete ABI decoder, return empty list for now
+            # In actual use, need to use web3.py's ABI decoding functionality
             pass
         
         return all_orders 

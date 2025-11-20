@@ -1,5 +1,5 @@
 """
-ETH Transaction Parser 测试套件
+ETH Transaction Parser Test Suite
 """
 
 import unittest
@@ -10,14 +10,14 @@ from .test_data import TEST_TRANSACTIONS, EXPECTED_RESULTS
 
 
 class TestEthTransactionParser(unittest.TestCase):
-    """ETH交易解析器测试"""
+    """ETH transaction parser tests"""
     
     def setUp(self):
-        """设置测试环境"""
+        """Set up test environment"""
         self.parser = EthTransactionParser(enable_logging=True)
     
     def test_eth_transfer(self):
-        """测试ETH转账"""
+        """Test ETH transfer"""
         tx = TEST_TRANSACTIONS["eth_transfer"]
         analysis = self.parser.parse(tx)
         expected = EXPECTED_RESULTS["eth_transfer"]
@@ -28,12 +28,12 @@ class TestEthTransactionParser(unittest.TestCase):
         self.assertFalse(analysis.transaction.is_contract_call)
         self.assertAlmostEqual(analysis.transaction.value_eth, 0.1, places=6)
         
-        # 检查描述内容
+        # Check description content
         for keyword in expected["description_contains"]:
             self.assertIn(keyword, analysis.description)
     
     def test_erc20_transfer(self):
-        """测试ERC20代币转账"""
+        """Test ERC20 token transfer"""
         tx = TEST_TRANSACTIONS["erc20_transfer"]
         analysis = self.parser.parse(tx)
         expected = EXPECTED_RESULTS["erc20_transfer"]
@@ -44,12 +44,12 @@ class TestEthTransactionParser(unittest.TestCase):
         self.assertIsNotNone(analysis.contract_call)
         self.assertEqual(analysis.contract_call.function_name, "transfer")
         
-        # 检查代币信息
+        # Check token information
         if analysis.token_info:
             self.assertEqual(analysis.token_info.symbol, "USDT")
     
     def test_erc20_approve(self):
-        """测试ERC20代币授权"""
+        """Test ERC20 token approval"""
         tx = TEST_TRANSACTIONS["erc20_approve"]
         analysis = self.parser.parse(tx)
         expected = EXPECTED_RESULTS["erc20_approve"]
@@ -59,12 +59,12 @@ class TestEthTransactionParser(unittest.TestCase):
         self.assertIsNotNone(analysis.contract_call)
         self.assertEqual(analysis.contract_call.function_name, "approve")
         
-        # 检查风险因素
+        # Check risk factors
         self.assertIn("疑似无限代币授权", analysis.risk_factors)
         self.assertTrue(len(analysis.security_warnings) > 0)
     
     def test_uniswap_swap(self):
-        """测试Uniswap交换"""
+        """Test Uniswap swap"""
         tx = TEST_TRANSACTIONS["uniswap_swap"]
         analysis = self.parser.parse(tx)
         expected = EXPECTED_RESULTS["uniswap_swap"]
@@ -73,7 +73,7 @@ class TestEthTransactionParser(unittest.TestCase):
         self.assertEqual(analysis.contract_call.function_name, "swapExactETHForTokens")
     
     def test_nft_transfer(self):
-        """测试NFT转移"""
+        """Test NFT transfer"""
         tx = TEST_TRANSACTIONS["nft_transfer"]
         analysis = self.parser.parse(tx)
         expected = EXPECTED_RESULTS["nft_transfer"]
@@ -82,7 +82,7 @@ class TestEthTransactionParser(unittest.TestCase):
         self.assertEqual(analysis.contract_call.function_name, "transferFrom")
     
     def test_nft_approve_all(self):
-        """测试NFT授权所有"""
+        """Test NFT approve all"""
         tx = TEST_TRANSACTIONS["nft_approve_all"]
         analysis = self.parser.parse(tx)
         expected = EXPECTED_RESULTS["nft_approve_all"]
@@ -92,7 +92,7 @@ class TestEthTransactionParser(unittest.TestCase):
         self.assertIn("NFT全部授权", analysis.risk_factors)
     
     def test_contract_deploy(self):
-        """测试合约部署"""
+        """Test contract deployment"""
         tx = TEST_TRANSACTIONS["contract_deploy"]
         analysis = self.parser.parse(tx)
         expected = EXPECTED_RESULTS["contract_deploy"]
@@ -102,7 +102,7 @@ class TestEthTransactionParser(unittest.TestCase):
         self.assertTrue(analysis.transaction.is_contract_call)
     
     def test_high_value_eth(self):
-        """测试大额ETH转账"""
+        """Test high-value ETH transfer"""
         tx = TEST_TRANSACTIONS["high_value_eth"]
         analysis = self.parser.parse(tx)
         expected = EXPECTED_RESULTS["high_value_eth"]
@@ -113,7 +113,7 @@ class TestEthTransactionParser(unittest.TestCase):
         self.assertAlmostEqual(analysis.transaction.value_eth, 100.0, places=6)
     
     def test_unknown_contract(self):
-        """测试未知合约调用"""
+        """Test unknown contract call"""
         tx = TEST_TRANSACTIONS["unknown_contract"]
         analysis = self.parser.parse(tx)
         expected = EXPECTED_RESULTS["unknown_contract"]
@@ -123,7 +123,7 @@ class TestEthTransactionParser(unittest.TestCase):
         self.assertIn("未知合约调用", analysis.risk_factors)
     
     def test_eip1559_transaction(self):
-        """测试EIP-1559交易"""
+        """Test EIP-1559 transaction"""
         tx = TEST_TRANSACTIONS["eip1559"]
         analysis = self.parser.parse(tx)
         
@@ -133,7 +133,7 @@ class TestEthTransactionParser(unittest.TestCase):
         self.assertAlmostEqual(analysis.transaction.value_eth, 0.01, places=6)
     
     def test_batch_parsing(self):
-        """测试批量解析"""
+        """Test batch parsing"""
         transactions = [
             TEST_TRANSACTIONS["eth_transfer"],
             TEST_TRANSACTIONS["erc20_transfer"],
@@ -148,7 +148,7 @@ class TestEthTransactionParser(unittest.TestCase):
         self.assertEqual(results[2].transaction_type, TransactionType.NFT_TRANSFER)
     
     def test_export_json(self):
-        """测试JSON导出"""
+        """Test JSON export"""
         tx = TEST_TRANSACTIONS["eth_transfer"]
         analysis = self.parser.parse(tx)
         
@@ -160,7 +160,7 @@ class TestEthTransactionParser(unittest.TestCase):
         self.assertIn("transaction", data)
     
     def test_export_text(self):
-        """测试文本导出"""
+        """Test text export"""
         tx = TEST_TRANSACTIONS["erc20_approve"]
         analysis = self.parser.parse(tx)
         
@@ -171,7 +171,7 @@ class TestEthTransactionParser(unittest.TestCase):
         self.assertIn("high", text_result)
     
     def test_transaction_summary(self):
-        """测试交易摘要"""
+        """Test transaction summary"""
         tx = TEST_TRANSACTIONS["uniswap_swap"]
         analysis = self.parser.parse(tx)
         
@@ -182,7 +182,7 @@ class TestEthTransactionParser(unittest.TestCase):
         self.assertIn("swapExactETHForTokens", summary)
     
     def test_invalid_transaction(self):
-        """测试无效交易"""
+        """Test invalid transaction"""
         invalid_tx = {"invalid": "data"}
         analysis = self.parser.parse(invalid_tx)
         
@@ -191,7 +191,7 @@ class TestEthTransactionParser(unittest.TestCase):
         self.assertTrue(len(analysis.security_warnings) > 0)
     
     def test_json_string_input(self):
-        """测试JSON字符串输入"""
+        """Test JSON string input"""
         tx = TEST_TRANSACTIONS["eth_transfer"]
         tx_json = json.dumps(tx)
         
@@ -202,15 +202,15 @@ class TestEthTransactionParser(unittest.TestCase):
 
 
 class TestTransactionAnalyzer(unittest.TestCase):
-    """交易分析器测试"""
+    """Transaction analyzer tests"""
     
     def setUp(self):
-        """设置测试环境"""
+        """Set up test environment"""
         self.parser = EthTransactionParser()
     
     def test_risk_analysis(self):
-        """测试风险分析"""
-        # 高风险：无限授权
+        """Test risk analysis"""
+        # High risk: unlimited approval
         tx = TEST_TRANSACTIONS["erc20_approve"]
         analysis = self.parser.parse(tx)
         risks = self.parser.transaction_analyzer.get_transaction_risks(analysis)
@@ -219,7 +219,7 @@ class TestTransactionAnalyzer(unittest.TestCase):
         self.assertGreater(risks["risk_score"], 60)
         self.assertTrue(len(risks["recommendations"]) > 0)
         
-        # 低风险：普通ETH转账
+        # Low risk: normal ETH transfer
         tx = TEST_TRANSACTIONS["eth_transfer"]
         analysis = self.parser.parse(tx)
         risks = self.parser.transaction_analyzer.get_transaction_risks(analysis)
@@ -228,7 +228,7 @@ class TestTransactionAnalyzer(unittest.TestCase):
         self.assertLess(risks["risk_score"], 30)
     
     def test_transaction_descriptions(self):
-        """测试交易描述生成"""
+        """Test transaction description generation"""
         test_cases = [
             ("eth_transfer", "转账"),
             ("erc20_transfer", "转账"),
@@ -246,15 +246,15 @@ class TestTransactionAnalyzer(unittest.TestCase):
 
 
 class TestParameterExtractor(unittest.TestCase):
-    """参数提取器测试"""
+    """Parameter extractor tests"""
     
     def setUp(self):
-        """设置测试环境"""
+        """Set up test environment"""
         self.parser = EthTransactionParser()
         self.extractor = self.parser.parameter_extractor
     
     def test_contract_call_extraction(self):
-        """测试合约调用信息提取"""
+        """Test contract call information extraction"""
         tx = TEST_TRANSACTIONS["erc20_transfer"]
         call_info = self.extractor.extract_contract_call_info(tx["data"])
         
@@ -265,7 +265,7 @@ class TestParameterExtractor(unittest.TestCase):
         self.assertIn("param_1", call_info.parameters)
     
     def test_token_info_extraction(self):
-        """测试代币信息提取"""
+        """Test token information extraction"""
         tx = TEST_TRANSACTIONS["erc20_transfer"]
         call_info = self.extractor.extract_contract_call_info(tx["data"]) 
         token_info = self.extractor.extract_token_transfer_info(call_info, tx["to"])
@@ -275,7 +275,7 @@ class TestParameterExtractor(unittest.TestCase):
             self.assertIsNotNone(token_info.amount)
     
     def test_gas_info_extraction(self):
-        """测试Gas信息提取"""
+        """Test Gas information extraction"""
         tx = TEST_TRANSACTIONS["eip1559"]
         gas_info = self.extractor.extract_gas_info(tx)
         
@@ -285,7 +285,7 @@ class TestParameterExtractor(unittest.TestCase):
         self.assertIn("max_fee_per_gas_gwei", gas_info)
     
     def test_address_validation(self):
-        """测试地址验证"""
+        """Test address validation"""
         valid_address = "0x742d35cc6670c13f11d1d3b0b99a6de5f8a5e17b"
         invalid_address = "0xinvalid"
         
@@ -293,7 +293,7 @@ class TestParameterExtractor(unittest.TestCase):
         self.assertFalse(self.extractor.validate_address(invalid_address))
     
     def test_hex_data_validation(self):
-        """测试十六进制数据验证"""
+        """Test hexadecimal data validation"""
         valid_hex = "0x1234abcd"
         invalid_hex = "0xzzzz"
         
@@ -302,5 +302,5 @@ class TestParameterExtractor(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    # 运行所有测试
+    # Run all tests
     unittest.main(verbosity=2) 

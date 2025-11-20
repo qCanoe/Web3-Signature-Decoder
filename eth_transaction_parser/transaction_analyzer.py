@@ -1,5 +1,5 @@
 """
-ETH Transaction 交易分析器
+ETH Transaction Analyzer
 """
 
 from typing import Dict, Any, List, Optional
@@ -16,42 +16,42 @@ from .parameter_extractor import TransactionParameterExtractor
 
 
 class TransactionAnalyzer:
-    """交易分析器"""
+    """Transaction analyzer"""
     
     def __init__(self):
         self.parameter_extractor = TransactionParameterExtractor()
     
     def analyze(self, transaction: EthTransaction) -> TransactionAnalysis:
         """
-        分析交易
+        Analyze transaction
         
         Args:
-            transaction: 交易对象
+            transaction: Transaction object
             
         Returns:
-            TransactionAnalysis: 分析结果
+            TransactionAnalysis: Analysis result
         """
-        # 基础分析
+        # Basic analysis
         tx_type, confidence = self._classify_transaction_type(transaction)
         
-        # 提取合约调用信息
+        # Extract contract call information
         contract_call = None
         if transaction.is_contract_call and transaction.data:
             contract_call = self.parameter_extractor.extract_contract_call_info(transaction.data)
         
-        # 提取代币信息
+        # Extract token information
         token_info = None
         if contract_call and transaction.to_address:
             token_info = self.parameter_extractor.extract_token_transfer_info(
                 contract_call, transaction.to_address
             )
         
-        # 风险分析
+        # Risk analysis
         risk_level, risk_factors, security_warnings = self._analyze_risks(
             transaction, contract_call, token_info
         )
         
-        # 生成描述
+        # Generate description
         description = self._generate_description(transaction, tx_type, contract_call, token_info)
         summary = self._generate_summary(transaction, tx_type, contract_call, token_info)
         
@@ -70,13 +70,13 @@ class TransactionAnalyzer:
     
     def _classify_transaction_type(self, transaction: EthTransaction) -> tuple[TransactionType, float]:
         """
-        分类交易类型
+        Classify transaction type
         
         Args:
-            transaction: 交易对象
+            transaction: Transaction object
             
         Returns:
-            tuple: (交易类型, 置信度)
+            tuple: (Transaction type, confidence)
         """
         # ETH转账
         if transaction.is_value_transfer and not transaction.is_contract_call:
@@ -98,20 +98,20 @@ class TransactionAnalyzer:
     
     def _classify_contract_call(self, transaction: EthTransaction) -> tuple[TransactionType, float]:
         """
-        分类合约调用类型
+        Classify contract call type
         
         Args:
-            transaction: 交易对象
+            transaction: Transaction object
             
         Returns:
-            tuple: (交易类型, 置信度)
+            tuple: (Transaction type, confidence)
         """
         if not transaction.data or len(transaction.data) < 10:
             return TransactionType.CONTRACT_CALL, 0.5
         
         function_selector = transaction.data[:10]
         
-        # ERC20 代币操作
+        # ERC20 token operations
         if function_selector == FunctionSelectors.ERC20_TRANSFER:
             return TransactionType.TOKEN_TRANSFER, 0.95
         elif function_selector == FunctionSelectors.ERC20_APPROVE:
@@ -119,7 +119,7 @@ class TransactionAnalyzer:
         elif function_selector == FunctionSelectors.ERC20_TRANSFER_FROM:
             return TransactionType.TOKEN_TRANSFER, 0.9
         
-        # ERC721 NFT操作
+        # ERC721 NFT operations
         elif function_selector in [
             FunctionSelectors.ERC721_TRANSFER_FROM,
             FunctionSelectors.ERC721_SAFE_TRANSFER_FROM
@@ -128,7 +128,7 @@ class TransactionAnalyzer:
         elif function_selector == FunctionSelectors.ERC721_SET_APPROVAL_FOR_ALL:
             return TransactionType.NFT_APPROVAL, 0.95
         
-        # DeFi操作
+        # DeFi operations
         elif function_selector in [
             FunctionSelectors.UNISWAP_SWAP_EXACT_TOKENS,
             FunctionSelectors.UNISWAP_SWAP_EXACT_ETH
@@ -137,7 +137,7 @@ class TransactionAnalyzer:
         elif function_selector == FunctionSelectors.UNISWAP_ADD_LIQUIDITY:
             return TransactionType.DEFI_LIQUIDITY, 0.9
         
-        # 根据合约地址推断
+        # Infer from contract address
         if transaction.to_address:
             contract_type = self._get_contract_type(transaction.to_address)
             if contract_type:
@@ -146,7 +146,7 @@ class TransactionAnalyzer:
         return TransactionType.CONTRACT_CALL, 0.6
     
     def _get_contract_type(self, contract_address: str) -> Optional[TransactionType]:
-        """根据合约地址推断类型"""
+        """Infer type from contract address"""
         known_contracts = {
             KnownContracts.UNISWAP_V2_ROUTER: TransactionType.DEFI_SWAP,
             KnownContracts.UNISWAP_V3_ROUTER: TransactionType.DEFI_SWAP,
@@ -156,84 +156,84 @@ class TransactionAnalyzer:
     
     def _analyze_risks(self, transaction: EthTransaction, contract_call, token_info) -> tuple[RiskLevel, List[str], List[str]]:
         """
-        分析风险
+        Analyze risks
         
         Args:
-            transaction: 交易对象
-            contract_call: 合约调用信息
-            token_info: 代币信息
+            transaction: Transaction object
+            contract_call: Contract call information
+            token_info: Token information
             
         Returns:
-            tuple: (风险级别, 风险因素, 安全警告)
+            tuple: (Risk level, risk factors, security warnings)
         """
         risk_factors = []
         security_warnings = []
         risk_level = RiskLevel.LOW
         
-        # 基础风险检查
+        # Basic risk checks
         if transaction.value_eth and transaction.value_eth > 10:
-            risk_factors.append("大额ETH转账")
+            risk_factors.append("Large ETH transfer")
             risk_level = max(risk_level, RiskLevel.MEDIUM)
         
-        # 合约调用风险
+        # Contract call risks
         if contract_call:
-            # 函数风险检查
+            # Function risk checks
             if contract_call.function_name in RiskKeywords.HIGH_RISK_FUNCTIONS:
-                risk_factors.append(f"高风险函数调用: {contract_call.function_name}")
+                risk_factors.append(f"High-risk function call: {contract_call.function_name}")
                 risk_level = max(risk_level, RiskLevel.HIGH)
             
-            # 授权风险
+            # Approval risks
             if contract_call.function_selector == FunctionSelectors.ERC20_APPROVE:
                 amount = contract_call.parameters.get('param_1', 0)
-                if isinstance(amount, int) and amount > 10**30:  # 极大数值，可能是无限授权
-                    risk_factors.append("疑似无限代币授权")
-                    security_warnings.append("检测到可能的无限授权，请谨慎确认")
+                if isinstance(amount, int) and amount > 10**30:  # Very large value, possibly unlimited approval
+                    risk_factors.append("Suspected unlimited token approval")
+                    security_warnings.append("Detected possible unlimited approval, please confirm carefully")
                     risk_level = max(risk_level, RiskLevel.HIGH)
             
-            # NFT全部授权
+            # NFT full approval
             if contract_call.function_selector == FunctionSelectors.ERC721_SET_APPROVAL_FOR_ALL:
-                risk_factors.append("NFT全部授权")
-                security_warnings.append("将授权操作者管理您的所有NFT")
+                risk_factors.append("NFT full approval")
+                security_warnings.append("Will authorize operator to manage all your NFTs")
                 risk_level = max(risk_level, RiskLevel.MEDIUM)
         
-        # 代币风险
+        # Token risks
         if token_info:
-            # 未知代币
+            # Unknown token
             if not token_info.symbol:
-                risk_factors.append("未知代币合约")
+                risk_factors.append("Unknown token contract")
                 risk_level = max(risk_level, RiskLevel.MEDIUM)
             
-            # 大额代币转移
+            # Large token transfer
             if token_info.amount_formatted:
                 try:
                     amount_float = float(token_info.amount_formatted.replace(',', ''))
-                    if amount_float > 100000:  # 大额转移
-                        risk_factors.append("大额代币转移")
+                    if amount_float > 100000:  # Large transfer
+                        risk_factors.append("Large token transfer")
                         risk_level = max(risk_level, RiskLevel.MEDIUM)
                 except (ValueError, AttributeError):
                     pass
         
-        # 未知合约风险
+        # Unknown contract risks
         if transaction.to_address and not self._is_known_contract(transaction.to_address):
             if transaction.is_contract_call:
-                risk_factors.append("未知合约调用")
+                risk_factors.append("Unknown contract call")
                 risk_level = max(risk_level, RiskLevel.MEDIUM)
         
-        # Gas费用风险
+        # Gas fee risks
         if hasattr(transaction, 'gas_fee_eth') and transaction.gas_fee_eth:
-            if transaction.gas_fee_eth > 0.1:  # 高Gas费
-                risk_factors.append("高Gas费用")
-                security_warnings.append(f"预估Gas费用较高: {transaction.gas_fee_eth:.4f} ETH")
+            if transaction.gas_fee_eth > 0.1:  # High gas fee
+                risk_factors.append("High gas fee")
+                security_warnings.append(f"Estimated gas fee is high: {transaction.gas_fee_eth:.4f} ETH")
         
         return risk_level, risk_factors, security_warnings
     
     def _is_known_contract(self, address: str) -> bool:
-        """检查是否为已知合约"""
+        """Check if it's a known contract"""
         return address.lower() in [addr.lower() for addr in KnownContracts.CONTRACT_NAMES.keys()]
     
     def _generate_description(self, transaction: EthTransaction, tx_type: TransactionType, 
                             contract_call, token_info) -> str:
-        """生成交易描述"""
+        """Generate transaction description"""
         descriptions = {
             TransactionType.ETH_TRANSFER: self._describe_eth_transfer,
             TransactionType.TOKEN_TRANSFER: self._describe_token_transfer,
@@ -250,100 +250,100 @@ class TransactionAnalyzer:
         return describe_func(transaction, contract_call, token_info)
     
     def _describe_eth_transfer(self, transaction: EthTransaction, contract_call, token_info) -> str:
-        """描述ETH转账"""
+        """Describe ETH transfer"""
         amount = transaction.value_eth or 0
-        to_addr = transaction.to_address or "未知地址"
-        return f"向 {to_addr} 转账 {amount:.6f} ETH"
+        to_addr = transaction.to_address or "Unknown address"
+        return f"Transfer {amount:.6f} ETH to {to_addr}"
     
     def _describe_token_transfer(self, transaction: EthTransaction, contract_call, token_info) -> str:
-        """描述代币转账"""
+        """Describe token transfer"""
         if not token_info:
-            return "代币转账操作"
+            return "Token transfer operation"
         
-        symbol = token_info.symbol or "未知代币"
-        amount = token_info.amount_formatted or "未知数量"
+        symbol = token_info.symbol or "Unknown token"
+        amount = token_info.amount_formatted or "Unknown amount"
         
         if contract_call and contract_call.function_name == "transferFrom":
-            return f"从其他地址转移 {amount} {symbol}"
+            return f"Transfer {amount} {symbol} from another address"
         else:
-            return f"转账 {amount} {symbol}"
+            return f"Transfer {amount} {symbol}"
     
     def _describe_token_approval(self, transaction: EthTransaction, contract_call, token_info) -> str:
-        """描述代币授权"""
+        """Describe token approval"""
         if not token_info:
-            return "代币授权操作"
+            return "Token approval operation"
         
-        symbol = token_info.symbol or "未知代币"
-        amount = token_info.amount_formatted or "未知数量"
+        symbol = token_info.symbol or "Unknown token"
+        amount = token_info.amount_formatted or "Unknown amount"
         
-        # 检查是否为无限授权
+        # Check if it's unlimited approval
         if contract_call and contract_call.parameters.get('param_1', 0) > 10**30:
-            return f"无限授权 {symbol} 代币"
+            return f"Unlimited approval for {symbol} token"
         else:
-            return f"授权 {amount} {symbol} 代币"
+            return f"Approve {amount} {symbol} token"
     
     def _describe_contract_deploy(self, transaction: EthTransaction, contract_call, token_info) -> str:
-        """描述合约部署"""
-        return "部署新智能合约"
+        """Describe contract deployment"""
+        return "Deploy new smart contract"
     
     def _describe_contract_call(self, transaction: EthTransaction, contract_call, token_info) -> str:
-        """描述合约调用"""
+        """Describe contract call"""
         if contract_call and contract_call.function_name:
-            return f"调用合约函数: {contract_call.function_name}"
+            return f"Call contract function: {contract_call.function_name}"
         
-        contract_name = KnownContracts.CONTRACT_NAMES.get(transaction.to_address or "", "未知合约")
-        return f"调用 {contract_name} 合约"
+        contract_name = KnownContracts.CONTRACT_NAMES.get(transaction.to_address or "", "Unknown contract")
+        return f"Call {contract_name} contract"
     
     def _describe_nft_transfer(self, transaction: EthTransaction, contract_call, token_info) -> str:
-        """描述NFT转移"""
-        return "转移NFT"
+        """Describe NFT transfer"""
+        return "Transfer NFT"
     
     def _describe_nft_approval(self, transaction: EthTransaction, contract_call, token_info) -> str:
-        """描述NFT授权"""
+        """Describe NFT approval"""
         if contract_call and contract_call.function_selector == FunctionSelectors.ERC721_SET_APPROVAL_FOR_ALL:
-            return "授权管理所有NFT"
-        return "授权NFT"
+            return "Approve operator to manage all NFTs"
+        return "Approve NFT"
     
     def _describe_defi_swap(self, transaction: EthTransaction, contract_call, token_info) -> str:
-        """描述DeFi交换"""
+        """Describe DeFi swap"""
         contract_name = KnownContracts.CONTRACT_NAMES.get(transaction.to_address or "", "DEX")
-        return f"在 {contract_name} 上交换代币"
+        return f"Swap tokens on {contract_name}"
     
     def _describe_defi_liquidity(self, transaction: EthTransaction, contract_call, token_info) -> str:
-        """描述DeFi流动性"""
-        return "添加流动性"
+        """Describe DeFi liquidity"""
+        return "Add liquidity"
     
     def _describe_unknown(self, transaction: EthTransaction, contract_call, token_info) -> str:
-        """描述未知交易"""
-        return "未知类型的交易"
+        """Describe unknown transaction"""
+        return "Unknown transaction type"
     
     def _generate_summary(self, transaction: EthTransaction, tx_type: TransactionType, 
                          contract_call, token_info) -> str:
-        """生成交易摘要"""
+        """Generate transaction summary"""
         parts = []
-        parts.append(f"类型: {tx_type.value}")
+        parts.append(f"Type: {tx_type.value}")
         
         if transaction.value_eth and transaction.value_eth > 0:
             parts.append(f"ETH: {transaction.value_eth:.6f}")
         
         if token_info and token_info.amount_formatted:
-            symbol = token_info.symbol or "代币"
+            symbol = token_info.symbol or "Token"
             parts.append(f"{symbol}: {token_info.amount_formatted}")
         
         if contract_call and contract_call.function_name:
-            parts.append(f"函数: {contract_call.function_name}")
+            parts.append(f"Function: {contract_call.function_name}")
         
         return " | ".join(parts)
     
     def get_transaction_risks(self, analysis: TransactionAnalysis) -> Dict[str, Any]:
         """
-        获取交易风险详情
+        Get transaction risk details
         
         Args:
-            analysis: 交易分析结果
+            analysis: Transaction analysis result
             
         Returns:
-            Dict: 风险详情
+            Dict: Risk details
         """
         return {
             "risk_level": analysis.risk_level.value,
@@ -354,7 +354,7 @@ class TransactionAnalyzer:
         }
     
     def _calculate_risk_score(self, analysis: TransactionAnalysis) -> int:
-        """计算风险分数 (0-100)"""
+        """Calculate risk score (0-100)"""
         base_score = {
             RiskLevel.LOW: 10,
             RiskLevel.MEDIUM: 40,
@@ -362,28 +362,28 @@ class TransactionAnalyzer:
             RiskLevel.CRITICAL: 90
         }.get(analysis.risk_level, 0)
         
-        # 根据风险因素数量调整
+        # Adjust based on number of risk factors
         factor_penalty = min(len(analysis.risk_factors) * 5, 20)
         
         return min(base_score + factor_penalty, 100)
     
     def _get_security_recommendations(self, analysis: TransactionAnalysis) -> List[str]:
-        """获取安全建议"""
+        """Get security recommendations"""
         recommendations = []
         
         if analysis.risk_level in [RiskLevel.HIGH, RiskLevel.CRITICAL]:
-            recommendations.append("请仔细审查交易详情再确认")
+            recommendations.append("Please carefully review transaction details before confirming")
         
-        if "无限授权" in str(analysis.risk_factors):
-            recommendations.append("考虑设置有限的授权数量而非无限授权")
+        if "unlimited" in str(analysis.risk_factors).lower() or "Unlimited" in str(analysis.risk_factors):
+            recommendations.append("Consider setting a limited approval amount instead of unlimited approval")
         
-        if "未知合约" in str(analysis.risk_factors):
-            recommendations.append("请验证合约地址的可信度")
+        if "Unknown contract" in str(analysis.risk_factors):
+            recommendations.append("Please verify the trustworthiness of the contract address")
         
         if analysis.transaction.value_eth and analysis.transaction.value_eth > 5:
-            recommendations.append("大额转账请再次确认接收地址")
+            recommendations.append("Please double-check the recipient address for large transfers")
         
         if analysis.risk_level == RiskLevel.LOW:
-            recommendations.append("交易风险较低，可以正常进行")
+            recommendations.append("Transaction risk is low, can proceed normally")
         
         return recommendations 

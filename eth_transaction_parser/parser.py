@@ -1,5 +1,5 @@
 """
-ETH Transaction 主解析器
+ETH Transaction Main Parser
 """
 
 import json
@@ -11,14 +11,14 @@ from .transaction_analyzer import TransactionAnalyzer
 
 
 class EthTransactionParser:
-    """ETH交易解析器"""
+    """ETH transaction parser"""
     
     def __init__(self, enable_logging: bool = False):
         """
-        初始化解析器
+        Initialize parser
         
         Args:
-            enable_logging: 是否启用日志
+            enable_logging: Whether to enable logging
         """
         self.logger = logging.getLogger(__name__)
         if enable_logging:
@@ -29,52 +29,52 @@ class EthTransactionParser:
     
     def parse(self, transaction_data: Union[str, Dict[str, Any]]) -> TransactionAnalysis:
         """
-        解析交易数据
+        Parse transaction data
         
         Args:
-            transaction_data: 交易数据 (JSON字符串或字典)
+            transaction_data: Transaction data (JSON string or dictionary)
             
         Returns:
-            TransactionAnalysis: 解析和分析结果
+            TransactionAnalysis: Parsing and analysis result
         """
         try:
-            # 解析输入数据
+            # Parse input data
             if isinstance(transaction_data, str):
                 tx_dict = json.loads(transaction_data)
             else:
                 tx_dict = transaction_data
             
-            # 提取交易参数
+            # Extract transaction parameters
             transaction = self._extract_transaction_params(tx_dict)
             
-            # 分析交易
+            # Analyze transaction
             analysis = self.transaction_analyzer.analyze(transaction)
             
-            self.logger.info(f"解析完成: {analysis.transaction_type.value}")
+            self.logger.info(f"Parsing completed: {analysis.transaction_type.value}")
             return analysis
             
         except Exception as e:
-            self.logger.error(f"解析失败: {str(e)}")
-            # 返回基本的错误分析
+            self.logger.error(f"Parsing failed: {str(e)}")
+            # Return basic error analysis
             return TransactionAnalysis(
                 transaction=EthTransaction(),
                 transaction_type=TransactionType.UNKNOWN,
                 confidence=0.0,
                 risk_level=RiskLevel.HIGH,
-                security_warnings=[f"解析错误: {str(e)}"],
-                description="交易解析失败",
-                summary="无法解析的交易"
+                security_warnings=[f"Parsing error: {str(e)}"],
+                description="Transaction parsing failed",
+                summary="Unable to parse transaction"
             )
     
     def _extract_transaction_params(self, tx_dict: Dict[str, Any]) -> EthTransaction:
         """
-        提取交易参数
+        Extract transaction parameters
         
         Args:
-            tx_dict: 交易字典
+            tx_dict: Transaction dictionary
             
         Returns:
-            EthTransaction: 交易对象
+            EthTransaction: Transaction object
         """
         return EthTransaction(
             from_address=tx_dict.get('from'),
@@ -90,13 +90,13 @@ class EthTransactionParser:
     
     def parse_batch(self, transactions: list) -> list:
         """
-        批量解析交易
+        Batch parse transactions
         
         Args:
-            transactions: 交易列表
+            transactions: List of transactions
             
         Returns:
-            list: 解析结果列表
+            list: List of parsing results
         """
         results = []
         for tx in transactions:
@@ -104,38 +104,38 @@ class EthTransactionParser:
                 result = self.parse(tx)
                 results.append(result)
             except Exception as e:
-                self.logger.error(f"批量解析中的单个交易失败: {str(e)}")
+                self.logger.error(f"Single transaction failed in batch parsing: {str(e)}")
                 results.append(None)
         
         return results
     
     def get_transaction_summary(self, analysis: TransactionAnalysis) -> str:
         """
-        获取交易摘要
+        Get transaction summary
         
         Args:
-            analysis: 交易分析结果
+            analysis: Transaction analysis result
             
         Returns:
-            str: 交易摘要
+            str: Transaction summary
         """
         tx = analysis.transaction
         
-        # 基本信息
+        # Basic information
         summary_parts = [
-            f"交易类型: {analysis.transaction_type.value}",
-            f"发送方: {tx.from_address or '未知'}",
-            f"接收方: {tx.to_address or '未知'}",
+            f"Transaction type: {analysis.transaction_type.value}",
+            f"From: {tx.from_address or 'Unknown'}",
+            f"To: {tx.to_address or 'Unknown'}",
         ]
         
-        # 价值转移
+        # Value transfer
         if tx.value_eth and tx.value_eth > 0:
-            summary_parts.append(f"ETH数量: {tx.value_eth:.6f} ETH")
+            summary_parts.append(f"ETH amount: {tx.value_eth:.6f} ETH")
         
-        # 合约调用
+        # Contract call
         if analysis.contract_call:
             if analysis.contract_call.function_name:
-                summary_parts.append(f"调用函数: {analysis.contract_call.function_name}")
+                summary_parts.append(f"Function called: {analysis.contract_call.function_name}")
         
         # 代币信息
         if analysis.token_info:

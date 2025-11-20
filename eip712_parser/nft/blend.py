@@ -1,5 +1,5 @@
 """
-Blend NFT 市场解析器
+Blend NFT marketplace parser
 """
 
 from typing import List
@@ -7,40 +7,40 @@ from ..types import EIP712Like, NFTMessage, TransactionLike
 
 
 class Blend:
-    """Blend NFT 市场解析器"""
+    """Blend NFT marketplace parser"""
     
     @staticmethod
     def parse(typed_data: EIP712Like) -> NFTMessage:
         """
-        解析 Blend EIP712 消息
+        Parse Blend EIP712 message
         
         Args:
-            typed_data: EIP712 格式的数据
+            typed_data: EIP712 format data
             
         Returns:
-            解析后的 NFT 消息
+            Parsed NFT message
             
         Raises:
-            ValueError: 当数据格式不正确时
+            ValueError: When data format is incorrect
         """
-        # 检查是否为 Blend 消息格式
+        # Check if it's a Blend message format
         primary_type = typed_data.get('primaryType', '')
         if 'LoanOffer' not in primary_type:
-            raise ValueError("不是有效的 Blend 消息格式")
+            raise ValueError("Not a valid Blend message format")
         
-        # TODO: 实现 Blend 特定的解析逻辑
-        raise NotImplementedError("Blend 解析器尚未实现")
+        # TODO: Implement Blend specific parsing logic
+        raise NotImplementedError("Blend parser not yet implemented")
     
     @staticmethod
     def parse_from_transaction(transaction: TransactionLike) -> List[NFTMessage]:
         """
-        从交易数据中解析 Blend 消息
+        Parse Blend messages from transaction data
         
         Args:
-            transaction: 交易数据
+            transaction: Transaction data
             
         Returns:
-            解析后的 NFT 消息列表
+            List of parsed NFT messages
         """
-        # TODO: 实现从交易解析的逻辑
+        # TODO: Implement transaction parsing logic
         return [] 

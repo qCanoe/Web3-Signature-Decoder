@@ -1,9 +1,9 @@
 """
-EIP712 测试数据
-包含各种类型的 EIP712 签名测试样本
+EIP712 Test Data
+Contains various types of EIP712 signature test samples
 """
 
-# Seaport NFT 订单数据
+# Seaport NFT order data
 SEAPORT_ORDER_DATA = {
     "types": {
         "EIP712Domain": [
@@ -86,7 +86,7 @@ SEAPORT_ORDER_DATA = {
     }
 }
 
-# ERC20 Permit 授权数据
+# ERC20 Permit authorization data
 PERMIT_DATA = {
     "types": {
         "EIP712Domain": [
@@ -119,7 +119,7 @@ PERMIT_DATA = {
     }
 }
 
-# DAO 投票数据
+# DAO voting data
 DAO_VOTING_DATA = {
     "types": {
         "EIP712Domain": [
@@ -152,7 +152,7 @@ DAO_VOTING_DATA = {
     }
 }
 
-# 自定义复杂结构数据
+# Custom complex structure data
 CUSTOM_STRUCT_DATA = {
     "types": {
         "EIP712Domain": [
@@ -202,7 +202,7 @@ CUSTOM_STRUCT_DATA = {
     }
 }
 
-# 简单分析用的 Permit 数据
+# Simple Permit data for analysis
 SIMPLE_PERMIT_DATA = {
     "types": {
         "EIP712Domain": [
@@ -231,7 +231,7 @@ SIMPLE_PERMIT_DATA = {
     }
 }
 
-# 测试数据集合
+# Test data set
 TEST_DATA_SET = {
     "seaport_order": SEAPORT_ORDER_DATA,
     "permit": PERMIT_DATA,
