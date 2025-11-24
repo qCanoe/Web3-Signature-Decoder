@@ -1,0 +1,46 @@
+{
+  "nft_marketplace": [
+    "opensea",
+    "blur",
+    "looksrare",
+    "x2y2",
+    "seaport",
+    "nft",
+    "marketplace"
+  ],
+  "defi": [
+    "uniswap",
+    "sushiswap",
+    "aave",
+    "compound",
+    "maker",
+    "curve",
+    "balancer",
+    "1inch",
+    "pancakeswap"
+  ],
+  "governance": [
+    "governance",
+    "vote",
+    "dao",
+    "snapshot"
+  ],
+  "bridge": [
+    "bridge",
+    "wormhole",
+    "multichain",
+    "stargate",
+    "across"
+  ],
+  "lending": [
+    "aave",
+    "compound",
+    "maker",
+    "lending"
+  ],
+  "staking": [
+    "stake",
+    "validator",
+    "delegation"
+  ]
+}

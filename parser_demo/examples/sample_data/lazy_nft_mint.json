@@ -1,0 +1,63 @@
+{
+  "types": {
+    "EIP712Domain": [
+      {
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "name": "version",
+        "type": "string"
+      },
+      {
+        "name": "chainId",
+        "type": "uint256"
+      },
+      {
+        "name": "verifyingContract",
+        "type": "address"
+      }
+    ],
+    "LazyNFTVoucher": [
+      {
+        "name": "tokenId",
+        "type": "uint256"
+      },
+      {
+        "name": "minPrice",
+        "type": "uint256"
+      },
+      {
+        "name": "uri",
+        "type": "string"
+      },
+      {
+        "name": "creator",
+        "type": "address"
+      },
+      {
+        "name": "royalty",
+        "type": "uint256"
+      },
+      {
+        "name": "deadline",
+        "type": "uint256"
+      }
+    ]
+  },
+  "primaryType": "LazyNFTVoucher",
+  "domain": {
+    "name": "LazyNFT",
+    "version": "1",
+    "chainId": 1,
+    "verifyingContract": "0x7f268357A8c2552623316e2562D90e642bB538E5"
+  },
+  "message": {
+    "tokenId": 42,
+    "minPrice": "100000000000000000",
+    "uri": "https://example.com/metadata/42",
+    "creator": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+    "royalty": 250,
+    "deadline": 1699987456
+  }
+}

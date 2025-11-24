@@ -1,0 +1,44 @@
+{
+  "user": [
+    "owner",
+    "user",
+    "signer",
+    "from",
+    "sender",
+    "account",
+    "wallet",
+    "address"
+  ],
+  "spender": [
+    "spender",
+    "operator",
+    "approved",
+    "delegate",
+    "recipient",
+    "to"
+  ],
+  "protocol": [
+    "contract",
+    "verifyingContract",
+    "protocol",
+    "dapp",
+    "app"
+  ],
+  "marketplace": [
+    "marketplace",
+    "exchange",
+    "platform",
+    "market"
+  ],
+  "governance": [
+    "governor",
+    "proposer",
+    "delegate",
+    "voter"
+  ],
+  "bridge": [
+    "bridge",
+    "relayer",
+    "validator"
+  ]
+}

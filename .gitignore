@@ -1,0 +1,271 @@
+# ==========================================
+# Sensitive Information and Key Files
+# ==========================================
+api_key.txt
+*.key
+*.pem
+*.secret
+*.token
+*.credential
+*.credentials
+config/secrets.py
+secrets.py
+.secrets
+
+# ==========================================
+# Environment Variables and Configuration Files
+# ==========================================
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+.env.test
+*.env
+.envrc
+.env.local.*
+config.ini
+settings.ini
+local_settings.py
+local_config.py
+
+# ==========================================
+# Python
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+cython_debug/
+*.pyc
+*.pyo
+*.pyd
+*.manifest
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.venv
+virtualenv/
+
+# ==========================================
+# IDE / Editors
+# ==========================================
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.vscode-test/
+.idea/
+*.iml
+*.ipr
+*.iws
+*.sublime-project
+*.sublime-workspace
+*.sublime-*
+.project
+.classpath
+.settings/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.history/
+*.code-workspace
+
+# ==========================================
+# Testing & Coverage (already included in Python section, kept here for clarity)
+# ==========================================
+# Note: .pytest_cache/, .coverage, .tox/, .hypothesis/ are already defined in Python section
+htmlcov/
+
+# ==========================================
+# Jupyter Notebook
+# ==========================================
+.ipynb_checkpoints
+*.ipynb
+
+# ==========================================
+# Flask / Web
+# ==========================================
+instance/
+.webassets-cache
+*.db
+*.sqlite
+*.sqlite3
+flask_session/
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Node.js (if used)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+.npm
+.eslintcache
+.node_repl_history
+*.tgz
+.yarn-integrity
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# ==========================================
+# Logs
+# ==========================================
+*.log
+*.log.*
+logs/
+log/
+*.out
+*.err
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# ==========================================
+# OS
+# ==========================================
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Linux
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ==========================================
+# Documentation
+# ==========================================
+framework.md
+
+# ==========================================
+# Temporary and Backup Files
+# ==========================================
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+*.orig
+*.save
+*~
+.#*
+\#*#
+.*.swp
+.*.swo
+*.swp
+*.swo
+
+# ==========================================
+# Compressed Files and Archives
+# ==========================================
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+*.gz
+*.bz2
+*.xz
+
+# ==========================================
+# Others
+# ==========================================
+*.pid
+*.seed
+*.pid.lock
+.cache/
+.parcel-cache/
+.next/
+out/
+.nuxt/
+.vuepress/dist/
+.serverless/
+.fusebox/
+.dynamodb/
+.tern-port
+*.tsbuildinfo
+.eslintcache
+.stylelintcache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/

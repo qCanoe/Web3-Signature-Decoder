@@ -1,0 +1,59 @@
+{
+  "authentication": {
+    "keywords": [
+      "login",
+      "sign in",
+      "signin",
+      "log in",
+      "authenticate",
+      "session"
+    ],
+    "patterns": [
+      "welcome.*to",
+      "sign\\s*in",
+      "log\\s*in"
+    ]
+  },
+  "binding": {
+    "keywords": [
+      "bind",
+      "link",
+      "connect",
+      "verify account"
+    ],
+    "patterns": [
+      "link.*account",
+      "connect.*to",
+      "confirm.*email",
+      "confirm.*phone"
+    ]
+  },
+  "authorization": {
+    "keywords": [
+      "authorize",
+      "permission",
+      "grant",
+      "approve",
+      "delegate"
+    ],
+    "patterns": [
+      "grant.*access",
+      "approve.*to",
+      "allow.*access"
+    ]
+  },
+  "verification": {
+    "keywords": [
+      "verify",
+      "confirm",
+      "validate",
+      "challenge",
+      "prove"
+    ],
+    "patterns": [
+      "verify.*ownership",
+      "check.*identity",
+      "prove.*ownership"
+    ]
+  }
+}

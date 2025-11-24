@@ -1,0 +1,67 @@
+{
+  "1": {
+    "0x000000000022d473030f116ddee9f6b43ac78ba3": "Permit2",
+    "0x00000000006c3852cbef3e08e8df289169ede581": "Seaport 1.5",
+    "0x00000000000001ead0be4a986c470d2743e30801": "Seaport 1.6",
+    "0x000000000000ad05ccc4f10045630fb830b95127": "Blur Marketplace",
+    "0x7be8076f4ea4a4ad08075c2508e481d6c946d12b": "OpenSea Wyvern",
+    "0x59728544b08ab483533076417fbbb2fd0b17ce3a": "LooksRare",
+    "0x74312363e45dcbae111dfd7a88828f2b0e3d4c97": "X2Y2",
+    "0x7a250d5630b4cf539739df2c5dacb4c659f2488d": "Uniswap V2 Router",
+    "0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45": "Uniswap V3 Router",
+    "0xe592427a0aece92de3edee1f18e0157c05861564": "Uniswap V3 SwapRouter",
+    "0xd9e1ce17f2641f24ae83637ab66a2cca9c378b9f": "SushiSwap Router",
+    "0x1111111254fb6c44bac0bed2854e76f90643097d": "1inch V5 Router",
+    "0x11111112542d85b3ef69ae05771c2dccff4faa26": "1inch V4 Router",
+    "0x881d40237659c251811cec9c364ef91dc08d300c": "Metamask Swap Router",
+    "0x7d2768de32b0b80b7a3454c06bdac94a69ddc7a9": "Aave V2 Lending Pool",
+    "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2": "Aave V3 Pool",
+    "0x3d9819210a31b4961b30ef54be2aed79b9c9cd3b": "Compound V2 Comptroller",
+    "0xc3d688b66703497daa19211eedd47e79280c5b90": "Compound V3 USDC Pool",
+    "0x408ed6354d4973fef38d7b3f0c5c5b5c5b5c5b5c": "Uniswap Governance",
+    "0x6f3e6272a167e8accb32072d08e0958fbc2f2599": "Aave Governance",
+    "0xc0da02939e1441f497fd74f78ce7decb17b66529": "Compound Governance",
+    "0x4d9078bb51c1f155272317c558a889fe8f4c2621": "Polygon Bridge",
+    "0x3ee18b2214aff97000d974cf647e7c347e8fa585": "Wormhole",
+    "0x3d4cc8a61c7528fd86c55cfe061a78ecba48fedf": "Across Protocol"
+  },
+  "137": {
+    "0x000000000022d473030f116ddee9f6b43ac78ba3": "Permit2",
+    "0x00000000006c3852cbef3e08e8df289169ede581": "Seaport 1.5",
+    "0xa5e0829caced8ffdd4de3c43696c57f7d7a678ff": "QuickSwap Router",
+    "0x1b02da8cb0d097eb8d57a175b88c7d8b47997506": "SushiSwap Router",
+    "0x794a61358d6845594f94dc1db02a252b5b4814ad": "Aave V3 Pool"
+  },
+  "42161": {
+    "0x000000000022d473030f116ddee9f6b43ac78ba3": "Permit2",
+    "0x00000000006c3852cbef3e08e8df289169ede581": "Seaport 1.5",
+    "0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45": "Uniswap V3 Router",
+    "0x794a61358d6845594f94dc1db02a252b5b4814ad": "Aave V3 Pool",
+    "0x1111111254fb6c44bac0bed2854e76f90643097d": "1inch V5 Router"
+  },
+  "10": {
+    "0x000000000022d473030f116ddee9f6b43ac78ba3": "Permit2",
+    "0x00000000006c3852cbef3e08e8df289169ede581": "Seaport 1.5",
+    "0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45": "Uniswap V3 Router",
+    "0x794a61358d6845594f94dc1db02a252b5b4814ad": "Aave V3 Pool"
+  },
+  "8453": {
+    "0x000000000022d473030f116ddee9f6b43ac78ba3": "Permit2",
+    "0x00000000006c3852cbef3e08e8df289169ede581": "Seaport 1.5",
+    "0x2626664c2603336e57b271c5c0b26f421741e481": "Uniswap V3 Router",
+    "0xb4885bc63399bf5518b3c4ae904ac6f3bbd9f5a8": "Aave V3 Pool"
+  },
+  "56": {
+    "0x10ed43c718714eb63d5aa57b78b54704e256024e": "PancakeSwap V2 Router",
+    "0x13f4ea83d0bd40e75c8222255bc855a974568dd4": "PancakeSwap V3 Router",
+    "0x1111111254fb6c44bac0bed2854e76f90643097d": "1inch V5 Router"
+  },
+  "43114": {
+    "0x60ae616a2155ee3d9a68541ba4544862310933d4": "TraderJoe Router",
+    "0x794a61358d6845594f94dc1db02a252b5b4814ad": "Aave V3 Pool"
+  },
+  "250": {
+    "0xf491e7b69e4244ad4002bc14e878a34207e38c29": "SpookySwap Router",
+    "0x16327e3fbdaca3bcf7e38f5af2599d2ddc33ae52": "SpiritSwap Router"
+  }
+}

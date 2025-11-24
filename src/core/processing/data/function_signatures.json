@@ -1,0 +1,512 @@
+{
+  "0xa9059cbb": {
+    "name": "transfer",
+    "signature": "transfer(address,uint256)",
+    "params": [
+      "address",
+      "uint256"
+    ],
+    "param_names": [
+      "to",
+      "amount"
+    ],
+    "category": "erc20_transfer"
+  },
+  "0x095ea7b3": {
+    "name": "approve",
+    "signature": "approve(address,uint256)",
+    "params": [
+      "address",
+      "uint256"
+    ],
+    "param_names": [
+      "spender",
+      "amount"
+    ],
+    "category": "erc20_approve"
+  },
+  "0x23b872dd": {
+    "name": "transferFrom",
+    "signature": "transferFrom(address,address,uint256)",
+    "params": [
+      "address",
+      "address",
+      "uint256"
+    ],
+    "param_names": [
+      "from",
+      "to",
+      "amount"
+    ],
+    "category": "erc20_transfer_from"
+  },
+  "0x42842e0e": {
+    "name": "safeTransferFrom",
+    "signature": "safeTransferFrom(address,address,uint256)",
+    "params": [
+      "address",
+      "address",
+      "uint256"
+    ],
+    "param_names": [
+      "from",
+      "to",
+      "tokenId"
+    ],
+    "category": "erc721_transfer"
+  },
+  "0xb88d4fde": {
+    "name": "safeTransferFrom",
+    "signature": "safeTransferFrom(address,address,uint256,bytes)",
+    "params": [
+      "address",
+      "address",
+      "uint256",
+      "bytes"
+    ],
+    "param_names": [
+      "from",
+      "to",
+      "tokenId",
+      "data"
+    ],
+    "category": "erc721_transfer"
+  },
+  "0x2e1a7d4d": {
+    "name": "withdraw",
+    "signature": "withdraw(address,uint256)",
+    "params": [
+      "address",
+      "uint256"
+    ],
+    "param_names": [
+      "token",
+      "amount"
+    ],
+    "category": "bridge_unlock"
+  },
+  "0x38ed1739": {
+    "name": "swapExactTokensForTokens",
+    "signature": "swapExactTokensForTokens(uint256,uint256,address[],address,uint256)",
+    "params": [
+      "uint256",
+      "uint256",
+      "bytes32",
+      "address",
+      "uint256"
+    ],
+    "param_names": [
+      "amountIn",
+      "amountOutMin",
+      "path",
+      "to",
+      "deadline"
+    ],
+    "category": "defi_swap"
+  },
+  "0x7ff36ab5": {
+    "name": "swapExactETHForTokens",
+    "signature": "swapExactETHForTokens(uint256,address[],address,uint256)",
+    "params": [
+      "uint256",
+      "bytes32",
+      "address",
+      "uint256"
+    ],
+    "param_names": [
+      "amountOutMin",
+      "path",
+      "to",
+      "deadline"
+    ],
+    "category": "defi_swap"
+  },
+  "0xfb3bdb41": {
+    "name": "swapExactETHForTokensSupportingFeeOnTransferTokens",
+    "signature": "swapExactETHForTokensSupportingFeeOnTransferTokens(uint256,address[],address,uint256)",
+    "params": [
+      "uint256",
+      "bytes32",
+      "address",
+      "uint256"
+    ],
+    "param_names": [
+      "amountOutMin",
+      "path",
+      "to",
+      "deadline"
+    ],
+    "category": "defi_swap"
+  },
+  "0x8a8c523c": {
+    "name": "permit",
+    "signature": "permit(address,address,uint256,uint256,uint8,bytes32,bytes32)",
+    "params": [
+      "address",
+      "address",
+      "uint256",
+      "uint256",
+      "uint8",
+      "bytes32",
+      "bytes32"
+    ],
+    "param_names": [
+      "owner",
+      "spender",
+      "value",
+      "deadline",
+      "v",
+      "r",
+      "s"
+    ],
+    "category": "erc20_permit"
+  },
+  "0xd505accf": {
+    "name": "permit2Permit",
+    "signature": "permit(address,address,uint160,uint48,uint48,bytes)",
+    "params": [
+      "address",
+      "address",
+      "uint256",
+      "uint256",
+      "uint256",
+      "bytes"
+    ],
+    "param_names": [
+      "owner",
+      "spender",
+      "amount",
+      "expiration",
+      "nonce",
+      "signature"
+    ],
+    "category": "permit2"
+  },
+  "0x70a08231": {
+    "name": "balanceOf",
+    "signature": "balanceOf(address)",
+    "params": [
+      "address"
+    ],
+    "param_names": [
+      "owner"
+    ],
+    "category": "view"
+  },
+  "0x6352211e": {
+    "name": "ownerOf",
+    "signature": "ownerOf(uint256)",
+    "params": [
+      "uint256"
+    ],
+    "param_names": [
+      "tokenId"
+    ],
+    "category": "view"
+  },
+  "0x081812fc": {
+    "name": "setApprovalForAll",
+    "signature": "setApprovalForAll(address,bool)",
+    "params": [
+      "address",
+      "bool"
+    ],
+    "param_names": [
+      "operator",
+      "approved"
+    ],
+    "category": "nft_approval"
+  },
+  "0x40c10f19": {
+    "name": "mint",
+    "signature": "mint(address,uint256)",
+    "params": [
+      "address",
+      "uint256"
+    ],
+    "param_names": [
+      "to",
+      "amount"
+    ],
+    "category": "nft_mint"
+  },
+  "0x42966c68": {
+    "name": "burn",
+    "signature": "burn(uint256)",
+    "params": [
+      "uint256"
+    ],
+    "param_names": [
+      "tokenId"
+    ],
+    "category": "nft_burn"
+  },
+  "0xf242432a": {
+    "name": "safeTransferFrom",
+    "signature": "safeTransferFrom(address,address,uint256,uint256,bytes)",
+    "params": [
+      "address",
+      "address",
+      "uint256",
+      "uint256",
+      "bytes"
+    ],
+    "param_names": [
+      "from",
+      "to",
+      "id",
+      "value",
+      "data"
+    ],
+    "category": "erc1155_transfer"
+  },
+  "0x2eb2c2d6": {
+    "name": "safeBatchTransferFrom",
+    "signature": "safeBatchTransferFrom(address,address,uint256[],uint256[],bytes)",
+    "params": [
+      "address",
+      "address",
+      "uint256[]",
+      "uint256[]",
+      "bytes"
+    ],
+    "param_names": [
+      "from",
+      "to",
+      "ids",
+      "values",
+      "data"
+    ],
+    "category": "erc1155_batch_transfer"
+  },
+  "0x414bf389": {
+    "name": "exactInputSingle",
+    "signature": "exactInputSingle((address,address,uint24,address,uint256,uint256,uint160))",
+    "params": [
+      "tuple"
+    ],
+    "param_names": [
+      "params"
+    ],
+    "category": "defi_swap"
+  },
+  "0xdb3e2198": {
+    "name": "exactInput",
+    "signature": "exactInput((bytes,address,uint256,uint256,uint256))",
+    "params": [
+      "tuple"
+    ],
+    "param_names": [
+      "params"
+    ],
+    "category": "defi_swap"
+  },
+  "0x04e45aaf": {
+    "name": "exactOutputSingle",
+    "signature": "exactOutputSingle((address,address,uint24,address,uint256,uint256,uint160))",
+    "params": [
+      "tuple"
+    ],
+    "param_names": [
+      "params"
+    ],
+    "category": "defi_swap"
+  },
+  "0x617ba037": {
+    "name": "borrow",
+    "signature": "borrow(address,uint256,uint256,uint16,address)",
+    "params": [
+      "address",
+      "uint256",
+      "uint256",
+      "uint16",
+      "address"
+    ],
+    "param_names": [
+      "asset",
+      "amount",
+      "interestRateMode",
+      "referralCode",
+      "onBehalfOf"
+    ],
+    "category": "defi_borrow"
+  },
+  "0x69328dec": {
+    "name": "withdraw",
+    "signature": "withdraw(address,uint256,address)",
+    "params": [
+      "address",
+      "uint256",
+      "address"
+    ],
+    "param_names": [
+      "asset",
+      "amount",
+      "to"
+    ],
+    "category": "defi_withdraw"
+  },
+  "0x573ade81": {
+    "name": "repay",
+    "signature": "repay(address,uint256,uint256,address)",
+    "params": [
+      "address",
+      "uint256",
+      "uint256",
+      "address"
+    ],
+    "param_names": [
+      "asset",
+      "amount",
+      "rateMode",
+      "onBehalfOf"
+    ],
+    "category": "defi_repay"
+  },
+  "0x1249c58b": {
+    "name": "mint",
+    "signature": "mint(uint256)",
+    "params": [
+      "uint256"
+    ],
+    "param_names": [
+      "mintAmount"
+    ],
+    "category": "defi_supply"
+  },
+  "0x852a12e3": {
+    "name": "redeem",
+    "signature": "redeem(uint256)",
+    "params": [
+      "uint256"
+    ],
+    "param_names": [
+      "redeemTokens"
+    ],
+    "category": "defi_withdraw"
+  },
+  "0x4e4d9fea": {
+    "name": "repayBorrow",
+    "signature": "repayBorrow(uint256)",
+    "params": [
+      "uint256"
+    ],
+    "param_names": [
+      "repayAmount"
+    ],
+    "category": "defi_repay"
+  },
+  "0xa694fc3a": {
+    "name": "stake",
+    "signature": "stake(uint256)",
+    "params": [
+      "uint256"
+    ],
+    "param_names": [
+      "amount"
+    ],
+    "category": "defi_stake"
+  },
+  "0x3d18b912": {
+    "name": "unstake",
+    "signature": "unstake(uint256)",
+    "params": [
+      "uint256"
+    ],
+    "param_names": [
+      "amount"
+    ],
+    "category": "defi_unstake"
+  },
+  "0x379607f5": {
+    "name": "claimRewards",
+    "signature": "claimRewards()",
+    "params": [],
+    "param_names": [],
+    "category": "defi_claim"
+  },
+  "0x56781388": {
+    "name": "castVote",
+    "signature": "castVote(uint256,uint8)",
+    "params": [
+      "uint256",
+      "uint8"
+    ],
+    "param_names": [
+      "proposalId",
+      "support"
+    ],
+    "category": "governance"
+  },
+  "0x0d582f13": {
+    "name": "castVoteWithReason",
+    "signature": "castVoteWithReason(uint256,uint8,string)",
+    "params": [
+      "uint256",
+      "uint8",
+      "string"
+    ],
+    "param_names": [
+      "proposalId",
+      "support",
+      "reason"
+    ],
+    "category": "governance"
+  },
+  "0x5c19a95c": {
+    "name": "delegate",
+    "signature": "delegate(address)",
+    "params": [
+      "address"
+    ],
+    "param_names": [
+      "delegatee"
+    ],
+    "category": "governance_delegation"
+  },
+  "0x44cee73c": {
+    "name": "deposit",
+    "signature": "deposit(address,uint256)",
+    "params": [
+      "address",
+      "uint256"
+    ],
+    "param_names": [
+      "token",
+      "amount"
+    ],
+    "category": "bridge_lock"
+  },
+  "0x7c025200": {
+    "name": "fillOrder",
+    "signature": "fillOrder((uint256,address,address,address,address,uint256,uint256,uint256,bytes,bytes),bytes,uint256,uint256)",
+    "params": [
+      "tuple",
+      "bytes",
+      "uint256",
+      "uint256"
+    ],
+    "param_names": [
+      "order",
+      "signature",
+      "makingAmount",
+      "takingAmount"
+    ],
+    "category": "defi_swap"
+  },
+  "0x415565b0": {
+    "name": "fillRfqOrder",
+    "signature": "fillRfqOrder((uint256,address,address,address,address,uint128,uint128,bytes32,bytes),bytes,uint128)",
+    "params": [
+      "tuple",
+      "bytes",
+      "uint128"
+    ],
+    "param_names": [
+      "order",
+      "signature",
+      "takerTokenFillAmount"
+    ],
+    "category": "defi_swap"
+  }
+}
