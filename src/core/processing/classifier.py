@@ -41,11 +41,28 @@ class Classifier:
         category = KnowledgeBase.get_eip712_category(primary_type)
         if category != "unknown":
             ir.action_type = category
+            # Additional checks for specific categories
+            if category in ["bridge", "bridge_lock", "bridge_unlock", "bridge_redeem"]:
+                Classifier._classify_bridge(ir)
+            elif category in ["governance_delegation", "delegation"]:
+                Classifier._classify_delegation(ir)
             return
 
         # 2. Heuristics based on fields
         params = ir.params
         keys = [k.lower() for k in params.keys()]
+        
+        # Check for bridge patterns
+        if Classifier._classify_bridge(ir):
+            return
+        
+        # Check for delegation patterns
+        if Classifier._classify_delegation(ir):
+            return
+        
+        # Check for cross-contract patterns
+        if Classifier._classify_cross_contract(ir):
+            return
         
         if "spender" in keys and ("value" in keys or "amount" in keys):
             ir.action_type = "approve"
@@ -58,6 +75,119 @@ class Classifier:
             ir.action_type = "authorization"
         else:
             ir.action_type = "structured_data_sign"
+    
+    @staticmethod
+    def _classify_bridge(ir: IntermediateRepresentation) -> bool:
+        """
+        Classify bridge/cross-chain operations.
+        
+        Returns:
+            True if classified as bridge operation
+        """
+        params = ir.params
+        keys = [k.lower() for k in params.keys()]
+        
+        # Bridge indicators
+        bridge_keywords = [
+            "destinationchain", "targetchain", "sourcechain", "chainid",
+            "lock", "unlock", "redeem", "mint", "burn", "bridge",
+            "relayer", "wormhole", "multichain", "layerzero"
+        ]
+        
+        # Check contract name
+        contract_name = KnowledgeBase.get_contract_name(ir.chain_id, ir.contract or "")
+        if contract_name:
+            contract_lower = contract_name.lower()
+            if any(kw in contract_lower for kw in ["bridge", "wormhole", "multichain", "layerzero", "across"]):
+                ir.action_type = "bridge"
+                return True
+        
+        # Check domain name
+        domain = ir.metadata.get("domain", {})
+        domain_name = domain.get("name", "").lower()
+        if any(kw in domain_name for kw in ["bridge", "cross-chain", "multichain"]):
+            ir.action_type = "bridge"
+            return True
+        
+        # Check field names
+        if any(kw in keys for kw in bridge_keywords):
+            if "lock" in keys or "deposit" in keys:
+                ir.action_type = "bridge_lock"
+            elif "unlock" in keys or "withdraw" in keys:
+                ir.action_type = "bridge_unlock"
+            elif "redeem" in keys or "mint" in keys:
+                ir.action_type = "bridge_redeem"
+            else:
+                ir.action_type = "bridge"
+            return True
+        
+        return False
+    
+    @staticmethod
+    def _classify_delegation(ir: IntermediateRepresentation) -> bool:
+        """
+        Classify delegation operations (voting power delegation).
+        
+        Returns:
+            True if classified as delegation operation
+        """
+        params = ir.params
+        keys = [k.lower() for k in params.keys()]
+        primary_type = ir.metadata.get("primaryType", "").lower()
+        
+        # Delegation keywords
+        delegation_keywords = ["delegate", "delegation", "delegatee", "delegator"]
+        
+        # Check primary type
+        if any(kw in primary_type for kw in delegation_keywords):
+            ir.action_type = "governance_delegation"
+            return True
+        
+        # Check field names
+        if any(kw in keys for kw in delegation_keywords):
+            ir.action_type = "governance_delegation"
+            return True
+        
+        # Check function name in decoded call
+        decoded_call = ir.decoded_call or {}
+        func_name = decoded_call.get("function_name", "").lower()
+        if "delegate" in func_name:
+            ir.action_type = "governance_delegation"
+            return True
+        
+        return False
+    
+    @staticmethod
+    def _classify_cross_contract(ir: IntermediateRepresentation) -> bool:
+        """
+        Classify cross-contract operations (operations that involve multiple contracts).
+        
+        Returns:
+            True if classified as cross-contract operation
+        """
+        # Check if transaction involves router or aggregator patterns
+        decoded_call = ir.decoded_call or {}
+        contract_name = KnowledgeBase.get_contract_name(ir.chain_id, ir.contract or "")
+        
+        if contract_name:
+            contract_lower = contract_name.lower()
+            # Router contracts often perform cross-contract operations
+            if "router" in contract_lower or "aggregator" in contract_lower:
+                # Check if it's a swap or complex operation
+                func_name = decoded_call.get("function_name", "").lower()
+                if "swap" in func_name or "multicall" in func_name or "batch" in func_name:
+                    ir.action_type = "cross_contract_interaction"
+                    return True
+        
+        # Check for multicall patterns in data
+        calldata = ir.params.get("calldata", "")
+        if calldata and len(calldata) > 10:
+            # Multicall selector: 0xac9650d8
+            if calldata.startswith("0xac9650d8"):
+                ir.action_type = "cross_contract_interaction"
+                return True
+        
+        return False
 
     @staticmethod
     def _classify_transaction(ir: IntermediateRepresentation):

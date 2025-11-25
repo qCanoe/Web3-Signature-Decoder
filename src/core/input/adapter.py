@@ -116,16 +116,25 @@ class InputAdapter:
         elif isinstance(chain_id, str) and chain_id.isdigit():
              chain_id = int(chain_id)
 
+        # Parse nested EIP-712 types recursively
+        types = data.get("types", {})
+        primary_type = data.get("primaryType", "")
+        message = data.get("message", {})
+        
+        # Flatten nested structures while preserving hierarchy
+        flattened_params = InputAdapter._flatten_eip712_message(message, primary_type, types)
+        
         ir = IntermediateRepresentation(
             signature_type=SignatureType.ETH_SIGN_TYPED_DATA_V4,
             raw_data=data,
             chain_id=chain_id,
             contract=domain.get("verifyingContract"),
-            params=data.get("message", {}),
+            params=flattened_params,
             metadata={
-                "primaryType": data.get("primaryType"),
+                "primaryType": primary_type,
                 "domain": domain,
-                "types": data.get("types")
+                "types": types,
+                "original_message": message  # Preserve original structure
             }
         )
         
@@ -136,6 +145,56 @@ class InputAdapter:
             pass
         
         return ir
+    
+    @staticmethod
+    def _flatten_eip712_message(message: Dict[str, Any], type_name: str, types: Dict[str, Any], prefix: str = "") -> Dict[str, Any]:
+        """
+        Recursively flatten nested EIP-712 message structures.
+        
+        Args:
+            message: The message dictionary to flatten
+            type_name: The type name of the current message
+            types: The types dictionary containing type definitions
+            prefix: Prefix for flattened keys (for nested structures)
+            
+        Returns:
+            Flattened dictionary with all nested fields
+        """
+        flattened: Dict[str, Any] = {}
+        
+        if type_name not in types:
+            # If type not found, just return the message as-is
+            return {f"{prefix}{k}" if prefix else k: v for k, v in message.items()}
+        
+        type_def = types[type_name]
+        if not isinstance(type_def, list):
+            return flattened
+        
+        for field_def in type_def:
+            if not isinstance(field_def, dict):
+                continue
+            
+            field_name = field_def.get("name")
+            field_type = field_def.get("type")
+            
+            if not field_name or field_name not in message:
+                continue
+            
+            field_value = message[field_name]
+            field_key = f"{prefix}{field_name}" if prefix else field_name
+            
+            # Check if field_type is a custom type (nested structure)
+            if field_type in types and isinstance(field_value, dict):
+                # Recursively flatten nested structure
+                nested_flattened = InputAdapter._flatten_eip712_message(
+                    field_value, field_type, types, prefix=f"{field_key}."
+                )
+                flattened.update(nested_flattened)
+            else:
+                # Primitive type or array, add directly
+                flattened[field_key] = field_value
+        
+        return flattened
 
     @staticmethod
     def _adapt_transaction(data: Dict[str, Any]) -> IntermediateRepresentation:
@@ -179,10 +238,36 @@ class InputAdapter:
         if isinstance(data, dict):
             msg_content = data.get("message")
         
+        # Parse EIP-191 prefix if present
+        eip191_prefix = None
+        actual_message = msg_content
+        
+        if isinstance(msg_content, str):
+            # Check for EIP-191 standard prefix: \x19Ethereum Signed Message:\n{length}{message}
+            if msg_content.startswith("\x19Ethereum Signed Message:\n"):
+                eip191_prefix = "standard"
+                # Extract the actual message (skip prefix + length)
+                parts = msg_content.split("\n", 1)
+                if len(parts) == 2:
+                    try:
+                        # First part after prefix is length
+                        length_part = parts[0].replace("\x19Ethereum Signed Message:\n", "")
+                        if length_part.isdigit():
+                            actual_message = parts[1]
+                    except:
+                        pass
+            elif "\x19" in msg_content:
+                eip191_prefix = "custom"
+        
+        params = {
+            "message": actual_message,
+            "eip191_prefix": eip191_prefix
+        }
+        
         return IntermediateRepresentation(
             signature_type=SignatureType.PERSONAL_SIGN,
             raw_data=data,
-            params={"message": msg_content}
+            params=params
         )
 
     @staticmethod

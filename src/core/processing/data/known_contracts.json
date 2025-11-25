@@ -63,5 +63,22 @@
   "250": {
     "0xf491e7b69e4244ad4002bc14e878a34207e38c29": "SpookySwap Router",
     "0x16327e3fbdaca3bcf7e38f5af2599d2ddc33ae52": "SpiritSwap Router"
+  },
+  "100": {
+    "0x2d4cc8a61c7528fd86c55cfe061a78ecba48fedf": "Gnosis Chain Bridge",
+    "0x1111111254fb6c44bac0bed2854e76f90643097d": "1inch V5 Router"
+  },
+  "324": {
+    "0x1111111254fb6c44bac0bed2854e76f90643097d": "1inch V5 Router",
+    "0x68b3465833fb72a70ecdf485e0e4c7bd8665fc45": "Uniswap V3 Router"
+  },
+  "42220": {
+    "0x1111111254fb6c44bac0bed2854e76f90643097d": "1inch V5 Router"
+  },
+  "1284": {
+    "0x1111111254fb6c44bac0bed2854e76f90643097d": "1inch V5 Router"
+  },
+  "1285": {
+    "0x1111111254fb6c44bac0bed2854e76f90643097d": "1inch V5 Router"
   }
 }

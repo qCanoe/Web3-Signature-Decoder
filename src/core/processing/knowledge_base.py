@@ -3,6 +3,8 @@ import re
 import json
 import os
 from pathlib import Path
+from functools import lru_cache
+from ..config import Config
 
 # Get the directory where this file is located
 _DATA_DIR = Path(__file__).parent / "data"
@@ -48,27 +50,32 @@ class KnowledgeBase:
     }
 
     @staticmethod
+    @lru_cache(maxsize=1000 if Config.PERFORMANCE["enable_caching"] else None)
     def get_function_name(selector: str) -> Optional[str]:
         definition = KnowledgeBase.get_function_definition(selector)
         return definition.get("name") if definition else None
 
     @staticmethod
+    @lru_cache(maxsize=1000 if Config.PERFORMANCE["enable_caching"] else None)
     def get_function_definition(selector: Optional[str]) -> Optional[Dict[str, Any]]:
         if not selector:
             return None
         return KnowledgeBase.FUNCTION_SIGNATURES.get(selector.lower())
 
     @staticmethod
+    @lru_cache(maxsize=500 if Config.PERFORMANCE["enable_caching"] else None)
     def get_eip712_category(primary_type: str) -> str:
         return KnowledgeBase.EIP712_TYPES.get(primary_type, "unknown")
 
     @staticmethod
+    @lru_cache(maxsize=2000 if Config.PERFORMANCE["enable_caching"] else None)
     def get_contract_name(chain_id: int, address: str) -> Optional[str]:
         if not chain_id or not address:
             return None
         return KnowledgeBase.KNOWN_CONTRACTS.get(chain_id, {}).get(address.lower())
 
     @staticmethod
+    @lru_cache(maxsize=2000 if Config.PERFORMANCE["enable_caching"] else None)
     def get_token_metadata(address: Optional[str]) -> Dict[str, Any]:
         if not address:
             return {}
@@ -109,6 +116,7 @@ class KnowledgeBase:
         return None
     
     @staticmethod
+    @lru_cache(maxsize=500 if Config.PERFORMANCE["enable_caching"] else None)
     def identify_protocol_type(domain_name: str, contract_address: Optional[str] = None, chain_id: Optional[int] = None) -> Optional[str]:
         """
         Identify the protocol type based on domain name and contract address.
@@ -143,6 +151,7 @@ class KnowledgeBase:
         return None
     
     @staticmethod
+    @lru_cache(maxsize=100 if CACHE_ENABLED else None)
     def get_chain_name(chain_id: int) -> str:
         """Get human-readable chain name from chain ID."""
         return KnowledgeBase._CHAIN_NAMES.get(chain_id, f"Chain {chain_id}")

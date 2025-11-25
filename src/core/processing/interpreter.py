@@ -145,32 +145,66 @@ class Interpreter:
         """
         Infer the scope of permissions being granted.
         Corresponds to infer_permission_level() in the framework.
+        Returns more granular permission levels.
         """
         action_type = structure.action.raw_value
         
         # Check for infinite approval
+        is_infinite = False
         for ctx in structure.context:
             if "Infinite" in ctx.description or ctx.risk_factor == "high":
                 amount = ctx.raw_value
                 if KnowledgeBase.is_infinite_allowance(amount):
-                    return "unlimited"
+                    is_infinite = True
+                    break
         
         # Check amount values
         amount_values = [c.raw_value for c in structure.context if "Amount" in c.description or "value" in c.description.lower()]
         for amount in amount_values:
             if KnowledgeBase.is_infinite_allowance(amount):
-                return "unlimited"
+                is_infinite = True
+                break
         
         # Check for time-limited permissions
-        has_deadline = any("deadline" in c.description.lower() or "expiry" in c.description.lower() 
-                          for c in structure.context)
-        if has_deadline:
-            return "time_limited"
+        has_deadline = False
+        deadline_value = None
+        for ctx in structure.context:
+            if "deadline" in ctx.description.lower() or "expiry" in ctx.description.lower():
+                has_deadline = True
+                deadline_value = ctx.raw_value
+                break
+        
+        # Check if deadline is far in the future or permanent
+        is_permanent = True
+        if has_deadline and deadline_value:
+            try:
+                deadline_int = int(deadline_value)
+                import time
+                current_time = int(time.time())
+                # If deadline is more than 1 year away, consider it effectively permanent
+                if deadline_int > current_time + 31536000:  # 1 year
+                    is_permanent = True
+                elif deadline_int > current_time:
+                    is_permanent = False
+            except:
+                pass
         
         # Check for single-use patterns (nonce-based)
         has_nonce = any("nonce" in c.description.lower() for c in structure.context)
         if has_nonce and action_type in ["authorization", "permit"]:
             return "single_use"
+        
+        # Determine granular permission level
+        if is_infinite:
+            if is_permanent or not has_deadline:
+                return "unlimited_permanent"
+            else:
+                return "unlimited_time_limited"
+        else:
+            if is_permanent or not has_deadline:
+                return "specific_amount_permanent"
+            else:
+                return "specific_amount_time_limited"
         
         # Check for specific amount
         if amount_values:
@@ -182,7 +216,7 @@ class Interpreter:
         elif action_type == "authentication":
             return "session_based"
         elif action_type == "authorization":
-            return "time_limited"  # Permits usually have deadlines
+            return "time_limited" if has_deadline else "specific_amount_permanent"
         
         return None
     
@@ -190,13 +224,14 @@ class Interpreter:
         """
         Detect hidden implications and risk patterns.
         Corresponds to detect_risk_patterns() in the framework.
+        Enhanced with more sophisticated pattern detection.
         """
         implications = []
         
         # 1. Check for infinite approval
         for ctx in structure.context:
             if "Infinite" in ctx.description:
-                implications.append("Unlimited spending permission - contract can spend all tokens")
+                implications.append("Unlimited spending permission - contract can spend all tokens without further approval")
                 break
         
         # 2. Check for high-value transfers
@@ -222,20 +257,42 @@ class Interpreter:
         if "delegate" in structure.action.raw_value.lower() or "delegation" in structure.action.raw_value.lower():
             implications.append("Voting power delegation - delegate can vote on your behalf")
         
-        # 6. Check for unknown contracts
+        # 6. Check for implicit delegation (through permit)
+        if structure.action.raw_value == "authorization" and structure.permission_scope == "unlimited_permanent":
+            implications.append("Implicit delegation - permit grants unlimited permanent access, can be used for on-chain actions")
+        
+        # 7. Check for cross-contract operations
+        if structure.action.raw_value == "cross_contract_interaction":
+            implications.append("Cross-contract operation - involves multiple contracts, verify all interactions")
+        
+        # 8. Check for long-term permissions
+        if structure.permission_scope in ["unlimited_permanent", "specific_amount_permanent"]:
+            implications.append("Permanent permission - no expiration date, requires manual revocation")
+        
+        # 9. Check for unknown contracts
         if ir.contract and not KnowledgeBase.get_contract_name(ir.chain_id, ir.contract):
             implications.append("Unknown contract - verify contract address before proceeding")
         
-        # 7. Check for eth_sign (blind signing)
+        # 10. Check for eth_sign (blind signing)
         if ir.signature_type == SignatureType.ETH_SIGN:
             implications.append("Blind signing - signing raw hash without seeing content")
         
-        # 8. Check for suspicious patterns in personal sign messages
+        # 11. Check for suspicious patterns in personal sign messages
         if ir.signature_type == SignatureType.PERSONAL_SIGN:
             message = str(ir.params.get("message", "")).lower()
             suspicious_keywords = ["urgent", "immediately", "verify", "claim", "reward"]
             if any(kw in message for kw in suspicious_keywords):
                 implications.append("Suspicious message content - may be phishing attempt")
+        
+        # 12. Check for bridge operations (cross-chain risk)
+        if structure.action.raw_value in ["bridge", "bridge_lock", "bridge_unlock", "bridge_redeem"]:
+            implications.append("Bridge operation - assets will be locked/unlocked on different chains")
+        
+        # 13. Check for router/aggregator patterns (indirect operations)
+        contract_name = KnowledgeBase.get_contract_name(ir.chain_id, ir.contract or "")
+        if contract_name and ("router" in contract_name.lower() or "aggregator" in contract_name.lower()):
+            if structure.action.raw_value == "defi_swap":
+                implications.append("Router contract - may execute multiple operations across different contracts")
         
         return implications
 
@@ -250,6 +307,8 @@ class Interpreter:
         if structure.action.raw_value == "approve":
             amount = next((c.raw_value for c in structure.context if "Amount" in c.description or "Infinite" in c.description), "tokens")
             spender = next((c.raw_value for c in structure.context if c.role == "Spender" or c.description == "Spender"), "contract")
+            if "Infinite" in str(amount) or KnowledgeBase.is_infinite_allowance(amount):
+                return f"You are authorizing {spender} to spend unlimited {obj} tokens on your behalf."
             return f"You are authorizing {spender} to spend {amount} of your {obj}."
 
         if structure.action.raw_value == "transfer_asset":
@@ -261,6 +320,28 @@ class Interpreter:
             
         if structure.action.raw_value == "marketplace_listing":
             return f"You are listing items for sale on {obj}."
+        
+        if structure.action.raw_value in ["bridge", "bridge_lock"]:
+            dest_chain = next((c.raw_value for c in structure.context if "Destination Chain" in c.description or "targetChain" in c.description.lower()), None)
+            if dest_chain:
+                return f"You are locking assets on {obj} to bridge to chain {dest_chain}."
+            return f"You are locking assets on {obj} bridge."
+        
+        if structure.action.raw_value in ["bridge_unlock", "bridge_redeem"]:
+            return f"You are unlocking/redeeming assets from {obj} bridge."
+        
+        if structure.action.raw_value == "governance_delegation":
+            delegatee = next((c.raw_value for c in structure.context if "delegate" in c.description.lower() or "delegatee" in c.description.lower()), "delegate")
+            return f"You are delegating voting power to {delegatee} for {obj}."
+        
+        if structure.action.raw_value == "cross_contract_interaction":
+            return f"You are performing a complex operation through {obj} that may involve multiple contracts."
+        
+        if structure.action.raw_value == "defi_swap":
+            amount_in = next((c.raw_value for c in structure.context if "Input Amount" in c.description or "amountIn" in c.description.lower()), None)
+            if amount_in:
+                return f"You are swapping {amount_in} through {obj}."
+            return f"You are performing a swap through {obj}."
 
         return None
 

@@ -42,6 +42,36 @@ class StructureParser:
         # the contract being empowered.
         # Standard: Actor = User (Sender)
         # Enhanced: Try to identify actor role from context
+        
+        # For nested EIP-712, try to extract from nested structures
+        if ir.signature_type == SignatureType.ETH_SIGN_TYPED_DATA_V4:
+            # Check for nested actor fields (e.g., message.from.wallet)
+            params = ir.params
+            actor_value = None
+            actor_description = "Current User"
+            
+            # Try common nested patterns
+            if "from.wallet" in params:
+                actor_value = params["from.wallet"]
+                actor_description = "Sender"
+            elif "from" in params and isinstance(params["from"], dict):
+                actor_value = params["from"].get("wallet") or params["from"].get("address")
+                actor_description = "Sender"
+            elif "owner" in params:
+                actor_value = params["owner"]
+                actor_description = "Owner"
+            elif "signer" in params:
+                actor_value = params["signer"]
+                actor_description = "Signer"
+            
+            if actor_value:
+                return SemanticComponent(
+                    role="Actor",
+                    description=actor_description,
+                    raw_value=actor_value
+                )
+        
+        # Fallback to standard extraction
         actor_description = "Current User"
         actor_value = ir.sender or "User Wallet"
         
@@ -89,6 +119,54 @@ class StructureParser:
         
         # Case 1: EIP-712
         if ir.signature_type == SignatureType.ETH_SIGN_TYPED_DATA_V4:
+            # Try to identify specific object types from nested structures
+            params = ir.params
+            
+            # Check for token address
+            token_addr = params.get("token") or params.get("tokenAddress") or params.get("asset")
+            if token_addr:
+                token_meta = KnowledgeBase.get_token_metadata(token_addr)
+                symbol = token_meta.get("symbol", "TOKEN") if token_meta else "TOKEN"
+                return SemanticComponent(
+                    role="Object",
+                    description=f"{symbol} Token",
+                    raw_value=token_addr
+                )
+            
+            # Check for NFT contract
+            nft_addr = params.get("nft") or params.get("collection") or params.get("contract")
+            if nft_addr:
+                return SemanticComponent(
+                    role="Object",
+                    description="NFT Collection",
+                    raw_value=nft_addr
+                )
+            
+            # Check for governance contract
+            proposal_id = params.get("proposalId") or params.get("proposal")
+            if proposal_id:
+                return SemanticComponent(
+                    role="Object",
+                    description=f"Governance Proposal #{proposal_id}",
+                    raw_value=str(proposal_id)
+                )
+            
+            # Check for nested structures (e.g., message.to.wallet)
+            if "to.wallet" in params:
+                return SemanticComponent(
+                    role="Object",
+                    description="Recipient",
+                    raw_value=params["to.wallet"]
+                )
+            elif "to" in params and isinstance(params["to"], dict):
+                to_wallet = params["to"].get("wallet") or params["to"].get("address")
+                if to_wallet:
+                    return SemanticComponent(
+                        role="Object",
+                        description="Recipient",
+                        raw_value=to_wallet
+                    )
+            
             # Usually the verifying contract is the context/object
             contract_addr = ir.contract
             name = ir.metadata.get("domain", {}).get("name")
@@ -100,6 +178,21 @@ class StructureParser:
             
         # Case 2: Transaction
         if ir.signature_type == SignatureType.ETH_SEND_TRANSACTION:
+            # Try to identify token from decoded call
+            decoded = ir.decoded_call or {}
+            params = decoded.get("parameters", {})
+            token_addr = params.get("token") or ir.contract
+            
+            if token_addr:
+                token_meta = KnowledgeBase.get_token_metadata(token_addr)
+                if token_meta:
+                    symbol = token_meta.get("symbol", "TOKEN")
+                    return SemanticComponent(
+                        role="Object",
+                        description=f"{symbol} Token",
+                        raw_value=token_addr
+                    )
+            
             return SemanticComponent(
                 role="Object",
                 description="Target Contract",
@@ -240,5 +333,26 @@ class StructureParser:
             for k, v in extracted.items():
                 if k not in ["nonce", "timestamp", "address", "domain"]:
                     ctx.append(SemanticComponent(role="Context", description=k.title(), raw_value=v))
+        
+        # EIP-712 Nested Context Extraction
+        if ir.signature_type == SignatureType.ETH_SIGN_TYPED_DATA_V4:
+            # Extract all nested fields that weren't already captured
+            for key, value in params.items():
+                # Skip already processed fields
+                if key in ["message", "message_cleaned"]:
+                    continue
+                
+                # Skip if already in context
+                if any(c.description == key.title() for c in ctx):
+                    continue
+                
+                # Add nested fields with dot notation
+                if "." in key:
+                    # This is a nested field, add it
+                    desc = key.replace(".", " ").title()
+                    ctx.append(SemanticComponent(role="Context", description=desc, raw_value=value))
+                elif key not in ["nonce", "deadline", "expiry", "value", "amount", "spender", "to"]:
+                    # Add other top-level fields
+                    ctx.append(SemanticComponent(role="Context", description=key.title(), raw_value=value))
 
         return ctx

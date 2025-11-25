@@ -508,5 +508,113 @@
       "takerTokenFillAmount"
     ],
     "category": "defi_swap"
+  },
+  "0x5c19a95c": {
+    "name": "delegate",
+    "signature": "delegate(address)",
+    "params": [
+      "address"
+    ],
+    "param_names": [
+      "delegatee"
+    ],
+    "category": "governance_delegation"
+  },
+  "0xda95691a": {
+    "name": "delegateBySig",
+    "signature": "delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32)",
+    "params": [
+      "address",
+      "uint256",
+      "uint256",
+      "uint8",
+      "bytes32",
+      "bytes32"
+    ],
+    "param_names": [
+      "delegatee",
+      "nonce",
+      "expiry",
+      "v",
+      "r",
+      "s"
+    ],
+    "category": "governance_delegation"
+  },
+  "0xac9650d8": {
+    "name": "multicall",
+    "signature": "multicall(bytes[])",
+    "params": [
+      "bytes[]"
+    ],
+    "param_names": [
+      "data"
+    ],
+    "category": "cross_contract_interaction"
+  },
+  "0x1f931c1c": {
+    "name": "multicall",
+    "signature": "multicall(uint256,bytes[])",
+    "params": [
+      "uint256",
+      "bytes[]"
+    ],
+    "param_names": [
+      "deadline",
+      "data"
+    ],
+    "category": "cross_contract_interaction"
+  },
+  "0x44cee73c": {
+    "name": "deposit",
+    "signature": "deposit(address,uint256)",
+    "params": [
+      "address",
+      "uint256"
+    ],
+    "param_names": [
+      "token",
+      "amount"
+    ],
+    "category": "bridge_lock"
+  },
+  "0x2e1a7d4d": {
+    "name": "withdraw",
+    "signature": "withdraw(address,uint256)",
+    "params": [
+      "address",
+      "uint256"
+    ],
+    "param_names": [
+      "token",
+      "amount"
+    ],
+    "category": "bridge_unlock"
+  },
+  "0x852a12e3": {
+    "name": "redeem",
+    "signature": "redeem(uint256)",
+    "params": [
+      "uint256"
+    ],
+    "param_names": [
+      "amount"
+    ],
+    "category": "bridge_redeem"
+  },
+  "0x3593564c": {
+    "name": "execute",
+    "signature": "execute(bytes,bytes[],uint256[])",
+    "params": [
+      "bytes",
+      "bytes[]",
+      "uint256[]"
+    ],
+    "param_names": [
+      "target",
+      "callData",
+      "value"
+    ],
+    "category": "cross_contract_interaction"
   }
 }
