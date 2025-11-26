@@ -5,10 +5,15 @@ Supports environment variable overrides.
 
 import os
 from typing import Dict, Any, Optional
+from pathlib import Path
 
 
 class Config:
     """Configuration settings for the signature decoder."""
+    
+    # Base directories
+    BASE_DIR = Path(__file__).parent.parent
+    DATA_DIR = BASE_DIR / "core" / "processing" / "data"
     
     # Risk assessment thresholds
     RISK_THRESHOLDS = {
@@ -17,10 +22,39 @@ class Config:
         "low": 0
     }
     
+    # Risk scoring weights
+    RISK_SCORES = {
+        "high_risk_param": 40,
+        "medium_risk_param": 20,
+        "approve": 15,
+        "transfer": 25,
+        "high_value_transfer": 30,
+        "authentication": -10,
+        "authorization": 20,
+        "bridge": 30,
+        "delegation": 25,
+        "cross_contract": 20,
+        "unlimited_permanent": 50,
+        "unlimited_time_limited": 35,
+        "permanent": 25,
+        "phishing": 60,
+        "blind_signing": 50,
+        "unknown_contract": 20
+    }
+
     # Financial thresholds
     FINANCIAL_THRESHOLDS = {
         "high_value_eth": int(os.getenv("HIGH_VALUE_ETH_THRESHOLD", "1000000000000000000")),  # 1 ETH
         "high_value_usd": float(os.getenv("HIGH_VALUE_USD_THRESHOLD", "1000.0"))  # $1000
+    }
+    
+    # Phishing detection keywords
+    PHISHING_KEYWORDS = {
+        "urgent": ["urgent", "urgently", "immediately", "asap"],
+        "time_pressure": ["expires", "deadline", "limited time", "act now"],
+        "authority": ["verify", "confirm", "validate", "verification required"],
+        "reward": ["claim", "reward", "bonus", "prize", "free"],
+        "threat": ["suspend", "block", "disable", "freeze"]
     }
     
     # EIP-712 validation settings
@@ -91,4 +125,3 @@ class Config:
             section_dict = getattr(Config, section)
             if isinstance(section_dict, dict):
                 section_dict.update(updates)
-

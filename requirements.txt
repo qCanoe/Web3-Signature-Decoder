@@ -1,16 +1,8 @@
-# 核心依赖
 eth-utils>=2.0.0
 web3>=6.0.0
 eth-abi>=4.0.0
 requests>=2.28.0
 pydantic>=2.0.0
 typing-extensions>=4.0.0
-
-# Web UI 依赖
 flask>=2.0.0
 
-# AI增强功能（可选）
-# pip install sentence-transformers  # embedding功能
-# pip install openai                 # LLM功能
-# pip install torch                  # 深度学习框架
-# pip install numpy                  # 数值计算 

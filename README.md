@@ -41,9 +41,8 @@ The codebase is designed for research on signature transparency and can serve as
 │       ├── templates/     # HTML templates
 │       └── static/        # Static assets (CSS, JS, images)
 │
-└── parser_demo/           # Legacy demo version
-    ├── core.py           # Original parser
-    ├── web_ui.py         # Demo web interface
-    ├── examples/         # Sample data and demos
-    └── static/           # Demo UI assets
+├── tests/                 # Standardized tests
+│   ├── test_core.py       # Unit tests for core logic
+│   └── test_pipeline.py   # Integration tests for pipeline
+└── src/utils/mock_data.py # Shared test data
 ```

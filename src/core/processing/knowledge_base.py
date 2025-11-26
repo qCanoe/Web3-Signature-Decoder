@@ -6,8 +6,8 @@ from pathlib import Path
 from functools import lru_cache
 from ..config import Config
 
-# Get the directory where this file is located
-_DATA_DIR = Path(__file__).parent / "data"
+# Get the directory from Config
+_DATA_DIR = Config.DATA_DIR
 
 def _load_json(filename: str) -> Dict[str, Any]:
     """Load JSON data from data directory."""
@@ -151,7 +151,7 @@ class KnowledgeBase:
         return None
     
     @staticmethod
-    @lru_cache(maxsize=100 if CACHE_ENABLED else None)
+    @lru_cache(maxsize=100 if Config.PERFORMANCE["enable_caching"] else None)
     def get_chain_name(chain_id: int) -> str:
         """Get human-readable chain name from chain ID."""
         return KnowledgeBase._CHAIN_NAMES.get(chain_id, f"Chain {chain_id}")

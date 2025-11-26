@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 from typing import Dict, Any, List, Optional
+import eth_abi
+from eth_utils import to_hex, to_checksum_address
 
 from .knowledge_base import KnowledgeBase
 
 
 class TransactionDecoder:
-    """Lightweight ABI decoder for common Ethereum transaction patterns."""
-
-    WORD_HEX_LENGTH = 64  # 32 bytes
+    """
+    Lightweight ABI decoder using eth-abi for robust decoding.
+    """
 
     @staticmethod
     def decode(calldata: Optional[str]) -> Dict[str, Any]:
@@ -20,20 +22,45 @@ class TransactionDecoder:
         if not definition:
             return {"function_selector": selector}
 
-        raw_params = calldata[10:]
-        parameters = TransactionDecoder._decode_parameters(
-            raw_params,
-            definition.get("params", []),
-            definition.get("param_names", []),
-        )
+        try:
+            # Get types from definition
+            param_types = definition.get("params", [])
+            
+            # Handle "tuple" placeholder in JSON which eth-abi doesn't understand directly
+            # We attempt to extract the real structure from the signature string
+            if "tuple" in param_types:
+                extracted_types = TransactionDecoder._extract_types_from_signature(definition["signature"])
+                if extracted_types:
+                    param_types = extracted_types
 
-        return {
-            "function_selector": selector,
-            "function_name": definition["name"],
-            "signature": definition["signature"],
-            "category": definition.get("category"),
-            "parameters": parameters,
-        }
+            # Decode using eth-abi
+            # calldata[10:] is the data part
+            data_bytes = bytes.fromhex(calldata[10:])
+            decoded_values = eth_abi.decode(param_types, data_bytes)
+
+            # Map values to parameter names
+            parameters = {}
+            param_names = definition.get("param_names", [])
+            
+            for i, value in enumerate(decoded_values):
+                name = param_names[i] if i < len(param_names) else f"param_{i}"
+                parameters[name] = TransactionDecoder._normalize_decoded_value(value, param_types[i] if i < len(param_types) else None)
+
+            return {
+                "function_selector": selector,
+                "function_name": definition["name"],
+                "signature": definition["signature"],
+                "category": definition.get("category"),
+                "parameters": parameters,
+            }
+        except Exception as e:
+            # Log error and return minimal info
+            # In a real app we might want to log this properly
+            return {
+                "function_selector": selector,
+                "function_name": definition.get("name"),
+                "error": f"Decoding failed: {str(e)}"
+            }
 
     @staticmethod
     def infer_assets(decoded: Dict[str, Any], contract_address: Optional[str], native_value: Any) -> List[Dict[str, Any]]:
@@ -49,7 +76,7 @@ class TransactionDecoder:
                 "direction": "outgoing"
             })
 
-        if not decoded:
+        if not decoded or "parameters" not in decoded:
             return assets
 
         category = decoded.get("category")
@@ -59,7 +86,13 @@ class TransactionDecoder:
         symbol = token_meta.get("symbol") or "TOKEN"
 
         if category in {"erc20_transfer", "erc20_transfer_from"}:
-            amount = TransactionDecoder._normalize_int(params.get("amount") or params.get("param_1") or params.get("param_2"))
+            # Handle different parameter names for transfer vs transferFrom
+            amount = None
+            if "amount" in params:
+                amount = TransactionDecoder._normalize_int(params["amount"])
+            elif "value" in params: # Some variants
+                amount = TransactionDecoder._normalize_int(params["value"])
+            
             if amount:
                 assets.append({
                     "type": "token",
@@ -70,7 +103,7 @@ class TransactionDecoder:
                     "direction": "outgoing"
                 })
         elif category == "erc20_approve":
-            amount = TransactionDecoder._normalize_int(params.get("amount") or params.get("param_1"))
+            amount = TransactionDecoder._normalize_int(params.get("amount") or params.get("value"))
             if amount:
                 assets.append({
                     "type": "approval",
@@ -84,33 +117,61 @@ class TransactionDecoder:
         return assets
 
     @staticmethod
-    def _decode_parameters(raw_params: str, param_types: List[str], param_names: List[str]) -> Dict[str, Any]:
-        decoded: Dict[str, Any] = {}
-
-        for index, param_type in enumerate(param_types):
-            start = index * TransactionDecoder.WORD_HEX_LENGTH
-            end = start + TransactionDecoder.WORD_HEX_LENGTH
-            word = raw_params[start:end]
-            if len(word) < TransactionDecoder.WORD_HEX_LENGTH:
-                break
-
-            name = param_names[index] if index < len(param_names) else f"param_{index}"
-            decoded[name] = TransactionDecoder._decode_word(word, param_type)
-
-        return decoded
+    def _extract_types_from_signature(signature: str) -> List[str]:
+        """
+        Extract parameter types from a function signature string.
+        Handles basic nested tuples.
+        Example: "func(uint256,(address,uint256))" -> ["uint256", "(address,uint256)"]
+        """
+        start = signature.find('(')
+        end = signature.rfind(')')
+        if start == -1 or end == -1:
+            return []
+        
+        content = signature[start+1:end]
+        if not content:
+            return []
+            
+        types = []
+        current = []
+        depth = 0
+        for char in content:
+            if char == ',' and depth == 0:
+                types.append("".join(current).strip())
+                current = []
+            else:
+                if char == '(': depth += 1
+                elif char == ')': depth -= 1
+                current.append(char)
+        
+        if current:
+            types.append("".join(current).strip())
+            
+        return types
 
     @staticmethod
-    def _decode_word(word: str, param_type: str) -> Any:
-        if param_type == "address":
-            return "0x" + word[-40:]
-        if param_type.startswith("uint"):
-            return int(word, 16)
-        if param_type == "bool":
-            return int(word, 16) > 0
-        if param_type == "bytes":
-            return "0x" + word
-        # For unsupported or dynamic types, keep raw hex
-        return "0x" + word
+    def _normalize_decoded_value(value: Any, type_str: Optional[str] = None) -> Any:
+        """Normalize decoded values to JSON-serializable format."""
+        if isinstance(value, bytes):
+            return to_hex(value)
+        
+        if isinstance(value, (list, tuple)):
+            return [TransactionDecoder._normalize_decoded_value(v) for v in value]
+        
+        if isinstance(value, str) and len(value) == 42 and value.startswith("0x"):
+             try:
+                 return to_checksum_address(value)
+             except:
+                 return value
+                 
+        # If the type was explicitly address, try to checksum it
+        if type_str == 'address' and isinstance(value, str):
+             try:
+                 return to_checksum_address(value)
+             except:
+                 return value
+
+        return value
 
     @staticmethod
     def _normalize_int(value: Any) -> Optional[int]:
@@ -136,4 +197,3 @@ class TransactionDecoder:
             return f"{scaled:.6f}".rstrip("0").rstrip(".")
         except Exception:
             return str(amount)
-
