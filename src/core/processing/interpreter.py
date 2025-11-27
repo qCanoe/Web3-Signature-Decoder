@@ -1,5 +1,6 @@
 import os
 import json
+import datetime
 from typing import Optional, Dict, Any, List
 from ..input.definitions import IntermediateRepresentation, SignatureType
 from .structure import SemanticStructure, SemanticComponent
@@ -66,7 +67,13 @@ class Interpreter:
             return self._llm_interpret(structure)
 
         # 3. Fallback
-        return f"Interact with {structure.target_object.description}"
+        action_desc = structure.action.description
+        if action_desc == "Unknown Action" and structure.action.raw_value:
+             action_desc = structure.action.raw_value.replace("_", " ").title()
+        elif action_desc == "Unknown Action":
+             action_desc = "an operation"
+            
+        return f"You are performing {action_desc} on {structure.target_object.description}."
     
     def _enrich_structure(self, structure: SemanticStructure, ir: Optional[IntermediateRepresentation] = None):
         """
@@ -320,6 +327,41 @@ class Interpreter:
             
         if structure.action.raw_value == "marketplace_listing":
             return f"You are listing items for sale on {obj}."
+        
+        if structure.action.raw_value in ["authorization", "permit"]:
+            spender = next((c.raw_value for c in structure.context if c.role == "Spender" or c.description == "Spender"), None)
+            amount = next((c.raw_value for c in structure.context if "Amount" in c.description or "value" in c.description.lower()), None)
+            deadline = next((c.raw_value for c in structure.context if "Deadline" in c.description or "Expiry" in c.description), None)
+            
+            parts = []
+            parts.append("You are authorizing")
+            
+            if spender:
+                spender_ctx = next((c for c in structure.context if c.role == "Spender" or c.description == "Spender"), None)
+                if spender_ctx and spender_ctx.description and spender_ctx.description != "Spender":
+                    parts.append(f"{spender_ctx.description}")
+                else:
+                    parts.append(f"contract {str(spender)[:6]}...{str(spender)[-4:]}")
+            else:
+                parts.append("a contract")
+                
+            if amount:
+                if KnowledgeBase.is_infinite_allowance(amount) or "Infinite" in str(amount):
+                    parts.append(f"to spend unlimited {obj}")
+                else:
+                    parts.append(f"to spend {amount} {obj}")
+            else:
+                parts.append(f"to access your {obj}")
+            
+            if deadline:
+                try:
+                    ts = int(deadline)
+                    dt = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d')
+                    parts.append(f"until {dt}")
+                except:
+                    parts.append("with a specific deadline")
+            
+            return " ".join(parts) + "."
         
         if structure.action.raw_value in ["bridge", "bridge_lock"]:
             dest_chain = next((c.raw_value for c in structure.context if "Destination Chain" in c.description or "targetChain" in c.description.lower()), None)

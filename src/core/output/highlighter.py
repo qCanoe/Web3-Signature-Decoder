@@ -20,26 +20,32 @@ class TextHighlighter:
             "pattern": re.compile(r'\b(authorize|authorization|approval|transfer|transaction|signature|confirm|login|vote|mint|burn|stake|unstake)\b', re.IGNORECASE),
             "className": 'action-keyword'
         },
+        # Date patterns (high priority to avoid splitting numbers)
+        {
+            "pattern": re.compile(r'\b\d{4}-\d{2}-\d{2}\b|\b\d{4}/\d{2}/\d{2}\b', re.IGNORECASE),
+            "className": 'keyword-highlight'
+        },
+        # Contract and address related
+        {
+            "pattern": re.compile(r'\b(smart\s+contract|contract|address)\b|(0x[a-fA-F0-9]{40})|(0x[a-fA-F0-9]{1,10}\.{3}[a-fA-F0-9]{1,10})', re.IGNORECASE),
+            "className": 'contract-keyword'
+        },
         # Amount and token related
         {
             # Match: numbers with commas (1,000), numbers with decimals (100.5)
             # Match patterns in order of priority (longer matches first):
             # 1. Number + token (e.g., "1,000 USD Coin", "1,000 USD")
             # 2. Standalone numbers (e.g., "1,000")
-            # 3. Standalone tokens (e.g., "USD", "Coin")
+            # 3. Standalone tokens (e.g., "USD Coin", "USD", "Coin")
             "pattern": re.compile(
                 r'\b(\d{1,3}(?:,\d{3})*(?:\.\d+)?|\d+\.?\d*)\s+(USD|USDT|USDC|ETH)\s+Coin\b|'  # "1,000 USD Coin"
                 r'\b(\d{1,3}(?:,\d{3})*(?:\.\d+)?|\d+\.?\d*)\s+(USD|USDT|USDC|ETH|Coin|token)\b|'  # "1,000 USD" or "1,000 Coin"
+                r'\b(USD|USDT|USDC|ETH)\s+Coin\b|'  # "USD Coin" standalone
                 r'\b(\d{1,3}(?:,\d{3})*(?:\.\d+)?|\d+\.?\d*)\b|'  # Standalone numbers like "1,000"
                 r'\b(USD|USDT|USDC|ETH|Coin|token)\b',  # Standalone tokens
                 re.IGNORECASE
             ),
             "className": 'amount-keyword'
-        },
-        # Contract and address related
-        {
-            "pattern": re.compile(r'\b(smart\s+contract|contract|address)\b|(0x[a-fA-F0-9]{40})', re.IGNORECASE),
-            "className": 'keyword-highlight'
         },
         # General important keywords
         {

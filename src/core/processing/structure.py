@@ -264,7 +264,7 @@ class StructureParser:
         decoded = ir.decoded_call or ir.metadata.get("decoded_call", {})
         decoded_params = decoded.get("parameters", {}) if decoded else {}
 
-        if ir.action_type == "approve":
+        if ir.action_type in ["approve", "authorization", "permit"]:
             spender = decoded_params.get("spender") or decoded_params.get("param_0") or params.get("spender")
             value = decoded_params.get("amount") or decoded_params.get("param_1") or params.get("value") or params.get("amount")
             if spender:

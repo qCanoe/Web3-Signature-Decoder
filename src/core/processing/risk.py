@@ -118,8 +118,14 @@ class RiskEngine:
 
         # 10. Unknown Contract Risk
         if ir.contract and not KnowledgeBase.get_contract_name(ir.chain_id, ir.contract):
-            risk_score += scores.get("unknown_contract", 20)
-            reasons.append("Unknown contract - verify contract address before proceeding")
+            # Only flag as high risk if on mainnet (Chain ID 1)
+            # On testnets or L2s, unknown contracts are more common
+            if ir.chain_id == 1:
+                risk_score += scores.get("unknown_contract", 20)
+                reasons.append("Unknown contract - verify contract address before proceeding")
+            else:
+                risk_score += 10 # Lower risk for non-mainnet
+                reasons.append("Unknown contract address")
 
         # Cap score at 100
         risk_score = min(100, risk_score)

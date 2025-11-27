@@ -99,6 +99,9 @@ body {
 .input-section {
     flex: 1;
     margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0; /* Allows flex item to shrink below content size */
 }
 
 .input-section label {
@@ -116,8 +119,9 @@ body {
     border-radius: 8px;
     font-size: 13px;
     font-family: 'SF Mono', Monaco, monospace;
-    resize: vertical;
-    min-height: 200px;
+    resize: none;
+    flex: 1;
+    height: 100%;
 }
 
 .form-control:focus {
@@ -139,21 +143,23 @@ body {
 /* Parse Button */
 .btn-parse {
     width: 100%;
-    padding: 16px;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    padding: 12px;
+    background: #6366f1;
     color: white;
-    border: none;
-    border-radius: 10px;
-    font-weight: 600;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    font-weight: 500;
     font-size: 14px;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.2s ease;
     margin-bottom: 16px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .btn-parse:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+    background: #4f46e5;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .btn-parse i {
@@ -521,15 +527,19 @@ body {
     gap: 8px;
     letter-spacing: -0.01em;
 }
+
 .risk-title-simple.low {
     color: #059669;
 }
+
 .risk-title-simple.medium {
     color: #d97706;
 }
+
 .risk-title-simple.high {
     color: #dc2626;
 }
+
 .risk-title-simple i {
     font-size: 16px;
 }
@@ -539,6 +549,7 @@ body {
     height: 48px;
     object-fit: contain;
 }
+
 .risk-desc-simple {
     color: #687076;
     font-size: 14px;
@@ -552,9 +563,11 @@ body {
         padding: 18px 10px;
         gap: 16px;
     }
+
     .risk-circle-simple {
         margin: 0 auto;
     }
+
     .risk-info-simple {
         align-items: center;
         text-align: center;
@@ -652,7 +665,7 @@ body {
     border: 1px solid rgba(0, 0, 0, 0.06);
     border-radius: 20px;
     color: #11181c;
-    box-shadow: 
+    box-shadow:
         0 1px 3px rgba(0, 0, 0, 0.04),
         0 4px 16px rgba(0, 0, 0, 0.04);
 }
@@ -705,10 +718,13 @@ body {
 
 .explanation-content p {
     margin: 0;
-    line-height: 1.5;
+    line-height: 1.8;
     font-size: 14px;
     color: #687076;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
 }
 
 /* Keyword Highlight Styles */
@@ -720,6 +736,15 @@ body {
     color: #d97706;
     border: 1px solid rgba(245, 158, 11, 0.2);
     box-shadow: 0 1px 2px rgba(245, 158, 11, 0.05);
+}
+
+.contract-keyword {
+    background: rgba(107, 114, 128, 0.08);
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-weight: 500;
+    color: #4b5563;
+    border: 1px solid rgba(107, 114, 128, 0.15);
 }
 
 .risk-keyword {
@@ -737,10 +762,13 @@ body {
 }
 
 .amount-keyword {
-    background: rgba(99, 102, 241, 0.1);
-    color: #4f46e5;
-    border: 1px solid rgba(99, 102, 241, 0.2);
-    box-shadow: 0 1px 2px rgba(99, 102, 241, 0.05);
+    background: rgba(59, 130, 246, 0.1);
+    color: #2563eb;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    box-shadow: 0 1px 2px rgba(59, 130, 246, 0.05);
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-weight: 500;
 }
 
 
@@ -874,4 +902,4 @@ body {
 
 .toast-success { background: #10b981; }
 .toast-error { background: #ef4444; }
-.toast-info { background: #6366f1; } 
+.toast-info { background: #6366f1; }

@@ -39,7 +39,8 @@ class Config:
         "permanent": 25,
         "phishing": 60,
         "blind_signing": 50,
-        "unknown_contract": 20
+        "unknown_contract": 20,
+        "trusted_contract": -10  # Reduce risk for trusted contracts
     }
 
     # Financial thresholds
