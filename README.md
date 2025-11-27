@@ -46,3 +46,18 @@ The codebase is designed for research on signature transparency and can serve as
 │   └── test_pipeline.py   # Integration tests for pipeline
 └── src/utils/mock_data.py # Shared test data
 ```
+
+## Research MVP Disclaimer
+
+Please note that this project is currently developed as a **Research MVP (Minimum Viable Product)**. It is primarily designed to demonstrate the feasibility of semantic interpretation for blockchain signatures within an academic or experimental context.
+
+While the core pipeline effectively handles common signature types, many advanced features and production-grade implementations are intentionally simplified or scoped out for this version. The current implementation serves as a standard baseline for research purposes, and there are significant opportunities for further development and optimization.
+
+**Examples of areas for future improvement include:**
+
+* **Deep ABI Parsing:** Currently relies on function selectors and partial decoding. A production version would integrate full ABI retrieval (e.g., via Etherscan API) and support complex `multicall` recursion.
+* **Dynamic Threat Intelligence:** The risk engine uses static heuristics. Future iterations could integrate real-time threat feeds (e.g., Chainabuse) and transaction simulation (e.g., Tenderly) to detect phishing campaigns dynamically.
+* **Expanded Knowledge Base:** The semantic interpreter's effectiveness depends on its knowledge base. Expanding coverage to include more Layer-2 protocols, niche DeFi contracts, and non-standard NFT standards would significantly enhance interpretation accuracy.
+* **Visual Semantics:** Moving beyond text-based explanations to generate visual asset flow diagrams (e.g., "Your Wallet -> [100 USDC] -> Uniswap Pool") would further improve user comprehension.
+
+This repository stands as a foundational framework, inviting researchers and developers to build upon these concepts to create fully robust, production-ready signature transparency tools.
