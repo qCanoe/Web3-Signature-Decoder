@@ -9,9 +9,11 @@ import type { AnalysisResult, SnapAnalyzeRequest } from "../types";
 /**
  * API 配置
  */
+const DEFAULT_BASE_URL = "https://signature-decoder-api.example.com";
+
 const API_CONFIG = {
   // 默认后端 URL - 可在部署时修改
-  baseUrl: "https://signature-decoder-api.example.com",
+  baseUrl: DEFAULT_BASE_URL,
   timeout: 15000, // 15 秒超时
   endpoints: {
     analyze: "/snap/analyze",
@@ -28,6 +30,9 @@ const API_CONFIG = {
 export async function fetchBackendAnalysis(
   request: SnapAnalyzeRequest
 ): Promise<AnalysisResult> {
+  if (!isBackendConfigured()) {
+    throw new ApiError("Backend not configured", 412);
+  }
   const url = `${API_CONFIG.baseUrl}${API_CONFIG.endpoints.analyze}`;
 
   const controller = new AbortController();
@@ -102,4 +107,14 @@ export function configureApiUrl(baseUrl: string): void {
  */
 export function getApiConfig(): typeof API_CONFIG {
   return { ...API_CONFIG };
+}
+
+/**
+ * 判断后端是否已配置
+ */
+export function isBackendConfigured(): boolean {
+  if (!API_CONFIG.baseUrl) return false;
+  const normalized = API_CONFIG.baseUrl.trim();
+  if (!normalized) return false;
+  return normalized !== DEFAULT_BASE_URL;
 }

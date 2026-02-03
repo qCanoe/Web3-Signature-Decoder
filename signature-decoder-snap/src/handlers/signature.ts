@@ -7,7 +7,7 @@
 import type { OnSignatureResponse, Signature } from "@metamask/snaps-sdk";
 
 import { localAnalyzeSignature } from "../analyzers/local";
-import { fetchBackendAnalysis } from "../api/client";
+import { fetchBackendAnalysis, isBackendConfigured } from "../api/client";
 import type { AnalysisResult, LocalAnalysisResult } from "../types";
 import { mapRiskToSeverity } from "../types";
 import { renderInsights, renderLocalInsights, renderError } from "../ui/components";
@@ -29,16 +29,18 @@ export async function handleSignature(
 
     // 2. 尝试调用后端深度分析
     let deepInsights: AnalysisResult | null = null;
-    try {
-      deepInsights = await fetchBackendAnalysis({
-        type: "signature",
-        data: signature,
-        origin: signatureOrigin,
-        signatureMethod: signature.signatureMethod,
-      });
-    } catch (error) {
-      // 后端不可用时，使用本地分析结果
-      console.error("Backend analysis failed:", error);
+    if (isBackendConfigured()) {
+      try {
+        deepInsights = await fetchBackendAnalysis({
+          type: "signature",
+          data: signature,
+          origin: signatureOrigin,
+          signatureMethod: signature.signatureMethod,
+        });
+      } catch (error) {
+        // 后端不可用时，使用本地分析结果
+        console.error("Backend analysis failed:", error);
+      }
     }
 
     // 3. 合并结果，渲染 UI

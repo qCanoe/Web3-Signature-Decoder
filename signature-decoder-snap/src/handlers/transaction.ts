@@ -7,7 +7,7 @@
 import type { OnTransactionResponse } from "@metamask/snaps-sdk";
 
 import { localAnalyzeTransaction } from "../analyzers/local";
-import { fetchBackendAnalysis } from "../api/client";
+import { fetchBackendAnalysis, isBackendConfigured } from "../api/client";
 import type { AnalysisResult } from "../types";
 import { mapRiskToSeverity } from "../types";
 import {
@@ -50,16 +50,18 @@ export async function handleTransaction(
 
     // 2. 尝试调用后端深度分析
     let deepInsights: AnalysisResult | null = null;
-    try {
-      deepInsights = await fetchBackendAnalysis({
-        type: "transaction",
-        data: transaction,
-        chainId,
-        origin: transactionOrigin,
-      });
-    } catch (error) {
-      // 后端不可用时，使用本地分析结果
-      console.error("Backend analysis failed:", error);
+    if (isBackendConfigured()) {
+      try {
+        deepInsights = await fetchBackendAnalysis({
+          type: "transaction",
+          data: transaction,
+          chainId,
+          origin: transactionOrigin,
+        });
+      } catch (error) {
+        // 后端不可用时，使用本地分析结果
+        console.error("Backend analysis failed:", error);
+      }
     }
 
     // 3. 合并结果，渲染 UI
