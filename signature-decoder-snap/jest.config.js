@@ -4,17 +4,17 @@
 
 module.exports = {
   preset: "@metamask/snaps-jest",
-  testEnvironment: "node",
   testMatch: ["**/test/**/*.test.ts"],
   transform: {
-    "^.+\\.tsx?$": "ts-jest",
+    "^.+\\.tsx?$": [
+      "ts-jest",
+      {
+        useESM: false,
+      },
+    ],
   },
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json"],
-  collectCoverageFrom: [
-    "src/**/*.{ts,tsx}",
-    "!src/**/*.d.ts",
-    "!src/data/**",
-  ],
-  coverageDirectory: "coverage",
-  coverageReporters: ["text", "lcov", "html"],
+  testEnvironmentOptions: {
+    customEnvironment: "@metamask/snaps-jest",
+  },
 };
