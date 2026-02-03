@@ -9,6 +9,20 @@ from ..config import Config
 # Get the directory from Config
 _DATA_DIR = Config.DATA_DIR
 
+# Lazy import to avoid circular imports
+_abi_fetcher = None
+
+def _get_abi_fetcher():
+    """Lazy load ABIFetcher to avoid circular imports."""
+    global _abi_fetcher
+    if _abi_fetcher is None:
+        try:
+            from .abi_fetcher import ABIFetcher
+            _abi_fetcher = ABIFetcher
+        except ImportError:
+            _abi_fetcher = False  # Mark as unavailable
+    return _abi_fetcher if _abi_fetcher else None
+
 def _load_json(filename: str) -> Dict[str, Any]:
     """Load JSON data from data directory."""
     filepath = _DATA_DIR / filename
@@ -49,10 +63,13 @@ class KnowledgeBase:
         for chain_id, name in _CHAIN_NAMES_RAW.items()
     }
 
+    # Enable dynamic ABI fetching (can be disabled for offline mode)
+    ENABLE_DYNAMIC_FETCH: bool = os.environ.get("ENABLE_DYNAMIC_ABI", "true").lower() == "true"
+    
     @staticmethod
     @lru_cache(maxsize=1000 if Config.PERFORMANCE["enable_caching"] else None)
     def get_function_name(selector: str) -> Optional[str]:
-        definition = KnowledgeBase.get_function_definition(selector)
+        definition = KnowledgeBase.get_function_definition_with_fallback(selector)
         return definition.get("name") if definition else None
 
     @staticmethod
@@ -61,6 +78,54 @@ class KnowledgeBase:
         if not selector:
             return None
         return KnowledgeBase.FUNCTION_SIGNATURES.get(selector.lower())
+    
+    @staticmethod
+    def get_function_definition_with_fallback(
+        selector: Optional[str],
+        chain_id: Optional[int] = None,
+        contract_address: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Get function definition with dynamic fallback to external APIs.
+        
+        Args:
+            selector: Function selector (e.g., "0xa9059cbb")
+            chain_id: Chain ID for ABI lookup
+            contract_address: Contract address for ABI lookup
+            
+        Returns:
+            Function definition dictionary or None
+        """
+        if not selector:
+            return None
+        
+        # First try static knowledge base
+        definition = KnowledgeBase.get_function_definition(selector)
+        if definition:
+            return definition
+        
+        # If dynamic fetching is enabled, try external sources
+        if KnowledgeBase.ENABLE_DYNAMIC_FETCH:
+            fetcher = _get_abi_fetcher()
+            if fetcher:
+                try:
+                    result = fetcher.resolve_unknown_selector(
+                        selector, chain_id, contract_address
+                    )
+                    if result:
+                        # Cache the result in the static dictionary for future use
+                        KnowledgeBase.FUNCTION_SIGNATURES[selector.lower()] = result
+                        # Clear caches so subsequent lookups see the new definition
+                        try:
+                            KnowledgeBase.get_function_definition.cache_clear()
+                            KnowledgeBase.get_function_name.cache_clear()
+                        except Exception:
+                            pass
+                        return result
+                except Exception:
+                    pass
+        
+        return None
 
     @staticmethod
     @lru_cache(maxsize=500 if Config.PERFORMANCE["enable_caching"] else None)

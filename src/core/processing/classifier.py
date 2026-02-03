@@ -199,10 +199,43 @@ class Classifier:
             "erc20_approve": "approve",
             "erc20_permit": "authorization",
             "permit2": "authorization",
+            "permit2_single": "authorization",
+            "permit2_batch": "authorization",
+            "permit2_transfer": "authorization",
+            "permit2_batch_transfer": "authorization",
             "erc721_transfer": "nft_transfer",
             "defi_swap": "defi_swap",
+            "defi_liquidity": "defi_liquidity",
+            "defi_stake": "defi_stake",
+            "defi_unstake": "defi_unstake",
+            "defi_borrow": "defi_borrow",
+            "defi_repay": "defi_repay",
+            "defi_supply": "defi_supply",
+            "defi_withdraw": "defi_withdraw",
+            "defi_claim": "defi_claim",
             "contract_withdraw": "withdraw",
+            "nft_approval": "nft_approve",
+            "nft_marketplace": "nft_trade",
+            "multicall": "batch_operation",
+            "universal_router": "batch_operation",
+            "multisig": "multisig_operation",
         }
+
+        # Check for multicall transactions
+        if decoded_call.get("is_multicall"):
+            ir.action_type = "batch_operation"
+            # Try to infer more specific type from nested calls
+            from .transaction_decoder import TransactionDecoder
+            summary = TransactionDecoder.get_multicall_summary(decoded_call)
+            if summary:
+                if summary.get("has_swaps"):
+                    ir.action_type = "batch_swap"
+                elif summary.get("has_approvals") or summary.get("has_permits"):
+                    ir.action_type = "batch_approval"
+                elif summary.get("has_transfers"):
+                    ir.action_type = "batch_transfer"
+            ir.metadata["multicall_summary"] = summary
+            return
 
         if category_hint and category_hint in category_to_action:
             ir.action_type = category_to_action[category_hint]

@@ -1,0 +1,30 @@
+{
+  "version": "0.1.0",
+  "description": "Signature Decoder Snap - 为 MetaMask 提供签名和交易的语义分析洞察",
+  "proposedName": "Signature Decoder",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/signature-decoder-snap.git"
+  },
+  "source": {
+    "shasum": "",
+    "location": {
+      "npm": {
+        "filePath": "dist/bundle.js",
+        "packageName": "@signature-decoder/snap",
+        "registry": "https://registry.npmjs.org/"
+      }
+    }
+  },
+  "initialPermissions": {
+    "endowment:signature-insight": {
+      "allowSignatureOrigin": true
+    },
+    "endowment:transaction-insight": {
+      "allowTransactionOrigin": true,
+      "maxRequestTime": 30000
+    },
+    "endowment:network-access": {}
+  },
+  "manifestVersion": "0.1"
+}

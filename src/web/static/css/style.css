@@ -883,6 +883,33 @@ body {
     .signature-confirmation {
         padding: 16px;
     }
+    
+    /* Asset Flow Mobile */
+    .flow-diagram {
+        flex-direction: column;
+        gap: 12px;
+    }
+    
+    .flow-node {
+        width: 100%;
+        flex-direction: row;
+        justify-content: flex-start;
+        gap: 12px;
+        padding: 12px;
+    }
+    
+    .node-icon {
+        font-size: 20px;
+    }
+    
+    .flow-edge {
+        flex-direction: row;
+        padding: 8px 0;
+    }
+    
+    .edge-arrow {
+        transform: rotate(90deg);
+    }
 }
 
 /* Toast Notifications */

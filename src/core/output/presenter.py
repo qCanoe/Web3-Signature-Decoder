@@ -1,7 +1,8 @@
 from typing import Dict, Any, List, Optional
 from ..input.definitions import IntermediateRepresentation
 from ..processing.structure import SemanticStructure
-from ..processing.risk import RiskAssessment
+from ..processing.risk import RiskAssessment, RiskEngine
+from ..processing.knowledge_base import KnowledgeBase
 from .highlighter import TextHighlighter
 
 class Presenter:
@@ -31,13 +32,18 @@ class Presenter:
         # Create a short title like "App Name - Action Type Operation"
         short_title = f"{app_name} - {action_title} Operation"
         
+        # Get risk explanation
+        risk_explanation = RiskEngine.get_risk_explanation(risk.level)
+        
         # Standardized clean output
         pipeline_result = {
             "ui": {
                 "title": short_title,
                 "description": description,
                 "risk_level": risk.level,
+                "risk_score": getattr(risk, 'score', 0),
                 "risk_reasons": risk.reasons,
+                "risk_explanation": risk_explanation,
                 "risk_mitigation": Presenter._generate_mitigation_suggestions(risk, structure)
             },
             "semantic": {
@@ -96,7 +102,9 @@ class Presenter:
                     "title": pipeline_result["ui"]["title"],
                     "summary": TextHighlighter.highlight_keywords(pipeline_result["ui"]["description"]),
                     "risk_level": risk.level,
-                    "risk_explanation": risk.reasons[0] if risk.reasons else "Check details"
+                    "risk_score": getattr(risk, 'score', 0),
+                    "risk_explanation": risk_explanation.get("description", risk.reasons[0] if risk.reasons else "Check details"),
+                    "risk_recommendation": risk_explanation.get("recommendation", "Review the details before signing.")
                 }
             }
         }
@@ -110,24 +118,43 @@ class Presenter:
         """
         suggestions = []
         
-        if risk.level == "high":
+        if risk.level in ["critical", "high"]:
+            # Critical/High risk mitigations
             if structure.permission_scope == "unlimited_permanent":
-                suggestions.append("建议使用有限额度授权而非无限授权")
-                suggestions.append("建议设置授权到期时间")
+                suggestions.append("Consider using limited amount approval instead of unlimited")
+                suggestions.append("Set an expiration time for the approval")
             if structure.action.raw_value == "approve":
-                suggestions.append("建议只授权必要的金额")
-                suggestions.append("使用后及时撤销授权")
-            if "bridge" in structure.action.raw_value:
-                suggestions.append("仔细验证目标链地址")
-                suggestions.append("确认桥接合约的官方地址")
+                suggestions.append("Only approve the exact amount needed")
+                suggestions.append("Revoke approval after use")
+            if "bridge" in (structure.action.raw_value or ""):
+                suggestions.append("Verify the destination chain address carefully")
+                suggestions.append("Confirm the bridge contract is official")
+            if structure.action.raw_value in ["batch_operation", "cross_contract_interaction"]:
+                suggestions.append("Review each operation in the batch")
+                suggestions.append("Verify all contract addresses involved")
+            
+            # Check for specific risks in reasons
+            if any("phishing" in r.lower() for r in risk.reasons):
+                suggestions.append("This appears to be a phishing attempt - do not proceed")
+                suggestions.append("Verify the request source through official channels")
+            if any("unknown contract" in r.lower() for r in risk.reasons):
+                suggestions.append("Verify the contract on a block explorer")
+                suggestions.append("Check for verified source code")
         
         elif risk.level == "medium":
             if structure.action.raw_value == "approve":
-                suggestions.append("确认授权金额是否合理")
-            if structure.contract_role == "Unknown":
-                suggestions.append("验证合约地址和来源")
+                suggestions.append("Confirm the approval amount is appropriate")
+            if structure.contract_role == "Unknown" or structure.contract_role is None:
+                suggestions.append("Verify the contract address and source")
+            if "transfer" in (structure.action.raw_value or ""):
+                suggestions.append("Double-check the recipient address")
         
-        return suggestions
+        elif risk.level == "low":
+            if structure.action.raw_value == "authentication":
+                suggestions.append("This is a login signature - generally safe")
+        
+        # Limit suggestions
+        return suggestions[:5] if suggestions else ["Review the transaction details before signing"]
     
     @staticmethod
     def _generate_contract_verification_url(chain_id: Optional[int], contract_address: Optional[str]) -> Optional[str]:

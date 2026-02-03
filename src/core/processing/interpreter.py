@@ -311,37 +311,71 @@ class Interpreter:
         # Extract context values for cleaner templates
         ctx_map = {c.description: c.raw_value for c in structure.context}
         
-        if structure.action.raw_value == "approve":
-            amount = next((c.raw_value for c in structure.context if "Amount" in c.description or "Infinite" in c.description), "tokens")
-            spender = next((c.raw_value for c in structure.context if c.role == "Spender" or c.description == "Spender"), "contract")
-            if "Infinite" in str(amount) or KnowledgeBase.is_infinite_allowance(amount):
-                return f"You are authorizing {spender} to spend unlimited {obj} tokens on your behalf."
-            return f"You are authorizing {spender} to spend {amount} of your {obj}."
-
-        if structure.action.raw_value == "transfer_asset":
-            amount = next((c.raw_value for c in structure.context if "Amount" in c.description or "Native" in c.description), "assets")
-            return f"You are transferring {amount} to {obj}."
-            
-        if structure.action.raw_value == "authentication":
-            return f"You are signing into {obj}. This does not move funds."
-            
-        if structure.action.raw_value == "marketplace_listing":
-            return f"You are listing items for sale on {obj}."
+        # Helper to get context value
+        def get_ctx(keywords, default=None):
+            for c in structure.context:
+                desc_lower = c.description.lower()
+                if any(kw.lower() in desc_lower for kw in keywords):
+                    return c.raw_value
+            return default
         
-        if structure.action.raw_value in ["authorization", "permit"]:
-            spender = next((c.raw_value for c in structure.context if c.role == "Spender" or c.description == "Spender"), None)
-            amount = next((c.raw_value for c in structure.context if "Amount" in c.description or "value" in c.description.lower()), None)
-            deadline = next((c.raw_value for c in structure.context if "Deadline" in c.description or "Expiry" in c.description), None)
+        def format_address(addr):
+            if isinstance(addr, str) and len(addr) == 42:
+                return f"{addr[:6]}...{addr[-4:]}"
+            return str(addr)
+        
+        # ========== Token Approvals ==========
+        if structure.action.raw_value == "approve":
+            amount = get_ctx(["Amount", "Infinite"], "tokens")
+            spender = get_ctx(["Spender"], "contract")
+            if "Infinite" in str(amount) or KnowledgeBase.is_infinite_allowance(amount):
+                return f"You are authorizing {format_address(spender)} to spend unlimited {obj} tokens on your behalf."
+            return f"You are authorizing {format_address(spender)} to spend {amount} of your {obj}."
+
+        # ========== NFT Approvals ==========
+        if structure.action.raw_value in ["nft_approve", "nft_approval"]:
+            operator = get_ctx(["Operator", "Spender"], "contract")
+            return f"You are granting {format_address(operator)} permission to manage ALL your NFTs in the {obj} collection. This allows transfers without further approval."
+        
+        # ========== Transfers ==========
+        if structure.action.raw_value == "transfer_asset":
+            amount = get_ctx(["Amount", "Native", "Token Amount"], "assets")
+            recipient = get_ctx(["Recipient", "To"], obj)
+            return f"You are transferring {amount} to {format_address(recipient)}. This action is irreversible."
+        
+        if structure.action.raw_value == "nft_transfer":
+            token_id = get_ctx(["TokenId", "Token ID", "Id"], "NFT")
+            recipient = get_ctx(["Recipient", "To"], obj)
+            return f"You are transferring NFT #{token_id} to {format_address(recipient)}."
             
-            parts = []
-            parts.append("You are authorizing")
+        # ========== Authentication ==========
+        if structure.action.raw_value == "authentication":
+            return f"You are signing into {obj}. This signature proves you own this wallet and does not authorize any token transfers."
+        
+        if structure.action.raw_value == "sign_message":
+            return f"You are signing a message for {obj}. Review the message content carefully."
+        
+        if structure.action.raw_value == "sign_hash":
+            return f"You are signing a raw hash. This is high risk - ensure you trust the source."
+        
+        # ========== NFT Marketplace ==========
+        if structure.action.raw_value == "marketplace_listing":
+            price = get_ctx(["Price", "Amount"], "specified price")
+            return f"You are listing items for sale on {obj} marketplace at {price}."
+        
+        if structure.action.raw_value == "nft_trade":
+            return f"You are executing an NFT trade through {obj} marketplace."
+        
+        # ========== Permits (EIP-2612, Permit2) ==========
+        if structure.action.raw_value in ["authorization", "permit"]:
+            spender = get_ctx(["Spender"], None)
+            amount = get_ctx(["Amount", "Value"], None)
+            deadline = get_ctx(["Deadline", "Expiry"], None)
+            
+            parts = ["You are authorizing"]
             
             if spender:
-                spender_ctx = next((c for c in structure.context if c.role == "Spender" or c.description == "Spender"), None)
-                if spender_ctx and spender_ctx.description and spender_ctx.description != "Spender":
-                    parts.append(f"{spender_ctx.description}")
-                else:
-                    parts.append(f"contract {str(spender)[:6]}...{str(spender)[-4:]}")
+                parts.append(format_address(spender))
             else:
                 parts.append("a contract")
                 
@@ -356,34 +390,116 @@ class Interpreter:
             if deadline:
                 try:
                     ts = int(deadline)
-                    dt = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d')
+                    dt = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M')
                     parts.append(f"until {dt}")
                 except:
-                    parts.append("with a specific deadline")
+                    parts.append("with a time limit")
             
-            return " ".join(parts) + "."
+            return " ".join(parts) + ". This is an off-chain signature that can be used on-chain."
         
+        # ========== Bridge Operations ==========
         if structure.action.raw_value in ["bridge", "bridge_lock"]:
-            dest_chain = next((c.raw_value for c in structure.context if "Destination Chain" in c.description or "targetChain" in c.description.lower()), None)
+            dest_chain = get_ctx(["Destination Chain", "Target Chain"], None)
+            amount = get_ctx(["Amount"], "assets")
             if dest_chain:
-                return f"You are locking assets on {obj} to bridge to chain {dest_chain}."
-            return f"You are locking assets on {obj} bridge."
+                chain_name = KnowledgeBase.get_chain_name(int(dest_chain)) if str(dest_chain).isdigit() else dest_chain
+                return f"You are bridging {amount} to {chain_name} via {obj}. Assets will be locked until bridging completes."
+            return f"You are locking assets on {obj} bridge for cross-chain transfer."
         
         if structure.action.raw_value in ["bridge_unlock", "bridge_redeem"]:
-            return f"You are unlocking/redeeming assets from {obj} bridge."
+            amount = get_ctx(["Amount"], "assets")
+            return f"You are claiming {amount} from {obj} bridge after cross-chain transfer."
         
+        # ========== Governance ==========
         if structure.action.raw_value == "governance_delegation":
-            delegatee = next((c.raw_value for c in structure.context if "delegate" in c.description.lower() or "delegatee" in c.description.lower()), "delegate")
-            return f"You are delegating voting power to {delegatee} for {obj}."
+            delegatee = get_ctx(["Delegate", "Delegatee"], "delegate")
+            return f"You are delegating your voting power to {format_address(delegatee)}. They can vote on your behalf in {obj} governance."
+        
+        if structure.action.raw_value == "governance":
+            proposal_id = get_ctx(["Proposal", "ProposalId"], "")
+            vote = get_ctx(["Vote", "Support"], "")
+            vote_text = "in favor" if str(vote) == "1" else "against" if str(vote) == "0" else ""
+            if proposal_id:
+                return f"You are voting {vote_text} on proposal #{proposal_id} in {obj} governance."
+            return f"You are participating in {obj} governance."
+        
+        # ========== DeFi Swaps ==========
+        if structure.action.raw_value == "defi_swap":
+            amount_in = get_ctx(["Input Amount", "AmountIn"], None)
+            amount_out_min = get_ctx(["Minimum Output", "AmountOutMin"], None)
+            if amount_in and amount_out_min:
+                return f"You are swapping {amount_in} through {obj} for at least {amount_out_min} output."
+            elif amount_in:
+                return f"You are swapping {amount_in} through {obj}."
+            return f"You are performing a token swap through {obj}."
+        
+        if structure.action.raw_value == "batch_swap":
+            return f"You are performing a batch of swaps through {obj}. Multiple tokens will be exchanged."
+        
+        # ========== DeFi Lending ==========
+        if structure.action.raw_value == "defi_supply":
+            amount = get_ctx(["Amount"], "assets")
+            return f"You are supplying {amount} to {obj} lending protocol. You will receive interest-bearing tokens in return."
+        
+        if structure.action.raw_value == "defi_borrow":
+            amount = get_ctx(["Amount"], "assets")
+            return f"You are borrowing {amount} from {obj} lending protocol. Ensure you have sufficient collateral to avoid liquidation."
+        
+        if structure.action.raw_value == "defi_repay":
+            amount = get_ctx(["Amount"], "assets")
+            return f"You are repaying {amount} to {obj} lending protocol to reduce your debt."
+        
+        if structure.action.raw_value == "defi_withdraw":
+            amount = get_ctx(["Amount"], "assets")
+            return f"You are withdrawing {amount} from {obj}."
+        
+        # ========== DeFi Staking ==========
+        if structure.action.raw_value == "defi_stake":
+            amount = get_ctx(["Amount"], "tokens")
+            return f"You are staking {amount} in {obj}. Your tokens will be locked but earn rewards."
+        
+        if structure.action.raw_value == "defi_unstake":
+            amount = get_ctx(["Amount"], "tokens")
+            return f"You are unstaking {amount} from {obj}. There may be a cooldown period."
+        
+        if structure.action.raw_value == "defi_claim":
+            return f"You are claiming rewards from {obj}."
+        
+        # ========== DeFi Liquidity ==========
+        if structure.action.raw_value == "defi_liquidity":
+            return f"You are managing liquidity position in {obj} pool."
+        
+        # ========== Batch Operations ==========
+        if structure.action.raw_value == "batch_operation":
+            return f"You are executing a batch of operations through {obj}. Review each action in the batch."
+        
+        if structure.action.raw_value == "batch_approval":
+            return f"You are granting multiple token approvals through {obj}. Each approval should be reviewed."
+        
+        if structure.action.raw_value == "batch_transfer":
+            return f"You are performing multiple transfers through {obj}."
         
         if structure.action.raw_value == "cross_contract_interaction":
-            return f"You are performing a complex operation through {obj} that may involve multiple contracts."
+            return f"You are performing a complex operation through {obj} that interacts with multiple contracts."
         
-        if structure.action.raw_value == "defi_swap":
-            amount_in = next((c.raw_value for c in structure.context if "Input Amount" in c.description or "amountIn" in c.description.lower()), None)
-            if amount_in:
-                return f"You are swapping {amount_in} through {obj}."
-            return f"You are performing a swap through {obj}."
+        # ========== Multisig ==========
+        if structure.action.raw_value == "multisig_operation":
+            return f"You are signing a transaction for the {obj} multisig wallet. Other signers may need to approve."
+        
+        # ========== Meta-transactions ==========
+        if structure.action.raw_value == "meta_tx":
+            return f"You are signing a gasless transaction for {obj}. A relayer will submit it on your behalf."
+        
+        # ========== Unknown/Fallback ==========
+        if structure.action.raw_value == "unknown_operation":
+            return f"You are performing an unknown operation on {obj}. Review the raw data carefully."
+        
+        if structure.action.raw_value == "contract_interaction":
+            return f"You are interacting with {obj} contract."
+        
+        if structure.action.raw_value == "contract_call":
+            func_name = structure.action.description if structure.action.description != "Unknown Action" else "a function"
+            return f"You are calling {func_name} on {obj} contract."
 
         return None
 

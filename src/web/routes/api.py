@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 import traceback
 from ...core.pipeline import SemanticPipeline
-from ...utils.mock_data import ALL_TEST_DATA
+from ...utils.mock_data import ALL_TEST_DATA, DATA_CATEGORIES, DATA_DESCRIPTIONS
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 pipeline = SemanticPipeline()
@@ -36,19 +36,27 @@ def parse_signature():
 
 @api_bp.route('/test_data')
 def get_test_data():
-    """Get test data API"""
+    """Get test data API with categories and descriptions"""
     try:
         test_data = {}
         for name, data in ALL_TEST_DATA.items():
+            risk_level = 'medium'
+            for level, items in DATA_CATEGORIES.items():
+                if name in items:
+                    risk_level = level
+                    break
+            
             test_data[name] = {
                 'name': name,
                 'data': data,
-                'description': f"{name} example data"
+                'description': DATA_DESCRIPTIONS.get(name, f"{name} example data"),
+                'risk_level': risk_level
             }
         
         return jsonify({
             'success': True,
-            'test_data': test_data
+            'test_data': test_data,
+            'categories': DATA_CATEGORIES
         })
     except Exception as e:
         return jsonify({

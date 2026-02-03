@@ -93,10 +93,12 @@ function populateTestDataSelect() {
     
     select.innerHTML = '<option value="">Select test data...</option>';
     
+    // Add all test data as flat list
     Object.keys(testData).forEach(key => {
+        const item = testData[key];
         const option = document.createElement('option');
         option.value = key;
-        option.textContent = `${key}`;
+        option.textContent = item.description || key;
         select.appendChild(option);
     });
 }
@@ -259,8 +261,6 @@ function showSignatureState(result) {
     
     // Update AI explanation
     updateAIExplanation(result.raw_result.english_description);
-    
-
 }
 
 /**
