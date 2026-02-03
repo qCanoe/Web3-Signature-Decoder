@@ -52,7 +52,7 @@ class KnowledgeBase:
     @staticmethod
     @lru_cache(maxsize=1000 if Config.PERFORMANCE["enable_caching"] else None)
     def get_function_name(selector: str) -> Optional[str]:
-        definition = KnowledgeBase.get_function_definition(selector)
+        definition = KnowledgeBase.get_function_definition_with_fallback(selector)
         return definition.get("name") if definition else None
 
     @staticmethod
@@ -61,6 +61,14 @@ class KnowledgeBase:
         if not selector:
             return None
         return KnowledgeBase.FUNCTION_SIGNATURES.get(selector.lower())
+
+    @staticmethod
+    def get_function_definition_with_fallback(selector: Optional[str]) -> Optional[Dict[str, Any]]:
+        """
+        Placeholder for future dynamic selector resolution.
+        Currently falls back to the static registry only.
+        """
+        return KnowledgeBase.get_function_definition(selector)
 
     @staticmethod
     @lru_cache(maxsize=500 if Config.PERFORMANCE["enable_caching"] else None)

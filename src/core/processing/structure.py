@@ -116,14 +116,24 @@ class StructureParser:
     @staticmethod
     def _extract_object(ir: IntermediateRepresentation) -> SemanticComponent:
         # The object acted upon (e.g. the Token, the NFT, the dApp)
-        
+        def _get_param_value(params: dict, keys: List[str]) -> Any:
+            for key in keys:
+                if key in params:
+                    return params[key]
+            for key in keys:
+                suffix = f".{key}"
+                for param_key, val in params.items():
+                    if param_key.endswith(suffix):
+                        return val
+            return None
+
         # Case 1: EIP-712
         if ir.signature_type == SignatureType.ETH_SIGN_TYPED_DATA_V4:
             # Try to identify specific object types from nested structures
             params = ir.params
             
             # Check for token address
-            token_addr = params.get("token") or params.get("tokenAddress") or params.get("asset")
+            token_addr = _get_param_value(params, ["token", "tokenAddress", "asset"])
             if token_addr:
                 token_meta = KnowledgeBase.get_token_metadata(token_addr)
                 symbol = token_meta.get("symbol", "TOKEN") if token_meta else "TOKEN"
@@ -134,7 +144,7 @@ class StructureParser:
                 )
             
             # Check for NFT contract
-            nft_addr = params.get("nft") or params.get("collection") or params.get("contract")
+            nft_addr = _get_param_value(params, ["nft", "collection", "contract"])
             if nft_addr:
                 return SemanticComponent(
                     role="Object",
@@ -143,7 +153,7 @@ class StructureParser:
                 )
             
             # Check for governance contract
-            proposal_id = params.get("proposalId") or params.get("proposal")
+            proposal_id = _get_param_value(params, ["proposalId", "proposal"])
             if proposal_id:
                 return SemanticComponent(
                     role="Object",
@@ -221,6 +231,17 @@ class StructureParser:
     def _extract_context(ir: IntermediateRepresentation) -> List[SemanticComponent]:
         ctx = []
         params = ir.params
+
+        def _get_param_value(keys: List[str]) -> Any:
+            for key in keys:
+                if key in params:
+                    return params[key]
+            for key in keys:
+                suffix = f".{key}"
+                for param_key, val in params.items():
+                    if param_key.endswith(suffix):
+                        return val
+            return None
         
         # Add Chain Info
         if ir.chain_id:
@@ -242,12 +263,12 @@ class StructureParser:
         # --- Generalized Parameter Extraction for Risk Analysis ---
         
         # 1. Deadlines / Time
-        deadline = params.get("deadline") or params.get("expiry") or params.get("endTime")
+        deadline = _get_param_value(["deadline", "expiry", "expiration", "endTime", "sigDeadline"])
         if deadline:
             ctx.append(SemanticComponent(role="Context", description="Deadline", raw_value=deadline))
             
         # 2. Value / Amount (General)
-        amount = params.get("value") or params.get("amount")
+        amount = _get_param_value(["value", "amount"])
         if amount and "amount" not in [c.description.lower() for c in ctx]: # Avoid dupe if handled below
              is_inf = KnowledgeBase.is_infinite_allowance(amount)
              desc = "Infinite Amount" if is_inf else "Amount"
@@ -255,7 +276,7 @@ class StructureParser:
              ctx.append(SemanticComponent(role="Context", description=desc, raw_value=amount, risk_factor=risk))
 
         # 3. Cross-chain Indicators
-        dest_chain = params.get("destinationChainId") or params.get("targetChain")
+        dest_chain = _get_param_value(["destinationChainId", "targetChain", "destinationChain", "targetChainId"])
         if dest_chain:
             ctx.append(SemanticComponent(role="Context", description="Destination Chain", raw_value=dest_chain, risk_factor="medium"))
 
@@ -265,8 +286,8 @@ class StructureParser:
         decoded_params = decoded.get("parameters", {}) if decoded else {}
 
         if ir.action_type in ["approve", "authorization", "permit"]:
-            spender = decoded_params.get("spender") or decoded_params.get("param_0") or params.get("spender")
-            value = decoded_params.get("amount") or decoded_params.get("param_1") or params.get("value") or params.get("amount")
+            spender = decoded_params.get("spender") or decoded_params.get("param_0") or _get_param_value(["spender"])
+            value = decoded_params.get("amount") or decoded_params.get("value") or decoded_params.get("param_1") or _get_param_value(["value", "amount"])
             if spender:
                 # Try to identify spender protocol
                 spender_name = KnowledgeBase.get_contract_name(ir.chain_id, spender)

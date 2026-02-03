@@ -183,6 +183,25 @@ class InputAdapter:
             field_value = message[field_name]
             field_key = f"{prefix}{field_name}" if prefix else field_name
             
+            # Handle array types (e.g. Type[], uint256[])
+            is_array = False
+            base_type = field_type
+            if isinstance(field_type, str) and "[" in field_type:
+                base_type = field_type.split("[", 1)[0]
+                is_array = True
+
+            if is_array and isinstance(field_value, list):
+                for idx, item in enumerate(field_value):
+                    item_key = f"{field_key}[{idx}]"
+                    if base_type in types and isinstance(item, dict):
+                        nested_flattened = InputAdapter._flatten_eip712_message(
+                            item, base_type, types, prefix=f"{item_key}."
+                        )
+                        flattened.update(nested_flattened)
+                    else:
+                        flattened[item_key] = item
+                continue
+
             # Check if field_type is a custom type (nested structure)
             if field_type in types and isinstance(field_value, dict):
                 # Recursively flatten nested structure
@@ -191,7 +210,7 @@ class InputAdapter:
                 )
                 flattened.update(nested_flattened)
             else:
-                # Primitive type or array, add directly
+                # Primitive type or untyped structure, add directly
                 flattened[field_key] = field_value
         
         return flattened
@@ -202,9 +221,15 @@ class InputAdapter:
         chain_id = data.get("chainId")
         if chain_id:
             if isinstance(chain_id, str) and chain_id.startswith("0x"):
-                chain_id = int(chain_id, 16)
+                try:
+                    chain_id = int(chain_id, 16)
+                except ValueError:
+                    chain_id = None
             elif isinstance(chain_id, str):
-                chain_id = int(chain_id)
+                try:
+                    chain_id = int(chain_id)
+                except ValueError:
+                    chain_id = None
 
         # Base params
         params = {
