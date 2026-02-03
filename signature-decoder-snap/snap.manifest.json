@@ -7,7 +7,7 @@
     "url": "https://github.com/your-username/signature-decoder-snap.git"
   },
   "source": {
-    "shasum": "",
+    "shasum": "tBP6Pmm6mEqD+MuEt9Fikp+gEubD1YdLFjjekP/JYE4=",
     "location": {
       "npm": {
         "filePath": "dist/bundle.js",
@@ -26,5 +26,6 @@
     },
     "endowment:network-access": {}
   },
+  "platformVersion": "6.24.0",
   "manifestVersion": "0.1"
 }
