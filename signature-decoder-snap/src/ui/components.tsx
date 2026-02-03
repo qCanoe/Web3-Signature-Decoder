@@ -399,6 +399,11 @@ function formatFieldLabel(key: string): string {
  * 格式化字段值
  */
 function formatFieldValue(value: unknown): string {
+  // 处理 null 和 undefined
+  if (value === null || value === undefined) {
+    return "N/A";
+  }
+
   if (typeof value === "string") {
     // 地址缩短
     if (value.match(/^0x[a-fA-F0-9]{40}$/)) {
@@ -411,12 +416,32 @@ function formatFieldValue(value: unknown): string {
     return value;
   }
 
-  if (typeof value === "number" || typeof value === "bigint") {
+  if (typeof value === "number") {
     return value.toString();
   }
 
-  if (typeof value === "object" && value !== null) {
-    return JSON.stringify(value).slice(0, 50) + "...";
+  if (typeof value === "bigint") {
+    return value.toString();
+  }
+
+  if (typeof value === "boolean") {
+    return value ? "true" : "false";
+  }
+
+  if (Array.isArray(value)) {
+    return `[${value.length} items]`;
+  }
+
+  if (typeof value === "object") {
+    try {
+      const str = JSON.stringify(value);
+      if (str.length > 50) {
+        return str.slice(0, 47) + "...";
+      }
+      return str;
+    } catch {
+      return "[Object]";
+    }
   }
 
   return String(value);
