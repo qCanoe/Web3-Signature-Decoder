@@ -67,11 +67,9 @@ export function renderInsights(insights: AnalysisResult) {
           <Heading>Key Parameters</Heading>
           {insights.highlights.map((h, i) => (
             <Row key={`highlight-${i}`} label={h.label}>
-              {h.type === "address" ? (
-                <Address address={h.value as `0x${string}`} />
-              ) : (
-                <Text>{h.value}</Text>
-              )}
+              {h.type === "address"
+                ? renderAddressOrText(h.value)
+                : <Text>{h.value}</Text>}
             </Row>
           ))}
         </Box>
@@ -84,7 +82,7 @@ export function renderInsights(insights: AnalysisResult) {
           <Heading>Participants</Heading>
           {insights.actors.map((actor, i) => (
             <Row key={`actor-${i}`} label={actor.role}>
-              <Address address={actor.address as `0x${string}`} />
+              {renderAddressOrText(actor.address)}
             </Row>
           ))}
         </Box>
@@ -147,13 +145,11 @@ export function renderTransactionInsights(
           <Heading>Key Parameters</Heading>
           {insights.highlights.map((h, i) => (
             <Row key={`highlight-${i}`} label={h.label}>
-              {h.type === "address" ? (
-                <Address address={h.value as `0x${string}`} />
-              ) : h.type === "amount" ? (
-                <Copyable value={h.value} />
-              ) : (
-                <Text>{h.value}</Text>
-              )}
+              {h.type === "address"
+                ? renderAddressOrText(h.value)
+                : h.type === "amount"
+                ? <Copyable value={h.value} />
+                : <Text>{h.value}</Text>}
             </Row>
           ))}
         </Box>
@@ -166,7 +162,7 @@ export function renderTransactionInsights(
           <Heading>Participants</Heading>
           {insights.actors.map((actor, i) => (
             <Row key={`actor-${i}`} label={actor.role}>
-              <Address address={actor.address as `0x${string}`} />
+              {renderAddressOrText(actor.address)}
             </Row>
           ))}
         </Box>
@@ -445,4 +441,21 @@ function formatFieldValue(value: unknown): string {
   }
 
   return String(value);
+}
+
+/**
+ * 渲染地址，非法时回退为文本
+ */
+function renderAddressOrText(value: string) {
+  if (isHexAddress(value)) {
+    return <Address address={value as `0x${string}`} />;
+  }
+  return <Text>{value}</Text>;
+}
+
+/**
+ * 检查是否为有效的 0x 地址
+ */
+function isHexAddress(value: string): boolean {
+  return /^0x[a-fA-F0-9]{40}$/.test(value);
 }
