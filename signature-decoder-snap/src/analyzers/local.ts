@@ -161,7 +161,7 @@ export async function localAnalyzeTransaction(
     case "erc20_approve":
       basicRisk = "medium";
       // 检查是否为无限授权
-      if (data.length >= 74) {
+      if (data.length >= 138) {
         const amountHex = "0x" + data.slice(74, 138);
         if (isUnlimitedAmount(amountHex)) {
           warnings.push("无限授权 - 允许花费全部代币");
