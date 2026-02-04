@@ -9,8 +9,15 @@ import type {
   OnTransactionHandler,
 } from "@metamask/snaps-sdk";
 
+import { configureApiUrl } from "./api/client";
 import { handleSignature } from "./handlers/signature";
 import { handleTransaction } from "./handlers/transaction";
+import { BACKEND_BASE_URL } from "./config";
+
+// Configure backend base URL for deep analysis
+if (BACKEND_BASE_URL) {
+  configureApiUrl(BACKEND_BASE_URL);
+}
 
 /**
  * onSignature 处理器 - 处理所有签名请求
