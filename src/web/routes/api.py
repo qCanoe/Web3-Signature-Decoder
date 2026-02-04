@@ -125,6 +125,9 @@ def _extract_signature_payload(data: Any, signature_method: Any) -> Any:
         if 'data' in data:
             return data.get('data')
         return data
+    if isinstance(data, list):
+        # eth_signTypedData (v1) can be an array payload
+        return data
     if isinstance(data, str):
         return data
     if signature_method and isinstance(signature_method, str):
