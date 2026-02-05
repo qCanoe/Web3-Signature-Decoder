@@ -47,6 +47,38 @@ The codebase is designed for research on signature transparency and can serve as
 └── src/utils/mock_data.py # Shared test data
 ```
 
+## Configuration
+
+Copy `.env.example` to `.env` and adjust as needed. Common settings:
+
+- `FLASK_DEBUG`, `FLASK_HOST`, `FLASK_PORT`: Web server settings
+- `OPENAI_API_KEY`, `LLM_ENABLED`: Optional LLM interpretation
+- `ETHERSCAN_API_KEY`: Optional ABI fetching
+- `LOG_LEVEL`, `LOG_FILE_ENABLED`, `LOG_FILE_PATH`: Logging controls
+
+## Running locally
+
+```bash
+pip install -r requirements.txt
+python src/web/app.py
+```
+
+Then open `http://localhost:5001` in your browser.
+
+Note: `requirements.txt` is pinned to tested versions. If you update
+dependencies, re-freeze the exact versions and re-run tests.
+
+## Production notes
+
+- Run behind a WSGI server (e.g., gunicorn/uwsgi) and a reverse proxy.
+- Serve static assets via the web server rather than Flask in production.
+
+## Snap configuration
+
+The Snap client uses a default API URL in
+`signature-decoder-snap/src/api/client.ts`. Update it or call
+`configureApiUrl()` to point to your deployed backend.
+
 ## Research MVP Disclaimer
 
 Please note that this project is currently developed as a **Research MVP (Minimum Viable Product)**. It is primarily designed to demonstrate the feasibility of semantic interpretation for blockchain signatures within an academic or experimental context.
