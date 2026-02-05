@@ -106,6 +106,8 @@ class StructureParser:
             desc = "Transfer Assets"
         elif ir.action_type == "authentication":
             desc = "Sign In / Authenticate"
+        elif ir.action_type == "sign_in_with_ethereum":
+            desc = "Sign-In with Ethereum"
 
         return SemanticComponent(
             role="Action",
@@ -214,7 +216,7 @@ class StructureParser:
         if ir.signature_type == SignatureType.PERSONAL_SIGN:
             # Try to extract domain from message if available
             msg = ir.params.get("message_cleaned", "")
-            extracted = ParameterExtractor.extract(msg)
+            extracted = ir.params.get("message_extracted") or ParameterExtractor.extract(msg)
             if "domain" in extracted:
                  return SemanticComponent(
                     role="Object",
@@ -342,19 +344,46 @@ class StructureParser:
         # Personal Sign Context Extraction
         if ir.signature_type == SignatureType.PERSONAL_SIGN:
             msg = params.get("message_cleaned", "")
-            extracted = ParameterExtractor.extract(msg)
+            extracted = params.get("message_extracted") or ParameterExtractor.extract(msg)
+
+            label_map = {
+                "domain": "Domain",
+                "address": "Address",
+                "uri": "URI",
+                "version": "Version",
+                "chain_id": "Chain ID",
+                "nonce": "Nonce",
+                "timestamp": "Timestamp",
+                "issued_at": "Issued At",
+                "expiration_time": "Expiration Time",
+                "not_before": "Not Before",
+                "request_id": "Request ID",
+                "resources": "Resources",
+                "statement": "Statement",
+            }
+
+            def _add_ctx(key: str, value: Any):
+                if value is None:
+                    return
+                label = label_map.get(key, key.title())
+                if isinstance(value, list):
+                    value = ", ".join([str(v) for v in value])
+                ctx.append(SemanticComponent(role="Context", description=label, raw_value=value))
             
-            # Add interesting fields to context
-            if "nonce" in extracted:
-                ctx.append(SemanticComponent(role="Context", description="Nonce", raw_value=extracted["nonce"]))
-            if "timestamp" in extracted:
-                 ctx.append(SemanticComponent(role="Context", description="Timestamp", raw_value=extracted["timestamp"]))
-            if "address" in extracted:
-                 ctx.append(SemanticComponent(role="Context", description="Referenced Address", raw_value=extracted["address"]))
+            ordered_keys = [
+                "domain", "address", "nonce", "timestamp", "uri", "version", "chain_id",
+                "issued_at", "expiration_time", "not_before", "request_id",
+                "statement", "resources"
+            ]
+            for key in ordered_keys:
+                if key in extracted:
+                    _add_ctx(key, extracted[key])
+
             # Add any other custom keys found
             for k, v in extracted.items():
-                if k not in ["nonce", "timestamp", "address", "domain"]:
-                    ctx.append(SemanticComponent(role="Context", description=k.title(), raw_value=v))
+                if k in ordered_keys or k == "siwe":
+                    continue
+                _add_ctx(k, v)
         
         # EIP-712 Nested Context Extraction
         if ir.signature_type == SignatureType.ETH_SIGN_TYPED_DATA_V4:

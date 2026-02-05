@@ -350,6 +350,27 @@ class Interpreter:
             return f"You are transferring NFT #{token_id} to {format_address(recipient)}."
             
         # ========== Authentication ==========
+        if structure.action.raw_value == "sign_in_with_ethereum":
+            statement = get_ctx(["Statement"], None)
+            nonce = get_ctx(["Nonce"], None)
+            issued_at = get_ctx(["Issued At"], None)
+            expiration = get_ctx(["Expiration Time"], None)
+            parts = [
+                f"You are signing in to {obj} with your wallet. This is a login signature (SIWE) and does not authorize token transfers."
+            ]
+            details = []
+            if nonce:
+                details.append(f"nonce {nonce}")
+            if issued_at:
+                details.append(f"issued {issued_at}")
+            if expiration:
+                details.append(f"expires {expiration}")
+            if details:
+                parts.append("Session details: " + ", ".join(details) + ".")
+            if statement:
+                parts.append(f"Statement: {statement}.")
+            return " ".join(parts)
+
         if structure.action.raw_value == "authentication":
             return f"You are signing into {obj}. This signature proves you own this wallet and does not authorize any token transfers."
         
