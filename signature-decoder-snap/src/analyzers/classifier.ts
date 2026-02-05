@@ -90,19 +90,19 @@ export function classifyEIP712Type(
 ): ClassificationResult {
   const { primaryType, types, message, domain } = typedData;
 
-  // 检测 Permit 类型
-  if (isPermitType(primaryType, types, message)) {
+  // 检测 Permit2 类型（优先级高于 Permit）
+  if (isPermit2Type(primaryType, domain)) {
     return {
-      type: "permit",
+      type: "permit2",
       subType: primaryType,
       confidence: 0.95,
     };
   }
 
-  // 检测 Permit2 类型
-  if (isPermit2Type(primaryType, domain)) {
+  // 检测 Permit 类型
+  if (isPermitType(primaryType, types, message)) {
     return {
-      type: "permit2",
+      type: "permit",
       subType: primaryType,
       confidence: 0.95,
     };

@@ -6,6 +6,17 @@
 
 import { installSnap } from "@metamask/snaps-jest";
 import { expect } from "@jest/globals";
+import type { Signature } from "@metamask/snaps-sdk";
+import type { EIP712TypedData } from "../src/types";
+import {
+  extractDisplayFields,
+  flattenTypedData,
+} from "../src/analyzers/eip712";
+import {
+  classifyEIP712Type,
+  detectProtocol,
+} from "../src/analyzers/classifier";
+import { localAnalyzeSignature } from "../src/analyzers/local";
 
 describe("Signature Decoder Snap", () => {
   describe("onSignature", () => {
@@ -147,25 +158,239 @@ describe("Signature Decoder Snap", () => {
 describe("Local Analyzers", () => {
   describe("EIP-712 Parser", () => {
     it("should flatten typed data correctly", () => {
-      expect(true).toBe(true);
+      const typedData: EIP712TypedData = {
+        types: {
+          EIP712Domain: [
+            { name: "name", type: "string" },
+            { name: "version", type: "string" },
+            { name: "chainId", type: "uint256" },
+            { name: "verifyingContract", type: "address" },
+          ],
+          Permit: [
+            { name: "owner", type: "address" },
+            { name: "spender", type: "address" },
+            { name: "value", type: "uint256" },
+            { name: "details", type: "Details" },
+          ],
+          Details: [
+            { name: "token", type: "address" },
+            { name: "amount", type: "uint256" },
+          ],
+        },
+        primaryType: "Permit",
+        domain: {
+          name: "USD Coin",
+          version: "2",
+          chainId: 1,
+          verifyingContract: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        },
+        message: {
+          owner: "0x1234567890123456789012345678901234567890",
+          spender: "0x0987654321098765432109876543210987654321",
+          value: "1000",
+          details: {
+            token: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+            amount: "250000000",
+          },
+        },
+      };
+
+      const flattened = flattenTypedData(typedData);
+      expect(flattened["domain.name"]).toBe("USD Coin");
+      expect(flattened["primaryType"]).toBe("Permit");
+      expect(flattened["owner"]).toBe(
+        "0x1234567890123456789012345678901234567890"
+      );
+      expect(flattened["details.token"]).toBe(
+        "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+      );
     });
 
     it("should detect unlimited approval amounts", () => {
-      expect(true).toBe(true);
+      const typedData: EIP712TypedData = {
+        types: {
+          EIP712Domain: [
+            { name: "name", type: "string" },
+            { name: "version", type: "string" },
+            { name: "chainId", type: "uint256" },
+            { name: "verifyingContract", type: "address" },
+          ],
+          Permit: [
+            { name: "owner", type: "address" },
+            { name: "spender", type: "address" },
+            { name: "value", type: "uint256" },
+            { name: "nonce", type: "uint256" },
+            { name: "deadline", type: "uint256" },
+          ],
+        },
+        primaryType: "Permit",
+        domain: {
+          name: "USD Coin",
+          version: "2",
+          chainId: 1,
+          verifyingContract: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        },
+        message: {
+          owner: "0x1234567890123456789012345678901234567890",
+          spender: "0x0987654321098765432109876543210987654321",
+          value:
+            "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          nonce: 0,
+          deadline: 1893456000,
+        },
+      };
+
+      const fields = extractDisplayFields(typedData);
+      const amountField = fields.find((field) => field.label === "Amount");
+      expect(amountField?.value).toBe("Unlimited (MAX)");
     });
   });
 
   describe("Classifier", () => {
     it("should classify Permit signatures correctly", () => {
-      expect(true).toBe(true);
+      const typedData: EIP712TypedData = {
+        types: {
+          EIP712Domain: [
+            { name: "name", type: "string" },
+            { name: "version", type: "string" },
+            { name: "chainId", type: "uint256" },
+            { name: "verifyingContract", type: "address" },
+          ],
+          Permit: [
+            { name: "owner", type: "address" },
+            { name: "spender", type: "address" },
+            { name: "value", type: "uint256" },
+            { name: "nonce", type: "uint256" },
+            { name: "deadline", type: "uint256" },
+          ],
+        },
+        primaryType: "Permit",
+        domain: {
+          name: "USD Coin",
+          version: "2",
+          chainId: 1,
+          verifyingContract: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+        },
+        message: {
+          owner: "0x1234567890123456789012345678901234567890",
+          spender: "0x0987654321098765432109876543210987654321",
+          value: "1000",
+          nonce: 0,
+          deadline: 1893456000,
+        },
+      };
+
+      const result = classifyEIP712Type(typedData);
+      expect(result.type).toBe("permit");
     });
 
     it("should classify Permit2 signatures correctly", () => {
-      expect(true).toBe(true);
+      const typedData: EIP712TypedData = {
+        types: {
+          EIP712Domain: [
+            { name: "name", type: "string" },
+            { name: "version", type: "string" },
+            { name: "chainId", type: "uint256" },
+            { name: "verifyingContract", type: "address" },
+          ],
+          PermitSingle: [
+            { name: "details", type: "details" },
+            { name: "spender", type: "address" },
+            { name: "sigDeadline", type: "uint256" },
+          ],
+        },
+        primaryType: "PermitSingle",
+        domain: {
+          name: "Permit2",
+          version: "1",
+          chainId: 1,
+          verifyingContract: "0x0000000000000000000000000000000000000000",
+        },
+        message: {
+          details: {},
+          spender: "0x0987654321098765432109876543210987654321",
+          sigDeadline: "0",
+        },
+      };
+
+      const result = classifyEIP712Type(typedData);
+      expect(result.type).toBe("permit2");
     });
 
     it("should detect known protocols", () => {
-      expect(true).toBe(true);
+      const typedData: EIP712TypedData = {
+        types: {
+          EIP712Domain: [
+            { name: "name", type: "string" },
+            { name: "version", type: "string" },
+            { name: "chainId", type: "uint256" },
+            { name: "verifyingContract", type: "address" },
+          ],
+          Order: [
+            { name: "maker", type: "address" },
+            { name: "taker", type: "address" },
+          ],
+        },
+        primaryType: "Order",
+        domain: {
+          name: "Uniswap",
+          version: "1",
+          chainId: 1,
+          verifyingContract: "0x1111111111111111111111111111111111111111",
+        },
+        message: {
+          maker: "0x1234567890123456789012345678901234567890",
+          taker: "0x0987654321098765432109876543210987654321",
+        },
+      };
+
+      expect(detectProtocol(typedData)).toBe("Uniswap");
     });
+  });
+});
+
+describe("Local Analysis", () => {
+  it("should flag unlimited permit approvals", async () => {
+    const typedData: EIP712TypedData = {
+      types: {
+        EIP712Domain: [
+          { name: "name", type: "string" },
+          { name: "version", type: "string" },
+          { name: "chainId", type: "uint256" },
+          { name: "verifyingContract", type: "address" },
+        ],
+        Permit: [
+          { name: "owner", type: "address" },
+          { name: "spender", type: "address" },
+          { name: "value", type: "uint256" },
+          { name: "nonce", type: "uint256" },
+          { name: "deadline", type: "uint256" },
+        ],
+      },
+      primaryType: "Permit",
+      domain: {
+        name: "USD Coin",
+        version: "2",
+        chainId: 1,
+        verifyingContract: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      },
+      message: {
+        owner: "0x1234567890123456789012345678901234567890",
+        spender: "0x0987654321098765432109876543210987654321",
+        value:
+          "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        nonce: 0,
+        deadline: 1893456000,
+      },
+    };
+
+    const signature = {
+      signatureMethod: "eth_signTypedData_v4",
+      data: typedData,
+    } as unknown as Signature;
+
+    const result = await localAnalyzeSignature(signature);
+    expect(result.basicRisk).toBe("high");
+    expect(result.warnings).toContain("无限授权 - 允许花费全部代币");
   });
 });
