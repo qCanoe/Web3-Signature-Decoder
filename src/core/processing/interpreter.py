@@ -374,10 +374,22 @@ class Interpreter:
         if structure.action.raw_value == "authentication":
             return f"You are signing into {obj}. This signature proves you own this wallet and does not authorize any token transfers."
         
+        if structure.action.raw_value == "verification":
+            warning = get_ctx(["Phishing Indicators"], None)
+            if warning:
+                return f"You are signing a verification message for {obj}. This does not authorize any token transfers. Warning: possible phishing indicators detected."
+            return f"You are signing a verification message for {obj}. This does not authorize any token transfers."
+        
         if structure.action.raw_value == "sign_message":
+            warning = get_ctx(["Phishing Indicators"], None)
+            if warning:
+                return f"You are signing a message for {obj}. Review the message content carefully. Warning: possible phishing indicators detected."
             return f"You are signing a message for {obj}. Review the message content carefully."
         
         if structure.action.raw_value == "sign_hash":
+            warning = get_ctx(["Phishing Indicators"], None)
+            if warning:
+                return f"You are signing a raw hash. This is high risk - ensure you trust the source. Warning: possible phishing indicators detected."
             return f"You are signing a raw hash. This is high risk - ensure you trust the source."
         
         # ========== NFT Marketplace ==========

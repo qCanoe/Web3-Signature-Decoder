@@ -58,6 +58,15 @@ class Config:
         "threat": ["suspend", "block", "disable", "freeze"]
     }
     
+    # Additional suspicious patterns for phishing detection
+    SUSPICIOUS_PATTERNS = {
+        "similar_address": ["similar to", "looks like", "resembles"],
+        "urgency": ["urgent", "immediately", "asap", "hurry", "quick", "fast"],
+        "fake_reward": ["claim", "reward", "bonus", "prize", "free", "airdrop", "giveaway"],
+        "authority_claim": ["official", "verified", "authentic", "legitimate"],
+        "threat": ["suspend", "block", "disable", "freeze", "locked", "restricted"],
+    }
+
     # EIP-712 validation settings
     EIP712_VALIDATION = {
         "strict_mode": os.getenv("EIP712_STRICT_MODE", "false").lower() == "true",

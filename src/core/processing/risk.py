@@ -60,14 +60,6 @@ class RiskEngine:
         "behavioral": 1.0,      # Behavioral patterns
     }
     
-    # Additional risk patterns
-    SUSPICIOUS_PATTERNS = {
-        "similar_address": ["similar to", "looks like", "resembles"],
-        "urgency": ["urgent", "immediately", "asap", "hurry", "quick", "fast"],
-        "fake_reward": ["claim", "reward", "bonus", "prize", "free", "airdrop", "giveaway"],
-        "authority_claim": ["official", "verified", "authentic", "legitimate"],
-        "threat": ["suspend", "block", "disable", "freeze", "locked", "restricted"],
-    }
     
     @staticmethod
     def assess(ir: IntermediateRepresentation, structure: SemanticStructure) -> RiskAssessment:
@@ -392,7 +384,7 @@ class RiskEngine:
                 return re.search(rf"\b{re.escape(pattern)}\b", text) is not None
             return pattern in text
 
-        for pattern_name, patterns in RiskEngine.SUSPICIOUS_PATTERNS.items():
+        for pattern_name, patterns in Config.SUSPICIOUS_PATTERNS.items():
             for pattern in patterns:
                 if _matches_pattern(text_content, pattern):
                     detected_patterns.append((pattern_name, pattern))

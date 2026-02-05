@@ -1,8 +1,10 @@
 from dataclasses import dataclass, field
 from typing import Optional, List, Any
+import re
 from ..input.definitions import IntermediateRepresentation, SignatureType
 from .knowledge_base import KnowledgeBase
 from .extractors import ParameterExtractor
+from ..config import Config
 
 @dataclass
 class SemanticComponent:
@@ -425,6 +427,32 @@ class StructureParser:
                 if k in ordered_keys or k == "siwe":
                     continue
                 _add_ctx(k, v)
+
+            # Phishing indicators for personal_sign messages
+            text_content = " ".join([
+                str(params.get("message", "")),
+                str(params.get("message_cleaned", "")),
+            ]).lower()
+            detected = []
+            for category, keywords in Config.PHISHING_KEYWORDS.items():
+                hits = [kw for kw in keywords if kw in text_content]
+                if hits:
+                    detected.append(f"{category}: {', '.join(sorted(set(hits)))}")
+            def _matches_pattern(text: str, pattern: str) -> bool:
+                if pattern.isalpha():
+                    return re.search(rf"\b{re.escape(pattern)}\b", text) is not None
+                return pattern in text
+            for category, patterns in Config.SUSPICIOUS_PATTERNS.items():
+                hits = [p for p in patterns if _matches_pattern(text_content, p)]
+                if hits:
+                    detected.append(f"{category}: {', '.join(sorted(set(hits)))}")
+            if detected:
+                ctx.append(SemanticComponent(
+                    role="Context",
+                    description="Phishing Indicators",
+                    raw_value="; ".join(detected),
+                    risk_factor="high"
+                ))
         
         # EIP-712 Nested Context Extraction
         if ir.signature_type == SignatureType.ETH_SIGN_TYPED_DATA_V4:
