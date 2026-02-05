@@ -5,12 +5,14 @@ import os
 from pathlib import Path
 from functools import lru_cache
 from ..config import Config
+from ..utils.logger import Logger
 
 # Get the directory from Config
 _DATA_DIR = Config.DATA_DIR
 
 # Lazy import to avoid circular imports
 _abi_fetcher = None
+logger = Logger.get_logger(__name__)
 
 def _get_abi_fetcher():
     """Lazy load ABIFetcher to avoid circular imports."""
@@ -119,11 +121,19 @@ class KnowledgeBase:
                         try:
                             KnowledgeBase.get_function_definition.cache_clear()
                             KnowledgeBase.get_function_name.cache_clear()
-                        except Exception:
-                            pass
+                        except Exception as error:
+                            logger.debug(f"Failed to clear caches: {error}")
                         return result
-                except Exception:
-                    pass
+                except Exception as error:
+                    logger.warning(
+                        "Dynamic ABI fetch failed",
+                        extra={
+                            "selector": selector,
+                            "chain_id": chain_id,
+                            "contract_address": contract_address,
+                            "error": str(error),
+                        },
+                    )
         
         return None
 

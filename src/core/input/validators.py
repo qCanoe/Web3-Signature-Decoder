@@ -1,4 +1,7 @@
 from typing import Dict, Any, List, Set
+from ..utils.logger import Logger
+
+logger = Logger.get_logger(__name__)
 
 class InputValidator:
     @staticmethod
@@ -63,7 +66,9 @@ class InputValidator:
                         # Check if field exists in message
                         if field_name and field_name not in message:
                             # Some fields might be optional, but log as warning
-                            pass
+                            logger.debug(
+                                f"EIP-712 message missing field: {field_name} in {primary_type}"
+                            )
                         
                         # Validate nested types
                         if field_type in types and isinstance(message.get(field_name), dict):

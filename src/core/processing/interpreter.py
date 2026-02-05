@@ -5,6 +5,7 @@ from typing import Optional, Dict, Any, List
 from ..input.definitions import IntermediateRepresentation, SignatureType
 from .structure import SemanticStructure, SemanticComponent
 from .knowledge_base import KnowledgeBase
+from ..utils.logger import Logger
 
 # Optional: Import OpenAI if available
 try:
@@ -12,6 +13,8 @@ try:
     HAS_OPENAI = True
 except ImportError:
     HAS_OPENAI = False
+
+logger = Logger.get_logger(__name__)
 
 class Interpreter:
     """
@@ -38,8 +41,8 @@ class Interpreter:
                     if ":" in content:
                         return content.split(":", 1)[1].strip()
                     return content
-        except Exception:
-            pass
+        except Exception as error:
+            logger.debug(f"Failed to load OpenAI API key: {error}")
         return None
 
     def interpret(self, structure: SemanticStructure, ir: Optional[IntermediateRepresentation] = None) -> str:
@@ -181,8 +184,8 @@ class Interpreter:
                 deadline_value = ctx.raw_value
                 break
         
-        # Check if deadline is far in the future or permanent
-        is_permanent = True
+        # By default, no deadline implies effectively permanent
+        is_permanent = not has_deadline
         if has_deadline and deadline_value:
             try:
                 deadline_int = int(deadline_value)
@@ -193,8 +196,11 @@ class Interpreter:
                     is_permanent = True
                 elif deadline_int > current_time:
                     is_permanent = False
-            except:
-                pass
+                else:
+                    # Expired deadline should not be treated as permanent
+                    is_permanent = False
+            except Exception as error:
+                logger.debug(f"Failed to parse deadline value: {error}")
         
         # Check for single-use patterns (nonce-based)
         has_nonce = any("nonce" in c.description.lower() for c in structure.context)
@@ -205,17 +211,12 @@ class Interpreter:
         if is_infinite:
             if is_permanent or not has_deadline:
                 return "unlimited_permanent"
-            else:
-                return "unlimited_time_limited"
-        else:
+            return "unlimited_time_limited"
+        
+        if amount_values:
             if is_permanent or not has_deadline:
                 return "specific_amount_permanent"
-            else:
-                return "specific_amount_time_limited"
-        
-        # Check for specific amount
-        if amount_values:
-            return "specific_amount"
+            return "specific_amount_time_limited"
         
         # Default based on action type
         if action_type == "approve":
@@ -248,8 +249,8 @@ class Interpreter:
                     amount_val = float(ctx.raw_value)
                     if amount_val > 1e18:  # Roughly 1 ETH or equivalent
                         implications.append(f"High value operation: {amount_val / 1e18:.2f} ETH equivalent")
-                except:
-                    pass
+                except Exception as error:
+                    logger.debug(f"Failed to parse amount value: {error}")
         
         # 3. Check for irreversible actions
         if structure.action.raw_value == "transfer_asset":
@@ -533,6 +534,6 @@ class Interpreter:
             )
             return response.choices[0].message.content.strip()
         except Exception as e:
-            print(f"LLM Error: {e}")
+            logger.warning(f"LLM interpretation failed: {e}")
             return f"Perform {structure.action.description} on {structure.target_object.description}."
 

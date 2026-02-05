@@ -57,8 +57,8 @@ class ABIFetcher:
                     for line in f:
                         if line.startswith("ETHERSCAN:"):
                             return line.split(":", 1)[1].strip()
-        except Exception:
-            pass
+        except Exception as error:
+            logger.warning(f"Failed to read Etherscan API key: {error}")
         
         return None
     

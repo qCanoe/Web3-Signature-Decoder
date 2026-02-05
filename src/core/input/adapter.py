@@ -4,6 +4,9 @@ from typing import Any, Dict, Union, Optional
 from .definitions import IntermediateRepresentation, SignatureType
 from .validators import InputValidator
 from ..processing.transaction_decoder import TransactionDecoder
+from ..utils.logger import Logger
+
+logger = Logger.get_logger(__name__)
 
 class InputAdapter:
     """
@@ -111,8 +114,8 @@ class InputAdapter:
         if isinstance(chain_id, str) and chain_id.startswith("0x"):
             try:
                 chain_id = int(chain_id, 16)
-            except ValueError:
-                pass
+            except ValueError as error:
+                logger.debug(f"Invalid hex chainId: {error}")
         elif isinstance(chain_id, str) and chain_id.isdigit():
              chain_id = int(chain_id)
 
@@ -142,7 +145,7 @@ class InputAdapter:
         if not origin and domain.get("name"):
             # Domain name might contain protocol info, but not full URL
             # In real wallet, origin comes from browser context
-            pass
+            logger.debug("Origin not provided; keeping as None for EIP-712")
         
         return ir
     
@@ -296,8 +299,8 @@ class InputAdapter:
                         length_part = parts[0].replace("\x19Ethereum Signed Message:\n", "")
                         if length_part.isdigit():
                             actual_message = parts[1]
-                    except:
-                        pass
+                    except Exception as error:
+                        logger.debug(f"Failed to parse EIP-191 prefix length: {error}")
             elif "\x19" in msg_content:
                 eip191_prefix = "custom"
         

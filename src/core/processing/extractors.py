@@ -2,6 +2,9 @@ import re
 import json
 from typing import Dict, Any, Optional, List
 from urllib.parse import parse_qs, urlparse
+from ..utils.logger import Logger
+
+logger = Logger.get_logger(__name__)
 
 class ParameterExtractor:
     """
@@ -83,8 +86,8 @@ class ParameterExtractor:
                 decoded = bytes.fromhex(message[2:]).decode('utf-8', errors='ignore')
                 if any(c.isalnum() for c in decoded): # Check if meaningful content
                     return decoded
-            except:
-                pass
+            except Exception as error:
+                logger.debug(f"Failed to decode hex message: {error}")
         return message.strip()
 
     @staticmethod
@@ -92,14 +95,15 @@ class ParameterExtractor:
         try:
             # Try full JSON
             return json.loads(message)
-        except:
+        except Exception as error:
+            logger.debug(f"Failed to parse message as JSON: {error}")
             # Try finding JSON block
             match = re.search(r'\{.*\}', message, re.DOTALL)
             if match:
                 try:
                     return json.loads(match.group(0))
-                except:
-                    pass
+                except Exception as error:
+                    logger.debug(f"Failed to parse JSON block: {error}")
         return None
 
     @staticmethod
@@ -109,12 +113,12 @@ class ParameterExtractor:
                 parsed = urlparse(message)
                 if parsed.query:
                     return parse_qs(parsed.query)
-            except:
-                pass
+            except Exception as error:
+                logger.debug(f"Failed to parse URL query string: {error}")
         if '=' in message and '&' in message:
              try:
                  return parse_qs(message)
-             except:
-                 pass
+             except Exception as error:
+                 logger.debug(f"Failed to parse query string: {error}")
         return None
 

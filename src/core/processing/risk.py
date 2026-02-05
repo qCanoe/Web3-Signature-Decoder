@@ -1,15 +1,18 @@
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Tuple, Optional, Set
 import json
+import re
 from pathlib import Path
 from functools import lru_cache
 from ..input.definitions import IntermediateRepresentation, SignatureType
 from .structure import SemanticStructure
 from ..config import Config
 from .knowledge_base import KnowledgeBase
+from ..utils.logger import Logger
 
 # Load blacklist data
 _DATA_DIR = Config.DATA_DIR
+logger = Logger.get_logger(__name__)
 
 def _load_blacklist() -> Dict[str, Set[str]]:
     """Load address blacklist from JSON file."""
@@ -26,7 +29,8 @@ def _load_blacklist() -> Dict[str, Set[str]]:
             addresses = info.get("addresses", [])
             result[category] = {addr.lower() for addr in addresses}
         return result
-    except Exception:
+    except Exception as error:
+        logger.warning(f"Failed to load blacklist data: {error}")
         return {}
 
 
@@ -258,8 +262,8 @@ class RiskEngine:
                     dimension["score"] += scores.get("high_value_transfer", 30)
                     eth_value = value_wei / 1e18
                     dimension["reasons"].append(f"High value transfer: {eth_value:.4f} ETH")
-            except (ValueError, TypeError):
-                pass
+            except (ValueError, TypeError) as error:
+                logger.debug(f"Failed to parse native value: {error}")
         
         # Check token amounts in context
         for ctx in structure.context:
@@ -270,8 +274,8 @@ class RiskEngine:
                         dimension["score"] += 20
                         dimension["reasons"].append("High value token operation")
                         break
-                except (ValueError, TypeError):
-                    pass
+                except (ValueError, TypeError) as error:
+                    logger.debug(f"Failed to parse token amount: {error}")
         
         # Transfer action specific
         if structure.action.raw_value == "transfer_asset":
@@ -382,24 +386,31 @@ class RiskEngine:
                 if keyword in text_content:
                     detected_patterns.append((category, keyword))
         
-        # Additional pattern checks
+        # Additional pattern checks (use word boundaries for pure alphabetic patterns)
+        def _matches_pattern(text: str, pattern: str) -> bool:
+            if pattern.isalpha():
+                return re.search(rf"\b{re.escape(pattern)}\b", text) is not None
+            return pattern in text
+
         for pattern_name, patterns in RiskEngine.SUSPICIOUS_PATTERNS.items():
             for pattern in patterns:
-                if pattern in text_content:
+                if _matches_pattern(text_content, pattern):
                     detected_patterns.append((pattern_name, pattern))
         
         if detected_patterns:
             # Group by category
             categories = set(p[0] for p in detected_patterns)
+
+            base_phishing_score = scores.get("phishing", 60)
             
             if len(categories) >= 3:
-                dimension["score"] += 50
+                dimension["score"] += base_phishing_score + 10
                 dimension["reasons"].append("Multiple phishing indicators detected")
             elif len(categories) >= 2:
-                dimension["score"] += 35
+                dimension["score"] += base_phishing_score
                 dimension["reasons"].append("Suspicious message patterns detected")
             else:
-                dimension["score"] += 20
+                dimension["score"] += max(0, base_phishing_score - 10)
                 category = detected_patterns[0][0]
                 dimension["reasons"].append(f"Warning: {category.replace('_', ' ')} pattern detected")
         
@@ -433,6 +444,18 @@ class RiskEngine:
         if action in ["defi_borrow", "defi_liquidate"]:
             breakdown["financial"]["score"] += 15
             breakdown["financial"]["reasons"].append("DeFi borrowing/liquidation operation")
+
+        # Seaport-style zero-consideration NFT orders (phishing pattern)
+        if ir.signature_type == SignatureType.ETH_SIGN_TYPED_DATA_V4:
+            if RiskEngine._detect_zero_consideration_nft_order(ir):
+                breakdown["behavioral"]["score"] += scores.get("phishing", 60)
+                breakdown["behavioral"]["reasons"].append(
+                    "NFT order with zero consideration - potential phishing"
+                )
+                breakdown["technical"]["score"] += 15
+                breakdown["technical"]["reasons"].append(
+                    "Zero-value consideration detected in NFT order"
+                )
     
     @staticmethod
     @lru_cache(maxsize=100)
@@ -466,3 +489,73 @@ class RiskEngine:
     def reload_blacklist():
         """Reload blacklist from file."""
         RiskEngine.ADDRESS_BLACKLIST = _load_blacklist()
+
+    @staticmethod
+    def _detect_zero_consideration_nft_order(ir: IntermediateRepresentation) -> bool:
+        """
+        Detect Seaport-style orders where an NFT is offered for zero consideration.
+        This is a common phishing pattern.
+        """
+        params = ir.params or {}
+
+        offer_items = RiskEngine._extract_eip712_array_items(params, "offer")
+        consideration_items = RiskEngine._extract_eip712_array_items(params, "consideration")
+
+        if not offer_items or not consideration_items:
+            return False
+
+        def _as_int(value: Any) -> Optional[int]:
+            if value is None:
+                return None
+            try:
+                if isinstance(value, str) and value.startswith("0x"):
+                    return int(value, 16)
+                return int(value)
+            except Exception:
+                return None
+
+        def _is_nft(item: Dict[str, Any]) -> bool:
+            item_type = item.get("itemtype")
+            item_type_int = _as_int(item_type)
+            return item_type_int in {2, 3, 4, 5}  # ERC721/1155 (+ criteria variants)
+
+        def _is_zero_consideration(item: Dict[str, Any]) -> bool:
+            amount = _as_int(item.get("startamount") or item.get("endamount") or item.get("amount"))
+            if amount is None or amount != 0:
+                return False
+
+            token = item.get("token")
+            token_zero = isinstance(token, str) and token.lower() == ("0x" + "0" * 40)
+            item_type_int = _as_int(item.get("itemtype"))
+
+            return token_zero or item_type_int in {0, 1}  # Native ETH or ERC20
+
+        has_nft_offer = any(_is_nft(item) for item in offer_items)
+        has_zero_consideration = any(_is_zero_consideration(item) for item in consideration_items)
+
+        return has_nft_offer and has_zero_consideration
+
+    @staticmethod
+    def _extract_eip712_array_items(params: Dict[str, Any], prefix: str) -> List[Dict[str, Any]]:
+        """
+        Extract array-like EIP-712 fields into a list of dicts.
+        Expected keys: "{prefix}[0].field", "{prefix}[1].field", etc.
+        """
+        items: Dict[int, Dict[str, Any]] = {}
+        prefix_lower = prefix.lower()
+
+        for key, value in params.items():
+            if not isinstance(key, str):
+                continue
+            key_lower = key.lower()
+            if not key_lower.startswith(prefix_lower + "["):
+                continue
+            match = re.match(rf"^{re.escape(prefix_lower)}\[(\d+)\]\.(.+)$", key_lower)
+            if not match:
+                continue
+            idx = int(match.group(1))
+            field_name = match.group(2)
+            items.setdefault(idx, {})[field_name] = value
+
+        # Return items in index order
+        return [items[i] for i in sorted(items.keys())]
