@@ -10,8 +10,10 @@ from src.core.processing.transaction_decoder import TransactionDecoder
 from src.core.processing.risk import RiskEngine, RiskAssessment
 from src.core.input.definitions import IntermediateRepresentation, SignatureType
 from src.core.processing.structure import SemanticStructure, SemanticComponent
+from src.core.processing.interpreter import Interpreter
 from src.core.input.adapter import InputAdapter
 from src.core.processing.knowledge_base import KnowledgeBase
+from src.core.output.highlighter import TextHighlighter
 
 
 class TestTransactionDecoder(unittest.TestCase):
@@ -376,6 +378,72 @@ class TestEdgeCases(unittest.TestCase):
         self.assertEqual(ir.signature_type, SignatureType.ETH_SIGN_TYPED_DATA_V4)
         # Check flattened params
         self.assertIn("inner.value", ir.params)
+
+
+class TestInterpreterPermissionScope(unittest.TestCase):
+    """Test permission scope inference in Interpreter"""
+
+    def setUp(self):
+        self.interpreter = Interpreter()
+        self.base_ir = IntermediateRepresentation(
+            signature_type=SignatureType.ETH_SIGN_TYPED_DATA_V4,
+            raw_data={},
+            chain_id=1
+        )
+
+    def _make_structure(self, action_type: str, context: list[SemanticComponent]) -> SemanticStructure:
+        return SemanticStructure(
+            actor=SemanticComponent("Actor", "User", "0xUser"),
+            action=SemanticComponent("Action", "Test", action_type),
+            target_object=SemanticComponent("Object", "Contract", "0xContract"),
+            context=context
+        )
+
+    def test_expired_deadline_is_not_permanent(self):
+        """Expired deadlines should not be treated as permanent."""
+        past_deadline = int(time.time()) - 60
+        structure = self._make_structure(
+            "authorization",
+            [
+                SemanticComponent("Context", "Amount", "1000"),
+                SemanticComponent("Context", "Deadline", str(past_deadline)),
+            ],
+        )
+
+        scope = self.interpreter._infer_permission_level(structure, self.base_ir)
+        self.assertEqual(scope, "specific_amount_time_limited")
+
+    def test_deadline_with_no_amount_is_time_limited(self):
+        """Deadline without amount should be time-limited for authorization."""
+        future_deadline = int(time.time()) + 600
+        structure = self._make_structure(
+            "authorization",
+            [
+                SemanticComponent("Context", "Deadline", str(future_deadline)),
+            ],
+        )
+
+        scope = self.interpreter._infer_permission_level(structure, self.base_ir)
+        self.assertEqual(scope, "time_limited")
+
+
+class TestTextHighlighter(unittest.TestCase):
+    """Test TextHighlighter escaping and highlighting"""
+
+    def test_html_is_escaped(self):
+        """Ensure raw HTML is escaped to prevent injection."""
+        text = '<img src=x onerror=alert(1)> Please approve'
+        highlighted = TextHighlighter.highlight_keywords(text)
+
+        self.assertIn("&lt;img", highlighted)
+        self.assertNotIn("<img", highlighted)
+
+    def test_highlight_still_applies(self):
+        """Ensure keyword highlighting still works after escaping."""
+        text = "Approve transfer of 1 ETH"
+        highlighted = TextHighlighter.highlight_keywords(text)
+
+        self.assertIn('class="action-keyword"', highlighted)
 
 
 if __name__ == "__main__":
