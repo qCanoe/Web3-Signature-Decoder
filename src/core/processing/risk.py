@@ -430,7 +430,7 @@ class RiskEngine:
         action = structure.action.raw_value
         
         # Safe actions that reduce overall risk
-        if action == "authentication":
+        if action in ["authentication", "sign_in_with_ethereum"]:
             breakdown["permission"]["score"] = max(0, breakdown["permission"]["score"] - 15)
             breakdown["financial"]["score"] = max(0, breakdown["financial"]["score"] - 10)
             breakdown["technical"]["reasons"].append("Identity verification only - generally safe")

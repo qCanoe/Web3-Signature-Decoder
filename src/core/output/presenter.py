@@ -22,6 +22,7 @@ class Presenter:
         action_map = {
             "approve": "Approval",
             "authentication": "Login",
+            "sign_in_with_ethereum": "Login",
             "transfer_asset": "Transfer",
             "marketplace_listing": "Listing",
             "vote": "Vote",
@@ -150,7 +151,7 @@ class Presenter:
                 suggestions.append("Double-check the recipient address")
         
         elif risk.level == "low":
-            if structure.action.raw_value == "authentication":
+            if structure.action.raw_value in ["authentication", "sign_in_with_ethereum"]:
                 suggestions.append("This is a login signature - generally safe")
         
         # Limit suggestions
