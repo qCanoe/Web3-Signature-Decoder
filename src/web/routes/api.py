@@ -4,11 +4,13 @@ import re
 import traceback
 from typing import Any, Dict, List
 from ...core.pipeline import SemanticPipeline
+from ...core.utils.logger import Logger
 from ...utils.mock_data import ALL_TEST_DATA, DATA_CATEGORIES, DATA_DESCRIPTIONS
 
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 snap_bp = Blueprint('snap', __name__)
 pipeline = SemanticPipeline()
+logger = Logger.get_logger(__name__)
 
 @api_bp.route('/parse', methods=['POST'])
 def parse_signature():
@@ -31,7 +33,7 @@ def parse_signature():
     except Exception as e:
         error_msg = str(e)
         traceback_str = traceback.format_exc()
-        print(traceback_str)
+        logger.exception("Parse API failed")
         return jsonify({
             'success': False,
             'error': error_msg,
@@ -108,7 +110,7 @@ def snap_analyze():
     except Exception as e:
         error_msg = str(e)
         traceback_str = traceback.format_exc()
-        print(traceback_str)
+        logger.exception("Snap analyze failed")
         return jsonify({
             'success': False,
             'error': error_msg,
