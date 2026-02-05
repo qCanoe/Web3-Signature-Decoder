@@ -71,6 +71,9 @@ function bindEventListeners() {
 async function loadTestDataFromServer() {
     try {
         const response = await fetch('/api/test_data');
+        if (!response.ok) {
+            throw new Error(`Request failed (${response.status})`);
+        }
         const data = await response.json();
         
         if (data.success) {
@@ -78,9 +81,11 @@ async function loadTestDataFromServer() {
             populateTestDataSelect();
         } else {
             console.error('Failed to load test data:', data.error);
+            showToast(data.error || 'Failed to load test data', 'error');
         }
     } catch (error) {
         console.error('Error loading test data:', error);
+        showToast('Failed to load test data. Please check server connection.', 'error');
     }
 }
 
@@ -225,7 +230,16 @@ async function parseSignature() {
             })
         });
         
-        const result = await response.json();
+        let result = null;
+        try {
+            result = await response.json();
+        } catch (parseError) {
+            throw new Error('Invalid response from server');
+        }
+        
+        if (!response.ok) {
+            throw new Error(result && result.error ? result.error : `Request failed (${response.status})`);
+        }
         
         if (result.success) {
             currentSignatureData = result;
@@ -237,8 +251,9 @@ async function parseSignature() {
         }
         
     } catch (error) {
-        showErrorState(error.message);
-        showToast('Loading failed', 'error');
+        const message = error && error.message ? error.message : 'Loading failed';
+        showErrorState(message);
+        showToast('Loading failed. Please retry or check server.', 'error');
     }
 }
 
