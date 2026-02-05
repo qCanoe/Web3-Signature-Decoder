@@ -2,6 +2,7 @@
 Text highlighting utility for keyword highlighting in summaries.
 """
 import re
+import html
 from typing import List, Tuple, Dict, Any
 
 
@@ -67,6 +68,9 @@ class TextHighlighter:
         """
         if not text:
             return text
+
+        # Escape HTML to avoid injection, then operate on safe text.
+        escaped_text = html.escape(text, quote=True)
         
         # Collect all matches with their positions
         matches: List[Dict[str, Any]] = []
@@ -75,7 +79,7 @@ class TextHighlighter:
             pattern = pattern_info["pattern"]
             className = pattern_info["className"]
             
-            for match in pattern.finditer(text):
+            for match in pattern.finditer(escaped_text):
                 matches.append({
                     "start": match.start(),
                     "end": match.end(),
@@ -105,7 +109,7 @@ class TextHighlighter:
         filtered_matches.sort(key=lambda m: -m["start"])
         
         # Replace matches from end to start to avoid position shifting
-        highlighted_text = text
+        highlighted_text = escaped_text
         for match_info in filtered_matches:
             start = match_info["start"]
             end = match_info["end"]
