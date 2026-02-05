@@ -278,6 +278,13 @@ class Classifier:
         
         # Update IR param with cleaned message for downstream usage
         ir.params["message_cleaned"] = msg
+        extracted = ParameterExtractor.extract(msg)
+        ir.params["message_extracted"] = extracted
+
+        # Detect SIWE (Sign-In with Ethereum)
+        if extracted.get("siwe") or "sign in with your ethereum account" in msg_lower:
+            ir.action_type = "sign_in_with_ethereum"
+            return
 
         # Match against patterns in KnowledgeBase
         best_match = "sign_message" # Default
