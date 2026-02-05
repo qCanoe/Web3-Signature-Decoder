@@ -85,6 +85,36 @@ class TestSemanticPipeline(unittest.TestCase):
         # Should detect phishing pattern (NFT for 0 ETH) and have high risk
         self.assertIn(result['pipeline_result']['ui']['risk_level'], ['high', 'critical', 'medium'])
 
+    def test_process_personal_sign_phishing(self):
+        """Test Pipeline: Personal Sign Phishing (T7)"""
+        data = ALL_TEST_DATA.get("t7_personal_sign_phishing")
+        if not data:
+            self.skipTest("t7_personal_sign_phishing test data not available")
+        
+        result = self.pipeline.process(data)
+        
+        self.assertTrue(result.get('success'))
+        self.assertEqual(result['pipeline_result']['technical']['type'], SignatureType.PERSONAL_SIGN)
+        context_labels = [c["label"] for c in result['pipeline_result']['semantic']['context']]
+        self.assertIn("Phishing Indicators", context_labels)
+        self.assertIn("Warning: possible phishing indicators detected", result['pipeline_result']['ui']['description'])
+
+    def test_process_multicall_summary(self):
+        """Test Pipeline: Multicall Summary (T8)"""
+        data = ALL_TEST_DATA.get("t8_multicall_approve")
+        if not data:
+            self.skipTest("t8_multicall_approve test data not available")
+        
+        result = self.pipeline.process(data)
+        
+        self.assertTrue(result.get('success'))
+        self.assertEqual(result['pipeline_result']['technical']['type'], SignatureType.ETH_SEND_TRANSACTION)
+        self.assertIn(result['pipeline_result']['semantic']['action']['type'], [
+            'batch_operation', 'batch_approval'
+        ])
+        context_labels = [c["label"] for c in result['pipeline_result']['semantic']['context']]
+        self.assertTrue(any(label in ["Batch Summary", "Universal Router Summary"] for label in context_labels))
+
     def test_process_with_origin(self):
         """Test Pipeline with DApp origin"""
         data = ALL_TEST_DATA.get("t4_bridge_swap")

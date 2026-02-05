@@ -260,6 +260,47 @@ T6_PHISHING_REQUEST = {
 
 
 # =============================================================================
+# T7 - Personal Sign Phishing (Personal Sign, High Risk)
+# =============================================================================
+# Method: PS (personal_sign)
+# Risk: H (High)
+# Scenario: Urgent reward message with phishing indicators
+#
+T7_PERSONAL_SIGN_PHISHING = {
+    "message": (
+        "URGENT: Verify your wallet immediately to claim your reward.\n"
+        "Act now to avoid account suspension.\n"
+        "Sign this message to continue."
+    )
+}
+
+
+# =============================================================================
+# T8 - Multicall Approval (Transaction, Medium Risk)
+# =============================================================================
+# Method: TX (eth_sendTransaction)
+# Risk: M (Medium)
+# Scenario: Multicall with a single ERC20 approve call
+#
+T8_MULTICALL_APPROVE = {
+    "from": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+    "to": "0x1111111111111111111111111111111111111111",
+    "value": "0",
+    "data": (
+        "0xac9650d8"
+        "0000000000000000000000000000000000000000000000000000000000000020"
+        "0000000000000000000000000000000000000000000000000000000000000001"
+        "0000000000000000000000000000000000000000000000000000000000000020"
+        "0000000000000000000000000000000000000000000000000000000000000044"
+        "095ea7b30000000000000000000000001111111111111111111111111111111111111111"
+        "0000000000000000000000000000000000000000000000000000000000000001"
+        "00000000000000000000000000000000000000000000000000000000"
+    ),
+    "chainId": 1
+}
+
+
+# =============================================================================
 # DATA SUMMARY
 # =============================================================================
 
@@ -270,13 +311,15 @@ ALL_TEST_DATA = {
     "t4_bridge_swap": T4_BRIDGE_SWAP,
     "t5_unlimited_approval": T5_UNLIMITED_APPROVAL,
     "t6_phishing_request": T6_PHISHING_REQUEST,
+    "t7_personal_sign_phishing": T7_PERSONAL_SIGN_PHISHING,
+    "t8_multicall_approve": T8_MULTICALL_APPROVE,
 }
 
 # Category index for UI grouping
 DATA_CATEGORIES = {
     "low_risk": ["t1_opensea_login", "t2_nft_mint"],
-    "medium_risk": ["t3_dao_vote", "t4_bridge_swap"],
-    "high_risk": ["t5_unlimited_approval", "t6_phishing_request"],
+    "medium_risk": ["t3_dao_vote", "t4_bridge_swap", "t8_multicall_approve"],
+    "high_risk": ["t5_unlimited_approval", "t6_phishing_request", "t7_personal_sign_phishing"],
 }
 
 # Data descriptions for UI display
@@ -287,4 +330,6 @@ DATA_DESCRIPTIONS = {
     "t4_bridge_swap": "T4: Bridge/Swap [E712, Medium] - Permit2 token approval",
     "t5_unlimited_approval": "T5: Unlimited Approval [E712, High] - Max uint256 to unknown",
     "t6_phishing_request": "T6: Phishing Request [E712, High] - NFT for 0 ETH",
+    "t7_personal_sign_phishing": "T7: Personal Sign Phishing [PS, High] - Urgent reward text",
+    "t8_multicall_approve": "T8: Multicall Approve [TX, Medium] - Batch approval call",
 }

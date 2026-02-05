@@ -70,6 +70,24 @@ class TestTransactionDecoder(unittest.TestCase):
         self.assertTrue(TransactionDecoder.is_multicall("0xac9650d8" + "0" * 64))
         self.assertTrue(TransactionDecoder.is_multicall("0x5ae401dc" + "0" * 64))
         self.assertFalse(TransactionDecoder.is_multicall("0xa9059cbb" + "0" * 64))
+    
+    def test_universal_router_summary(self):
+        """Test universal router summary aggregation"""
+        decoded = {
+            "is_multicall": True,
+            "category": "universal_router",
+            "commands": [
+                {"command": "V3_SWAP_EXACT_IN", "allow_revert": False},
+                {"command": "PERMIT2_PERMIT", "allow_revert": True},
+                {"command": "SEAPORT_V1_5", "allow_revert": False},
+            ]
+        }
+        summary = TransactionDecoder.get_multicall_summary(decoded)
+        self.assertEqual(summary.get("total_calls"), 3)
+        self.assertEqual(summary.get("command_types", {}).get("swap"), 1)
+        self.assertEqual(summary.get("command_types", {}).get("permit"), 1)
+        self.assertEqual(summary.get("command_types", {}).get("nft"), 1)
+        self.assertEqual(summary.get("allow_revert_count"), 1)
 
     def test_type_extraction_simple(self):
         """Test simple type extraction from signature"""
