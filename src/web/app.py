@@ -18,4 +18,7 @@ app.register_blueprint(api_bp)
 app.register_blueprint(snap_bp)
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    debug = os.getenv("FLASK_DEBUG", "false").lower() == "true"
+    host = os.getenv("FLASK_HOST", "0.0.0.0")
+    port = int(os.getenv("FLASK_PORT", "5001"))
+    app.run(debug=debug, host=host, port=port)
