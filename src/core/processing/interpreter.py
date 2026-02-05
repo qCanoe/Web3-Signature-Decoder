@@ -456,6 +456,9 @@ class Interpreter:
             return f"You are performing a token swap through {obj}."
         
         if structure.action.raw_value == "batch_swap":
+            batch_summary = get_ctx(["Batch Summary", "Universal Router Summary"], None)
+            if batch_summary:
+                return f"You are performing a batch of swaps through {obj}. Multiple tokens will be exchanged. {batch_summary}."
             return f"You are performing a batch of swaps through {obj}. Multiple tokens will be exchanged."
         
         # ========== DeFi Lending ==========
@@ -493,6 +496,9 @@ class Interpreter:
         
         # ========== Batch Operations ==========
         if structure.action.raw_value == "batch_operation":
+            batch_summary = get_ctx(["Batch Summary", "Universal Router Summary"], None)
+            if batch_summary:
+                return f"You are executing a batch of operations through {obj}. Review each action in the batch. {batch_summary}."
             return f"You are executing a batch of operations through {obj}. Review each action in the batch."
         
         if structure.action.raw_value == "batch_approval":

@@ -693,32 +693,71 @@ class TransactionDecoder:
         summary = {
             "total_calls": 0,
             "action_types": {},
+            "command_types": {},
             "has_swaps": False,
             "has_transfers": False,
             "has_approvals": False,
             "has_permits": False,
+            "has_nft": False,
+            "allow_revert_count": 0,
+            "source": None,
         }
         
+        def _update_flags(category: str):
+            category_lower = category.lower()
+            if "swap" in category_lower:
+                summary["has_swaps"] = True
+            if "transfer" in category_lower:
+                summary["has_transfers"] = True
+            if "approve" in category_lower:
+                summary["has_approvals"] = True
+            if "permit" in category_lower:
+                summary["has_permits"] = True
+            if "nft" in category_lower:
+                summary["has_nft"] = True
+
+        def _command_category(command: str) -> str:
+            cmd = command.upper()
+            if "SWAP" in cmd:
+                return "swap"
+            if "PERMIT" in cmd:
+                return "permit"
+            if "TRANSFER" in cmd or "SWEEP" in cmd or "PAY_PORTION" in cmd:
+                return "transfer"
+            if "WRAP_ETH" in cmd or "UNWRAP_WETH" in cmd:
+                return "transfer"
+            if any(x in cmd for x in [
+                "SEAPORT", "LOOKS_RARE", "NFTX", "CRYPTOPUNKS", "X2Y2",
+                "SUDOSWAP", "NFT20", "FOUNDATION", "ELEMENT_MARKET",
+                "SWEEP_ERC", "OWNER_CHECK"
+            ]):
+                return "nft"
+            return "other"
+
         def count_actions(calls_list: List[Dict], key: str = "decoded"):
             for call in calls_list:
+                if "command" in call:
+                    summary["source"] = summary["source"] or "universal_router"
+                    summary["total_calls"] += 1
+                    cmd_name = call.get("command", "unknown")
+                    cmd_category = _command_category(cmd_name)
+                    summary["command_types"][cmd_category] = summary["command_types"].get(cmd_category, 0) + 1
+                    summary["action_types"][cmd_category] = summary["action_types"].get(cmd_category, 0) + 1
+                    _update_flags(cmd_category)
+                    if call.get("allow_revert"):
+                        summary["allow_revert_count"] += 1
+                    continue
+
                 decoded_call = call.get(key, {})
                 if not decoded_call:
                     continue
-                
+
                 summary["total_calls"] += 1
-                
+
                 category = decoded_call.get("category", "unknown")
                 summary["action_types"][category] = summary["action_types"].get(category, 0) + 1
-                
-                if "swap" in category.lower():
-                    summary["has_swaps"] = True
-                if "transfer" in category.lower():
-                    summary["has_transfers"] = True
-                if "approve" in category.lower():
-                    summary["has_approvals"] = True
-                if "permit" in category.lower():
-                    summary["has_permits"] = True
-                
+                _update_flags(category)
+
                 # Recurse into nested multicalls
                 if decoded_call.get("is_multicall"):
                     nested = decoded_call.get("nested_calls") or decoded_call.get("transactions") or []
@@ -726,6 +765,8 @@ class TransactionDecoder:
         
         # Start counting
         calls = decoded.get("nested_calls") or decoded.get("transactions") or decoded.get("commands") or []
+        if decoded.get("commands"):
+            summary["source"] = "universal_router"
         count_actions(calls)
         
         return summary

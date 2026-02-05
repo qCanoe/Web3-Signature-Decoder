@@ -340,6 +340,47 @@ class StructureParser:
             desc = f"{label}: {asset.get('symbol', 'TOKEN')} {asset.get('amount_formatted') or asset.get('amount_raw')}"
             risk = "high" if asset.get("direction") == "authorization" else "low"
             ctx.append(SemanticComponent(role="Context", description=desc, raw_value=asset, risk_factor=risk))
+
+        # Multicall / Universal Router summary
+        summary = ir.metadata.get("multicall_summary") if ir.metadata else None
+        if summary and summary.get("total_calls"):
+            counts = {"swap": 0, "permit": 0, "transfer": 0, "approve": 0, "nft": 0, "other": 0}
+            if summary.get("command_types"):
+                for key, value in summary.get("command_types", {}).items():
+                    counts[key] = counts.get(key, 0) + int(value)
+            else:
+                for key, value in summary.get("action_types", {}).items():
+                    key_lower = key.lower()
+                    if "swap" in key_lower:
+                        counts["swap"] += int(value)
+                    elif "permit" in key_lower:
+                        counts["permit"] += int(value)
+                    elif "approve" in key_lower:
+                        counts["approve"] += int(value)
+                    elif "transfer" in key_lower:
+                        counts["transfer"] += int(value)
+                    elif "nft" in key_lower:
+                        counts["nft"] += int(value)
+                    else:
+                        counts["other"] += int(value)
+
+            parts = [f"{summary.get('total_calls')} calls"]
+            detail_items = []
+            for key in ["swap", "permit", "approve", "transfer", "nft", "other"]:
+                if counts.get(key):
+                    detail_items.append(f"{key}: {counts[key]}")
+            if detail_items:
+                parts.append("(" + ", ".join(detail_items) + ")")
+            if summary.get("allow_revert_count"):
+                parts.append(f"allow_revert: {summary['allow_revert_count']}")
+
+            label = "Universal Router Summary" if summary.get("source") == "universal_router" else "Batch Summary"
+            ctx.append(SemanticComponent(
+                role="Context",
+                description=label,
+                raw_value=" ".join(parts),
+                risk_factor="medium"
+            ))
         
         # Personal Sign Context Extraction
         if ir.signature_type == SignatureType.PERSONAL_SIGN:
