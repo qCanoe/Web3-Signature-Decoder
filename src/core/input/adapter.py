@@ -4,6 +4,7 @@ from typing import Any, Dict, Union, Optional
 from .definitions import IntermediateRepresentation, SignatureType
 from .validators import InputValidator
 from ..processing.transaction_decoder import TransactionDecoder
+from ..config import Config
 from ..utils.logger import Logger
 
 logger = Logger.get_logger(__name__)
@@ -123,6 +124,15 @@ class InputAdapter:
         types = data.get("types", {})
         primary_type = data.get("primaryType", "")
         message = data.get("message", {})
+
+        schema_validation = {"valid": True, "errors": []}
+        if Config.EIP712_VALIDATION.get("validate_nested_types", True):
+            is_valid, errors = InputValidator.validate_eip712_schema_integrity(data)
+            schema_validation = {"valid": is_valid, "errors": errors}
+            if not is_valid:
+                if Config.EIP712_VALIDATION.get("strict_mode") and not Config.EIP712_VALIDATION.get("warn_only", True):
+                    raise ValueError(f"EIP-712 schema validation failed: {errors}")
+                logger.warning(f"EIP-712 schema integrity warning: {errors}")
         
         # Flatten nested structures while preserving hierarchy
         flattened_params = InputAdapter._flatten_eip712_message(message, primary_type, types)
@@ -137,7 +147,8 @@ class InputAdapter:
                 "primaryType": primary_type,
                 "domain": domain,
                 "types": types,
-                "original_message": message  # Preserve original structure
+                "original_message": message,  # Preserve original structure
+                "schema_validation": schema_validation,
             }
         )
         

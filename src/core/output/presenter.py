@@ -37,6 +37,9 @@ class Presenter:
         risk_explanation = RiskEngine.get_risk_explanation(risk.level)
         
         # Standardized clean output
+        risk_signals = risk.details.get("risk_signals", []) if isinstance(risk.details, dict) else []
+        risk_policy_version = risk.details.get("risk_policy_version", "v1") if isinstance(risk.details, dict) else "v1"
+
         pipeline_result = {
             "ui": {
                 "title": short_title,
@@ -45,7 +48,8 @@ class Presenter:
                 "risk_score": getattr(risk, 'score', 0),
                 "risk_reasons": risk.reasons,
                 "risk_explanation": risk_explanation,
-                "risk_mitigation": Presenter._generate_mitigation_suggestions(risk, structure)
+                "risk_mitigation": Presenter._generate_mitigation_suggestions(risk, structure),
+                "risk_policy_version": risk_policy_version,
             },
             "semantic": {
                 "actor": {
@@ -68,7 +72,8 @@ class Presenter:
                 "permission_scope": structure.permission_scope,
                 "hidden_implications": structure.hidden_implications,
                 "assets": ir.assets,
-                "decoded_call": ir.decoded_call
+                "decoded_call": ir.decoded_call,
+                "risk_signals": risk_signals,
             },
             "technical": {
                 "type": ir.signature_type,

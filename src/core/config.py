@@ -70,6 +70,7 @@ class Config:
     # EIP-712 validation settings
     EIP712_VALIDATION = {
         "strict_mode": os.getenv("EIP712_STRICT_MODE", "false").lower() == "true",
+        "warn_only": os.getenv("EIP712_WARN_ONLY", "true").lower() == "true",
         "check_circular_deps": True,
         "validate_nested_types": True
     }
@@ -84,7 +85,7 @@ class Config:
     # LLM settings
     LLM = {
         "enabled": os.getenv("LLM_ENABLED", "false").lower() == "true",
-        "model": os.getenv("LLM_MODEL", "gpt-4o-mini"),
+        "model": os.getenv("LLM_MODEL", "gpt-5.2"),
         "max_tokens": int(os.getenv("LLM_MAX_TOKENS", "100")),
         "temperature": float(os.getenv("LLM_TEMPERATURE", "0.3"))
     }
@@ -94,6 +95,12 @@ class Config:
         "level": os.getenv("LOG_LEVEL", "INFO"),
         "file_enabled": os.getenv("LOG_FILE_ENABLED", "false").lower() == "true",
         "file_path": os.getenv("LOG_FILE_PATH", "logs/signature_decoder.log")
+    }
+
+    # Risk policy settings
+    RISK_POLICY = {
+        "version": os.getenv("RISK_POLICY_VERSION", "v1"),
+        "filename": os.getenv("RISK_POLICY_FILENAME", "risk_policy.v1.json")
     }
     
     @staticmethod

@@ -3,6 +3,7 @@ import re
 from ..input.definitions import IntermediateRepresentation, SignatureType
 from .knowledge_base import KnowledgeBase
 from .extractors import ParameterExtractor
+from .risk_signals import RiskSignalExtractor
 
 class Classifier:
     """
@@ -36,6 +37,17 @@ class Classifier:
     @staticmethod
     def _classify_eip712(ir: IntermediateRepresentation):
         primary_type = ir.metadata.get("primaryType", "")
+        primary_type_lower = str(primary_type).lower()
+        keys = [k.lower() for k in ir.params.keys()]
+
+        # High-priority explicit patterns
+        if "permit" in primary_type_lower:
+            ir.action_type = "authorization"
+            return
+
+        if Classifier._is_zero_consideration_nft_order(ir):
+            ir.action_type = "phishing_nft_order"
+            return
         
         # 1. Check Knowledge Base
         category = KnowledgeBase.get_eip712_category(primary_type)
@@ -46,11 +58,12 @@ class Classifier:
                 Classifier._classify_bridge(ir)
             elif category in ["governance_delegation", "delegation"]:
                 Classifier._classify_delegation(ir)
+            elif category == "authorization" and any("permitbatch" in k for k in keys):
+                ir.action_type = "batch_approval"
             return
 
         # 2. Heuristics based on fields
         params = ir.params
-        keys = [k.lower() for k in params.keys()]
         
         # Check for bridge patterns
         if Classifier._classify_bridge(ir):
@@ -234,6 +247,8 @@ class Classifier:
                     ir.action_type = "batch_approval"
                 elif summary.get("has_transfers"):
                     ir.action_type = "batch_transfer"
+                elif summary.get("source") == "universal_router":
+                    ir.action_type = "batch_operation"
             ir.metadata["multicall_summary"] = summary
             return
 
@@ -356,3 +371,7 @@ class Classifier:
         
         # Default fallback
         ir.action_type = "unknown_operation"
+
+    @staticmethod
+    def _is_zero_consideration_nft_order(ir: IntermediateRepresentation) -> bool:
+        return RiskSignalExtractor._detect_zero_consideration_nft_order(ir)

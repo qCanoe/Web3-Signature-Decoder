@@ -236,8 +236,13 @@ class StructureParser:
     def _extract_context(ir: IntermediateRepresentation) -> List[SemanticComponent]:
         ctx = []
         params = ir.params
+        decoded = ir.decoded_call or ir.metadata.get("decoded_call", {})
+        decoded_params = decoded.get("parameters", {}) if decoded else {}
 
         def _get_param_value(keys: List[str]) -> Any:
+            for key in keys:
+                if key in decoded_params:
+                    return decoded_params[key]
             for key in keys:
                 if key in params:
                     return params[key]
@@ -286,9 +291,6 @@ class StructureParser:
             ctx.append(SemanticComponent(role="Context", description="Destination Chain", raw_value=dest_chain, risk_factor="medium"))
 
         # --- Action Specific Extraction ---
-
-        decoded = ir.decoded_call or ir.metadata.get("decoded_call", {})
-        decoded_params = decoded.get("parameters", {}) if decoded else {}
 
         if ir.action_type in ["approve", "authorization", "permit"]:
             spender = decoded_params.get("spender") or decoded_params.get("param_0") or _get_param_value(["spender"])
