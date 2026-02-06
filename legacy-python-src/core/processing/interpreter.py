@@ -563,7 +563,7 @@ class Interpreter:
 
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4o-mini", # or appropriate model
+                model="gpt-5.2", # or appropriate model
                 messages=[
                     {"role": "system", "content": "You are a helpful security assistant explaining crypto transactions."},
                     {"role": "user", "content": prompt}

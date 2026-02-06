@@ -14,7 +14,7 @@ app.use(express.json({ limit: "2mb" }));
 
 const openAiProvider = new OpenAiReasoningProvider({
   apiKey: process.env.OPENAI_API_KEY ?? "",
-  model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
+  model: process.env.OPENAI_MODEL ?? "gpt-5.2",
   timeoutMs: Number(process.env.OPENAI_TIMEOUT_MS ?? "12000"),
   promptVersion: "reasoning-v2",
 });

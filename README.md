@@ -35,7 +35,7 @@ npm run dev:test-web
 Copy `.env.example` to `.env` and set required values.
 
 - `OPENAI_API_KEY`: required for test-api reasoning
-- `OPENAI_MODEL`: default `gpt-4o-mini`
+- `OPENAI_MODEL`: default `gpt-5.2`
 - `OPENAI_TIMEOUT_MS`: request timeout
 - `TEST_API_PORT`: API port, default `4000`
 - `TEST_WEB_PORT`: web shell port, default `4173`
