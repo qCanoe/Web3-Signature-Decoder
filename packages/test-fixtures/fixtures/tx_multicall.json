@@ -1,0 +1,21 @@
+{
+  "name": "tx_multicall",
+  "request": {
+    "kind": "transaction",
+    "method": "eth_sendTransaction",
+    "payload": {
+      "from": "0x1111111111111111111111111111111111111111",
+      "to": "0x3333333333333333333333333333333333333333",
+      "data": "0xac9650d80000000000000000000000000000000000000000000000000000000000000020",
+      "value": "0x0"
+    },
+    "context": {
+      "origin": "https://dex.test",
+      "chainId": "eip155:1",
+      "walletAddress": "0x1111111111111111111111111111111111111111"
+    }
+  },
+  "expected": {
+    "decision": "block"
+  }
+}

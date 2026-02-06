@@ -1,0 +1,15 @@
+{
+  "name": "@sd/test-fixtures",
+  "version": "2.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run --passWithNoTests",
+    "clean": "if (Test-Path dist) { Remove-Item -Recurse -Force dist }"
+  },
+  "dependencies": {
+    "@sd/core-schema": "2.0.0"
+  }
+}

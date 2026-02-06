@@ -1,0 +1,20 @@
+{
+  "version": "v2",
+  "protocols": [
+    {
+      "name": "Uniswap",
+      "domainPatterns": ["uniswap", "permit2"],
+      "contractPatterns": ["0x000000000022d473030f116ddee9f6b43ac78ba3"]
+    },
+    {
+      "name": "OpenSea",
+      "domainPatterns": ["seaport", "opensea"],
+      "contractPatterns": []
+    },
+    {
+      "name": "Safe",
+      "domainPatterns": ["safe", "gnosis"],
+      "contractPatterns": []
+    }
+  ]
+}

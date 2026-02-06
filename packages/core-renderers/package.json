@@ -1,0 +1,16 @@
+{
+  "name": "@sd/core-renderers",
+  "version": "2.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run --passWithNoTests",
+    "clean": "if (Test-Path dist) { Remove-Item -Recurse -Force dist }"
+  },
+  "dependencies": {
+    "@metamask/snaps-sdk": "^6.22.1",
+    "@sd/core-schema": "2.0.0"
+  }
+}

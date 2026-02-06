@@ -1,0 +1,40 @@
+{
+  "name": "@sd/snap",
+  "version": "2.0.0",
+  "description": "Signature Decoder Snap v2",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/example/signature-decoder-v2.git"
+  },
+  "main": "./dist/bundle.js",
+  "private": true,
+  "files": [
+    "dist/",
+    "snap.manifest.json"
+  ],
+  "scripts": {
+    "build": "mm-snap build",
+    "build:clean": "if (Test-Path dist) { Remove-Item -Recurse -Force dist }; mm-snap build",
+    "serve": "mm-snap serve",
+    "start": "mm-snap watch",
+    "test": "jest",
+    "clean": "if (Test-Path dist) { Remove-Item -Recurse -Force dist }"
+  },
+  "dependencies": {
+    "@metamask/snaps-sdk": "^6.22.1",
+    "@sd/core-engine": "2.0.0",
+    "@sd/core-llm": "2.0.0",
+    "@sd/core-renderers": "2.0.0"
+  },
+  "devDependencies": {
+    "@jest/globals": "^29.7.0",
+    "@metamask/snaps-cli": "^6.5.1",
+    "@metamask/snaps-jest": "^8.8.1",
+    "@types/jest": "^29.5.14",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5"
+  },
+  "engines": {
+    "node": ">=20.11.0"
+  }
+}

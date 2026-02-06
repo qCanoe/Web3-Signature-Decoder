@@ -1,0 +1,22 @@
+{
+  "name": "@sd/test-api",
+  "version": "2.0.0",
+  "private": true,
+  "main": "dist/server.js",
+  "types": "dist/server.d.ts",
+  "scripts": {
+    "dev": "tsx src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run --passWithNoTests",
+    "clean": "if (Test-Path dist) { Remove-Item -Recurse -Force dist }"
+  },
+  "dependencies": {
+    "@sd/core-engine": "2.0.0",
+    "@sd/core-llm": "2.0.0",
+    "@sd/core-schema": "2.0.0",
+    "@sd/test-fixtures": "2.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  }
+}

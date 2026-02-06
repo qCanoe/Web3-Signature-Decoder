@@ -1,0 +1,18 @@
+{
+  "name": "personal_sign_login",
+  "request": {
+    "kind": "signature",
+    "method": "personal_sign",
+    "payload": {
+      "message": "Sign in with your wallet. nonce: 123456"
+    },
+    "context": {
+      "origin": "https://safe-app.test",
+      "chainId": "eip155:1",
+      "walletAddress": "0x1111111111111111111111111111111111111111"
+    }
+  },
+  "expected": {
+    "decision": "allow"
+  }
+}

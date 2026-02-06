@@ -1,0 +1,17 @@
+{
+  "version": "v2",
+  "patterns": [
+    {
+      "key": "login_nonce",
+      "regex": "nonce|sign\\s?in",
+      "signal": "login_message",
+      "reason": "Message appears to be an authentication request"
+    },
+    {
+      "key": "urgent_language",
+      "regex": "urgent|immediately|verify wallet",
+      "signal": "suspicious_urgency",
+      "reason": "Message includes urgency language commonly used in phishing"
+    }
+  ]
+}

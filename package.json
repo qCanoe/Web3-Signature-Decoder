@@ -1,0 +1,31 @@
+{
+  "name": "signature-decoder-v2",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Monorepo for Signature Decoder v2 (single TypeScript core)",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run -w @sd/core-schema build && npm run -w @sd/core-knowledge build && npm run -w @sd/core-llm build && npm run -w @sd/core-engine build && npm run -w @sd/core-renderers build && npm run -w @sd/test-fixtures build && npm run -w @sd/test-harness build && npm run -w @sd/test-api build && npm run -w @sd/test-web build && npm run -w @sd/snap build",
+    "test": "npm run -w @sd/test-harness test && npm run -w @sd/snap test",
+    "clean": "npm run --workspaces --if-present clean",
+    "dev:test-api": "npm run -w @sd/test-api dev",
+    "dev:test-web": "npm run -w @sd/test-web dev",
+    "dev:snap": "npm run -w @sd/snap start",
+    "test:harness": "npm run -w @sd/test-harness test"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.2",
+    "prettier": "^3.4.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=20.11.0"
+  }
+}

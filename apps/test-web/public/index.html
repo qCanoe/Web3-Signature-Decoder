@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signature Decoder Test Web</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --brand: #0ea5e9;
+      --danger: #dc2626;
+      --ok: #059669;
+      --border: #dbe4ef;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      background: radial-gradient(circle at top right, #dbeafe, var(--bg));
+      color: var(--text);
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      min-height: 100vh;
+    }
+    .panel {
+      padding: 20px;
+    }
+    .panel.card {
+      background: var(--panel);
+      border-left: 1px solid var(--border);
+    }
+    textarea {
+      width: 100%;
+      min-height: 360px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+      resize: vertical;
+    }
+    input, select, button {
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      font-size: 14px;
+    }
+    button {
+      background: var(--brand);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    button.secondary {
+      background: #334155;
+    }
+    .row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+      align-items: center;
+    }
+    .row.wrap { flex-wrap: wrap; }
+    h1 { margin: 0 0 8px; font-size: 24px; }
+    p.sub { margin: 0 0 16px; color: var(--muted); }
+    pre {
+      margin: 0;
+      background: #0b1220;
+      color: #cbd5e1;
+      border-radius: 10px;
+      padding: 12px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      min-height: 360px;
+      overflow: auto;
+    }
+    .badge { display: inline-flex; padding: 4px 8px; border-radius: 999px; font-size: 12px; }
+    .badge.allow { background: #dcfce7; color: var(--ok); }
+    .badge.block { background: #fee2e2; color: var(--danger); }
+    @media (max-width: 960px) {
+      .layout { grid-template-columns: 1fr; }
+      .panel.card { border-left: none; border-top: 1px solid var(--border); }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <section class="panel">
+      <h1>Signature Decoder v2 Test Web</h1>
+      <p class="sub">Web is only a test shell. Core logic lives in shared packages.</p>
+
+      <div class="row wrap">
+        <label for="apiBase">API Base</label>
+        <input id="apiBase" style="min-width:280px" />
+        <select id="fixtureSelect"></select>
+      </div>
+
+      <div class="row wrap">
+        <button id="loadFixtureBtn" class="secondary">Load Fixture</button>
+        <button id="analyzeBtn">POST /v2/analyze</button>
+        <button id="validateBtn" class="secondary">POST /v2/fixtures/validate</button>
+      </div>
+
+      <textarea id="payloadEditor"></textarea>
+    </section>
+
+    <section class="panel card">
+      <div class="row">
+        <strong>Decision:</strong>
+        <span id="decisionBadge" class="badge allow">N/A</span>
+      </div>
+      <pre id="output">Run an analysis to see result...</pre>
+    </section>
+  </div>
+
+  <script src="/config.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>

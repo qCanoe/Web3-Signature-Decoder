@@ -1,0 +1,21 @@
+{
+  "version": "v2",
+  "types": {
+    "Permit": {
+      "action": "token_approval",
+      "tags": ["permit", "approval"]
+    },
+    "PermitSingle": {
+      "action": "permit2_approval",
+      "tags": ["permit2", "approval"]
+    },
+    "OrderComponents": {
+      "action": "nft_order",
+      "tags": ["nft", "marketplace"]
+    },
+    "Mail": {
+      "action": "structured_sign",
+      "tags": ["generic"]
+    }
+  }
+}

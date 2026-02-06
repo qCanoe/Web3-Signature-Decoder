@@ -1,0 +1,18 @@
+{
+  "name": "@sd/test-harness",
+  "version": "2.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "clean": "if (Test-Path dist) { Remove-Item -Recurse -Force dist }"
+  },
+  "dependencies": {
+    "@sd/core-engine": "2.0.0",
+    "@sd/core-llm": "2.0.0",
+    "@sd/core-schema": "2.0.0",
+    "@sd/test-fixtures": "2.0.0"
+  }
+}
