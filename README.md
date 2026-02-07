@@ -25,9 +25,10 @@ signature-decoder-v2/
 │   ├── test-fixtures/           # Golden test fixtures with schema validation
 │   └── test-harness/            # Contract, schema, and integration tests
 ├── apps/                        # Deployable applications
-│   ├── snap/                    # MetaMask Snap (uses core-engine via gateway)
-│   ├── test-api/                # Express REST API for development and testing
-│   └── test-web/                # Browser-based test shell
+    │   ├── snap/                    # MetaMask Snap (uses core-engine via gateway)
+    │   ├── site/                    # Project landing page and Snap initialization UI
+    │   ├── test-api/                # Express REST API for development and testing
+    │   └── test-web/                # Browser-based test shell
 ├── package.json                 # Workspace root (npm workspaces)
 └── tsconfig.base.json           # Shared TypeScript configuration
 ```
@@ -127,8 +128,9 @@ The knowledge singleton is initialized lazily and can be reset for testing.
 
 ### Prerequisites
 
-- Node.js >= 20.11.0
-- npm >= 10
+- **Node.js**: >= 20.11.0
+- **npm**: >= 10
+- **MetaMask Flask**: Recommended for Snap development
 
 ### Installation
 
@@ -138,21 +140,32 @@ cd Web3-Signature-Decoder
 npm install
 ```
 
-### Build
+### Configuration
 
-The build script compiles all packages in dependency order:
-
-```bash
-npm run build
-```
-
-### Test
+Copy the example environment file and add your OpenAI API key:
 
 ```bash
-npm run test
+cp .env.example .env
+# Edit .env and set OPENAI_API_KEY
 ```
 
-This runs the test harness (contract tests, fail-closed tests, fixture tests, schema validation) and Snap unit tests.
+### Development
+
+The fastest way to get started is to run the local development environment, which starts both the MetaMask Snap and the companion site:
+
+```bash
+npm run dev
+```
+
+- **Snap**: Running at `http://localhost:8080`
+- **Site**: Open `http://localhost:8000` to install and test the Snap
+
+### Other Commands
+
+- **Build**: `npm run build` (compiles all packages in dependency order)
+- **Test**: `npm run test` (runs harness and snap tests)
+- **API Server**: `npm run dev:test-api` (standalone analysis API)
+- **Web Shell**: `npm run dev:test-web` (fixture-based testing UI)
 
 ## Development
 
@@ -190,6 +203,14 @@ npm run dev:snap
 ```
 
 The Snap registers `onSignature` and `onTransaction` handlers that intercept wallet operations, run them through the core engine, and display risk assessments in the MetaMask UI.
+
+### Project Site
+
+```bash
+npm run dev:site
+```
+
+A landing page and initialization UI for the Snap. Open `http://localhost:8000` after starting.
 
 ## Environment variables
 
