@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signature Decoder v2</title>
+  <style>
+    :root {
+      --bg: #050505;
+      --fg: #e5e5e5;
+      --dim: #555;
+      --border: #333;
+      --accent: #fff; /* High contrast white */
+      --signal: #0f0; /* Terminal green */
+      --err: #f00;
+      --pad: 24px;
+    }
+
+    * { box-sizing: border-box; outline: none; }
+    
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.4;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: var(--pad);
+    }
+
+    /* ─── Grid Layout ─── */
+    .interface {
+      width: 100%;
+      max-width: 680px;
+      border: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: 1fr;
+    }
+
+    /* ─── Typography & Elements ─── */
+    h1, h2, h3 { margin: 0; font-weight: 400; font-size: inherit; text-transform: uppercase; letter-spacing: 0.05em; }
+    a { color: inherit; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    a:hover { background: var(--fg); color: var(--bg); text-decoration: none; }
+
+    /* ─── Sections ─── */
+    .row {
+      border-bottom: 1px solid var(--border);
+      padding: var(--pad);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .row:last-child { border-bottom: none; }
+    
+    .col-header { color: var(--dim); margin-bottom: 12px; display: block; }
+
+    /* ─── Header ─── */
+    header.row { align-items: center; }
+    .badge { 
+      background: var(--fg); 
+      color: var(--bg); 
+      padding: 2px 6px; 
+      font-size: 11px; 
+    }
+
+    /* ─── Status ─── */
+    .status-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .dot {
+      width: 8px; height: 8px;
+      background: var(--dim);
+      border-radius: 0; /* Square dots for brutalism */
+    }
+    .dot.active { background: var(--signal); box-shadow: 0 0 8px var(--signal); }
+    .dot.error { background: var(--err); box-shadow: 0 0 8px var(--err); }
+
+    /* ─── Controls ─── */
+    .controls { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--border); }
+    
+    button {
+      background: transparent;
+      color: var(--fg);
+      border: none;
+      border-right: 1px solid var(--border);
+      padding: 20px;
+      cursor: pointer;
+      font-family: inherit;
+      text-transform: uppercase;
+      text-align: left;
+      font-size: 12px;
+      transition: all 0.1s;
+      position: relative;
+    }
+    button:last-child { border-right: none; }
+    button:hover:not(:disabled) { background: #111; color: var(--accent); }
+    button:active:not(:disabled) { background: #222; transform: translateY(1px); }
+    button:disabled { opacity: 0.3; cursor: not-allowed; }
+    
+    button::before { content: "[ "; color: var(--dim); opacity: 0; transition: opacity 0.2s; }
+    button::after { content: " ]"; color: var(--dim); opacity: 0; transition: opacity 0.2s; }
+    button:hover::before, button:hover::after { opacity: 1; }
+
+    /* ─── Log ─── */
+    .log-container {
+      height: 200px;
+      overflow-y: auto;
+      padding: var(--pad);
+      background: #080808;
+      font-size: 12px;
+      
+      /* Firefox: Default transparent, show on hover */
+      scrollbar-width: thin;
+      scrollbar-color: transparent transparent;
+      transition: scrollbar-color 0.2s;
+    }
+    .log-container:hover {
+      scrollbar-color: var(--dim) transparent;
+    }
+
+    /* Webkit (Chrome/Edge/Safari) */
+    .log-container::-webkit-scrollbar {
+      width: 6px; /* Thinner for floating look */
+      height: 6px;
+      background: transparent;
+    }
+    .log-container::-webkit-scrollbar-track {
+      background: transparent; /* No track background */
+      border: none;
+    }
+    .log-container::-webkit-scrollbar-thumb {
+      background-color: transparent;
+      border: none;
+    }
+    
+    /* Show thumb on container hover */
+    .log-container:hover::-webkit-scrollbar-thumb {
+      background-color: var(--dim);
+    }
+    
+    /* Active thumb state */
+    .log-container::-webkit-scrollbar-thumb:hover {
+      background-color: var(--fg);
+    }
+    .log-entry { margin-bottom: 4px; display: block; opacity: 0.7; }
+    .log-entry.new { opacity: 1; color: var(--accent); }
+    .log-entry.err { color: var(--err); }
+    .ts { color: var(--dim); margin-right: 8px; user-select: none; }
+
+    /* ─── Footer / Info ─── */
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .info-item {
+      padding: var(--pad);
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .info-item:nth-child(2n) { border-right: none; }
+    .info-item:nth-last-child(-n+2) { border-bottom: none; }
+
+    /* ─── Utilities ─── */
+    .mono-box {
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      margin-top: 8px;
+      display: inline-block;
+      color: var(--dim);
+    }
+    .hidden { display: none; }
+
+    @media (max-width: 600px) {
+      .info-grid { grid-template-columns: 1fr; }
+      .info-item { border-right: none; border-bottom: 1px solid var(--border); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="interface">
+    <!-- Header -->
+    <header class="row">
+      <div>
+        <h1>Signature Decoder <span class="badge">V2</span></h1>
+      </div>
+      <div class="status-indicator">
+        <span id="statusText" style="color:var(--dim)">SYSTEM READY</span>
+        <div id="statusDot" class="dot"></div>
+      </div>
+    </header>
+
+    <!-- Controls -->
+    <div class="controls">
+      <button id="installBtn">Initialize Snap</button>
+      <button id="checkBtn">Verify Integrity</button>
+    </div>
+
+    <!-- Log Output -->
+    <div class="log-container" id="log">
+      <!-- Logs injected here -->
+    </div>
+
+    <!-- System Info Grid -->
+    <div class="info-grid">
+      <div class="info-item">
+        <span class="col-header">TARGET ID</span>
+        <div id="snapIdDisplay" style="word-break:break-all">...</div>
+      </div>
+      <div class="info-item">
+        <span class="col-header">ENVIRONMENT</span>
+        <div id="envDisplay">Detecting...</div>
+      </div>
+      <div class="info-item">
+        <span class="col-header">CAPABILITIES</span>
+        <div>Tx Analysis, Risk Scoring, EIP-712 Decoding</div>
+      </div>
+      <div class="info-item">
+        <span class="col-header">REPOSITORY</span>
+        <a href="https://github.com/qCanoe/Web3-Signature-Decoder" target="_blank">github.com/qCanoe/Web3-Signature-Decoder</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="/config.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
