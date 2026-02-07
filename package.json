@@ -14,12 +14,15 @@
     "dev:test-api": "npm run -w @sd/test-api dev",
     "dev:test-web": "npm run -w @sd/test-web dev",
     "dev:snap": "npm run -w @sd/snap start",
+    "dev:site": "npm run -w @sd/site dev",
+    "dev": "run-p dev:snap dev:site",
     "test:harness": "npm run -w @sd/test-harness test"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^22.10.2",
+    "npm-run-all2": "^8.0.4",
     "prettier": "^3.4.2",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
