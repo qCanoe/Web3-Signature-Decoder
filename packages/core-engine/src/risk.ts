@@ -12,54 +12,25 @@ export interface RiskDecisionInput {
 }
 
 export function buildAnalysisResult({ enriched, llm }: RiskDecisionInput): AnalysisResultV2 {
-  if (llm.status === "error") {
-    return {
-      summary: {
-        action: "analysis_unavailable",
-        description: "Unable to complete mandatory safety analysis. Please retry.",
-        protocol: enriched.inferredProtocol,
-        confidence: 0,
-      },
-      risk: {
-        level: "critical",
-        score: 100,
-        reasons: [
-          "LLM reasoning failed",
-          llm.failureReason ?? "analysis_unavailable",
-        ],
-        signals: [
-          {
-            key: "analysis_unavailable",
-            weight: 100,
-            source: "policy",
-            reason: "Fail-closed policy: block when analysis cannot complete",
-          },
-        ],
-      },
-      decision: {
-        value: "block",
-        policyReason: "analysis_unavailable",
-      },
-      entities: {
-        actors: enriched.actors,
-        assets: enriched.assets,
-        contracts: enriched.contracts,
-      },
-      highlights: enriched.highlights,
-      llm: {
-        model: "unavailable",
-        latencyMs: llm.latencyMs,
-        promptVersion: "reasoning-v2",
-        status: "error",
-      },
-    };
-  }
-
   const knowledge = getKnowledge();
   const rule = knowledge.riskRules;
+  const llmFailed = llm.status === "error";
 
+  // Always run knowledge-based scoring, even when LLM is unavailable.
   const base = rule.baseScoreByMethod[enriched.request.method] ?? 30;
-  const signals = mergeSignals(enriched.inferredSignals, llm.output.riskSignals);
+  const signals = llmFailed
+    ? [...enriched.inferredSignals]
+    : mergeSignals(enriched.inferredSignals, llm.output.riskSignals);
+
+  // When LLM failed, add a policy signal so the user knows analysis was degraded.
+  if (llmFailed) {
+    signals.push({
+      key: "llm_unavailable",
+      weight: 0,
+      source: "policy",
+      reason: "LLM reasoning unavailable — analysis based on knowledge base only",
+    });
+  }
 
   let score = base;
   const reasons: string[] = [];
@@ -82,12 +53,27 @@ export function buildAnalysisResult({ enriched, llm }: RiskDecisionInput): Analy
     policyReason = "high_risk";
   }
 
+  // Use LLM output when available, fall back to enriched (knowledge-base) data.
+  const action = llmFailed
+    ? enriched.inferredAction
+    : llm.output.action || enriched.inferredAction;
+
+  const description = llmFailed
+    ? buildFallbackDescription(enriched)
+    : llm.output.description;
+
+  const protocol = llmFailed
+    ? enriched.inferredProtocol
+    : llm.output.protocol ?? enriched.inferredProtocol;
+
+  const confidence = llmFailed ? 0 : llm.output.confidence;
+
   return {
     summary: {
-      action: llm.output.action || enriched.inferredAction,
-      description: llm.output.description,
-      protocol: llm.output.protocol ?? enriched.inferredProtocol,
-      confidence: llm.output.confidence,
+      action,
+      description,
+      protocol,
+      confidence,
     },
     risk: {
       level,
@@ -106,12 +92,34 @@ export function buildAnalysisResult({ enriched, llm }: RiskDecisionInput): Analy
     },
     highlights: enriched.highlights,
     llm: {
-      model: "provider",
+      model: llmFailed ? "unavailable" : llm.model,
       latencyMs: llm.latencyMs,
-      promptVersion: "reasoning-v2",
-      status: "ok",
+      promptVersion: llm.promptVersion,
+      status: llm.status,
     },
   };
+}
+
+function buildFallbackDescription(enriched: EnrichedRequest): string {
+  const method = enriched.request.method;
+  const protocol = enriched.inferredProtocol;
+  const action = enriched.inferredAction;
+
+  const parts: string[] = [];
+
+  if (action !== "unknown_operation") {
+    parts.push(`Detected: ${action}`);
+  } else {
+    parts.push(`Method: ${method}`);
+  }
+
+  if (protocol) {
+    parts.push(`Protocol: ${protocol}`);
+  }
+
+  parts.push("(LLM unavailable, knowledge-base analysis only)");
+
+  return parts.join(". ");
 }
 
 function mergeSignals(
