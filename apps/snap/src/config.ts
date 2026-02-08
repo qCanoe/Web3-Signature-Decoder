@@ -1,3 +1,5 @@
-export const SNAP_GATEWAY_URL = "http://localhost:4000/v2/reason";
-export const SNAP_GATEWAY_TOKEN = "";
-export const SNAP_GATEWAY_TIMEOUT_MS = 12000;
+// Direct OpenAI configuration (no gateway needed)
+// API key should be set via environment variable or build-time replacement
+export const OPENAI_API_KEY = "";
+export const OPENAI_MODEL = "gpt-4o";
+export const OPENAI_TIMEOUT_MS = 15000;

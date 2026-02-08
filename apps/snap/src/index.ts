@@ -6,25 +6,23 @@ import type {
   OnTransactionResponse,
 } from "@metamask/snaps-sdk";
 import { CoreEngine } from "@sd/core-engine";
-import { GatewayReasoningProvider } from "@sd/core-llm";
+import { OpenAiReasoningProvider } from "@sd/core-llm";
 import {
   toSnapSignatureResponse,
   toSnapTransactionResponse,
 } from "@sd/core-renderers";
 import type { AnalysisResultV2, AnalyzeRequestV2 } from "@sd/core-schema";
 import {
-  SNAP_GATEWAY_TIMEOUT_MS,
-  SNAP_GATEWAY_TOKEN,
-  SNAP_GATEWAY_URL,
+  OPENAI_API_KEY,
+  OPENAI_MODEL,
+  OPENAI_TIMEOUT_MS,
 } from "./config";
 
 const engine = new CoreEngine({
-  llmProvider: new GatewayReasoningProvider({
-    endpoint: SNAP_GATEWAY_URL,
-    token: SNAP_GATEWAY_TOKEN,
-    timeoutMs: SNAP_GATEWAY_TIMEOUT_MS,
-    model: "gateway",
-    promptVersion: "gateway-v2",
+  llmProvider: new OpenAiReasoningProvider({
+    apiKey: OPENAI_API_KEY,
+    model: OPENAI_MODEL,
+    timeoutMs: OPENAI_TIMEOUT_MS,
   }),
 });
 
@@ -32,23 +30,27 @@ export const onSignature: OnSignatureHandler = async ({
   signature,
   signatureOrigin,
 }) => {
-  const method = mapSignatureMethod(signature.signatureMethod);
-  if (!method) {
-    return toSnapSignatureResponse(makeUnsupportedResult(signature.signatureMethod));
+  try {
+    const method = mapSignatureMethod(signature.signatureMethod);
+    if (!method) {
+      return toSnapSignatureResponse(makeUnsupportedResult(signature.signatureMethod));
+    }
+
+    const request: AnalyzeRequestV2 = {
+      kind: "signature",
+      method,
+      payload: signature,
+      context: {
+        origin: normalizeOrigin(signatureOrigin),
+        timestamp: Date.now(),
+      },
+    };
+
+    const result = await engine.analyze(request);
+    return toSnapSignatureResponse(result);
+  } catch (error) {
+    return toSnapSignatureResponse(makeRuntimeFailureResult("signature", error));
   }
-
-  const request: AnalyzeRequestV2 = {
-    kind: "signature",
-    method,
-    payload: signature,
-    context: {
-      origin: signatureOrigin,
-      timestamp: Date.now(),
-    },
-  };
-
-  const result = await engine.analyze(request);
-  return toSnapSignatureResponse(result);
 };
 
 export const onTransaction: OnTransactionHandler = async ({
@@ -56,20 +58,24 @@ export const onTransaction: OnTransactionHandler = async ({
   chainId,
   transactionOrigin,
 }) => {
-  const request: AnalyzeRequestV2 = {
-    kind: "transaction",
-    method: "eth_sendTransaction",
-    payload: transaction,
-    context: {
-      origin: transactionOrigin,
-      chainId,
-      walletAddress: pickWalletAddress(transaction),
-      timestamp: Date.now(),
-    },
-  };
+  try {
+    const request: AnalyzeRequestV2 = {
+      kind: "transaction",
+      method: "eth_sendTransaction",
+      payload: transaction,
+      context: {
+        origin: normalizeOrigin(transactionOrigin),
+        chainId,
+        walletAddress: pickWalletAddress(transaction),
+        timestamp: Date.now(),
+      },
+    };
 
-  const result = await engine.analyze(request);
-  return toSnapTransactionResponse(result);
+    const result = await engine.analyze(request);
+    return toSnapTransactionResponse(result);
+  } catch (error) {
+    return toSnapTransactionResponse(makeRuntimeFailureResult("transaction", error));
+  }
 };
 
 function mapSignatureMethod(method: string): AnalyzeRequestV2["method"] | null {
@@ -85,6 +91,18 @@ function pickWalletAddress(transaction: Record<string, unknown>): string | undef
     return from;
   }
   return undefined;
+}
+
+function normalizeOrigin(origin?: string): string | undefined {
+  if (!origin) {
+    return undefined;
+  }
+
+  try {
+    return new URL(origin).toString();
+  } catch {
+    return undefined;
+  }
 }
 
 function makeUnsupportedResult(method: string): AnalysisResultV2 {
@@ -120,6 +138,56 @@ function makeUnsupportedResult(method: string): AnalysisResultV2 {
       {
         label: "method",
         value: method,
+        type: "text",
+      },
+    ],
+    llm: {
+      model: "gateway",
+      latencyMs: 0,
+      promptVersion: "gateway-v2",
+      status: "error",
+    },
+  };
+}
+
+function makeRuntimeFailureResult(
+  operation: "signature" | "transaction",
+  error: unknown
+): AnalysisResultV2 {
+  const reason = error instanceof Error ? error.message : "unknown_error";
+
+  return {
+    summary: {
+      action: `${operation}_analysis_failed`,
+      description: `Snap failed to analyze this ${operation}.`,
+      confidence: 0,
+    },
+    risk: {
+      level: "critical",
+      score: 100,
+      reasons: ["Snap analysis runtime failure", reason],
+      signals: [
+        {
+          key: "analysis_runtime_failure",
+          weight: 100,
+          source: "policy",
+          reason,
+        },
+      ],
+    },
+    decision: {
+      value: "block",
+      policyReason: "analysis_runtime_failure",
+    },
+    entities: {
+      actors: [],
+      assets: [],
+      contracts: [],
+    },
+    highlights: [
+      {
+        label: "operation",
+        value: operation,
         type: "text",
       },
     ],
