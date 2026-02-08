@@ -60,69 +60,70 @@ export class OpenAiReasoningProvider implements ReasoningProvider {
       throw new LlmUnavailableError("OPENAI_API_KEY is missing");
     }
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
-
     const prompt = buildPrompt(input);
 
+    // Use Promise.race for timeout — avoids relying on AbortController/setTimeout
+    // which may not be available in MetaMask Snap SES sandbox.
+    const fetchPromise = this.doFetch(prompt);
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new LlmUnavailableError("LLM timeout")), this.timeoutMs);
+    });
+
     try {
-      const response = await fetch(this.endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${this.apiKey}`,
-        },
-        body: JSON.stringify({
-          model: this.model,
-          temperature: 0,
-          messages: [
-            {
-              role: "system",
-              content:
-                "You are a blockchain security analyst. Return JSON only. No markdown.",
-            },
-            {
-              role: "user",
-              content: prompt,
-            },
-          ],
-        }),
-        signal: controller.signal,
-      });
-
-      if (!response.ok) {
-        throw new LlmUnavailableError(
-          `OpenAI request failed (${response.status})`,
-          "analysis_unavailable"
-        );
-      }
-
-      const data = (await response.json()) as {
-        choices?: Array<{ message?: { content?: string } }>;
-      };
-
-      const content = data.choices?.[0]?.message?.content;
-      if (!content) {
-        throw new LlmUnavailableError("OpenAI returned empty content");
-      }
-
-      const parsed = parseStrictJson(content);
-      return LlmReasoningResponseSchema.parse(parsed);
+      return await Promise.race([fetchPromise, timeoutPromise]);
     } catch (error) {
       if (error instanceof LlmUnavailableError) {
         throw error;
       }
-
-      if (error instanceof Error && error.name === "AbortError") {
-        throw new LlmUnavailableError("LLM timeout");
-      }
-
       throw new LlmUnavailableError(
         error instanceof Error ? error.message : "Unknown LLM failure"
       );
-    } finally {
-      clearTimeout(timeout);
     }
+  }
+
+  private async doFetch(prompt: string): Promise<LlmReasoningResponse> {
+    const response = await fetch(this.endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: this.model,
+        temperature: 0,
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a blockchain security analyst. Return JSON only. No markdown.",
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      const body = await response.text().catch(() => "");
+      throw new LlmUnavailableError(
+        `OpenAI request failed (${response.status}): ${body.slice(0, 200)}`,
+        "analysis_unavailable"
+      );
+    }
+
+    const data = (await response.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+
+    const content = data.choices?.[0]?.message?.content;
+    if (!content) {
+      throw new LlmUnavailableError("OpenAI returned empty content");
+    }
+
+    const parsed = parseStrictJson(content);
+    return LlmReasoningResponseSchema.parse(parsed);
   }
 }
 
@@ -154,46 +155,44 @@ export class GatewayReasoningProvider implements ReasoningProvider {
       throw new LlmUnavailableError("Gateway endpoint is missing");
     }
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
+    const fetchPromise = this.doFetch(input);
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new LlmUnavailableError("Gateway timeout")), this.timeoutMs);
+    });
 
     try {
-      const headers: Record<string, string> = {
-        "Content-Type": "application/json",
-      };
-
-      if (this.token) {
-        headers.Authorization = `Bearer ${this.token}`;
-      }
-
-      const response = await fetch(this.endpoint, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ input }),
-        signal: controller.signal,
-      });
-
-      if (!response.ok) {
-        throw new LlmUnavailableError(`Gateway request failed (${response.status})`);
-      }
-
-      const data = (await response.json()) as unknown;
-      return LlmReasoningResponseSchema.parse(data);
+      return await Promise.race([fetchPromise, timeoutPromise]);
     } catch (error) {
       if (error instanceof LlmUnavailableError) {
         throw error;
       }
-
-      if (error instanceof Error && error.name === "AbortError") {
-        throw new LlmUnavailableError("Gateway timeout");
-      }
-
       throw new LlmUnavailableError(
         error instanceof Error ? error.message : "Unknown gateway failure"
       );
-    } finally {
-      clearTimeout(timeout);
     }
+  }
+
+  private async doFetch(input: LlmReasoningInput): Promise<LlmReasoningResponse> {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    if (this.token) {
+      headers.Authorization = `Bearer ${this.token}`;
+    }
+
+    const response = await fetch(this.endpoint, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ input }),
+    });
+
+    if (!response.ok) {
+      throw new LlmUnavailableError(`Gateway request failed (${response.status})`);
+    }
+
+    const data = (await response.json()) as unknown;
+    return LlmReasoningResponseSchema.parse(data);
   }
 }
 
@@ -224,7 +223,8 @@ export function parseStrictJson(content: string): unknown {
 function buildPrompt(input: LlmReasoningInput): string {
   return [
     "Analyze this wallet request and return strict JSON with shape:",
-    '{"action":"...","description":"...","confidence":0.0,"protocol":"...","riskSignals":[{"key":"...","reason":"...","severity":"low|medium|high|critical"}]}',
+    '{"action":"...","description":"one sentence, max 80 chars","confidence":0.0,"protocol":"...","riskSignals":[{"key":"snake_case_id","reason":"max 50 chars","severity":"low|medium|high|critical"}]}',
+    "Rules: description must be one concise sentence. Each riskSignal reason must be under 50 characters. Return at most 3 riskSignals. key must be snake_case.",
     "Request:",
     JSON.stringify(input),
   ].join("\n");
