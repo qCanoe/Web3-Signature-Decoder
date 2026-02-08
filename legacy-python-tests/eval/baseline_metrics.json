@@ -1,6 +1,0 @@
-{
-  "risk_macro_f1": 0.66,
-  "high_risk_recall": 0.84,
-  "high_risk_precision": 0.64,
-  "action_top1_accuracy": 0.79
-}
