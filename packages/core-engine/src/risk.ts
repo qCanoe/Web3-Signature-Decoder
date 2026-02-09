@@ -34,9 +34,19 @@ export function buildAnalysisResult({ enriched, llm }: RiskDecisionInput): Analy
 
   let score = base;
   const reasons: string[] = [];
+  const llmSourceWeightCap = rule.llmSourceWeightCap ?? Number.POSITIVE_INFINITY;
+  let llmSourceWeightUsed = 0;
 
   for (const signal of signals) {
-    const weight = rule.signalWeights[signal.key] ?? 0;
+    const baseWeight = rule.signalWeights[signal.key] ?? 0;
+    let weight = baseWeight;
+
+    if (signal.source === "llm" && Number.isFinite(llmSourceWeightCap) && baseWeight > 0) {
+      const remaining = Math.max(0, llmSourceWeightCap - llmSourceWeightUsed);
+      weight = Math.min(baseWeight, remaining);
+      llmSourceWeightUsed += weight;
+    }
+
     signal.weight = weight;
     score += weight;
     reasons.push(signal.reason);
@@ -48,7 +58,10 @@ export function buildAnalysisResult({ enriched, llm }: RiskDecisionInput): Analy
   let decision: "allow" | "block" = "allow";
   let policyReason = "policy_allow";
 
-  if (level === "high" || level === "critical") {
+  if (llmFailed) {
+    decision = "block";
+    policyReason = "analysis_unavailable";
+  } else if (level === "high" || level === "critical") {
     decision = "block";
     policyReason = "high_risk";
   }
@@ -131,20 +144,70 @@ function mergeSignals(
     source: "knowledge",
   }));
 
-  const fromLlm: RiskSignal[] = llmSignals.map((signal) => ({
-    key:
-      signal.severity === "critical"
-        ? "llm_critical_risk"
-        : signal.severity === "high"
-          ? "llm_high_risk"
-          : signal.key,
-    weight: 0,
-    source: "llm",
-    reason: signal.reason,
-  }));
+  const knowledgeKeys = new Set(fromKnowledge.map((signal) => signal.key));
+  const fromLlm: RiskSignal[] = [];
+
+  for (const signal of llmSignals) {
+    const key = normalizeLlmSignalKey(signal);
+    if (knowledgeKeys.has(key)) {
+      continue;
+    }
+    fromLlm.push({
+      key,
+      weight: 0,
+      source: "llm",
+      reason: signal.reason,
+    });
+  }
 
   return dedupeSignals([...fromKnowledge, ...fromLlm]);
 }
+
+function normalizeLlmSignalKey(signal: LlmReasoningResponse["riskSignals"][number]): string {
+  if (signal.severity === "critical") {
+    return "llm_critical_risk";
+  }
+  if (signal.severity === "high") {
+    return "llm_high_risk";
+  }
+
+  const normalizedKey = toSnakeCase(signal.key);
+  if (KNOWN_TAXON_KEYS.has(normalizedKey)) {
+    return normalizedKey;
+  }
+
+  const hint = `${signal.key} ${signal.reason}`.toLowerCase();
+  if (hint.includes("permit") && (hint.includes("unlimit") || hint.includes("max"))) {
+    return "permit_unlimited";
+  }
+  if (hint.includes("phish") || hint.includes("spoof") || hint.includes("fake domain")) {
+    return "phishing_domain";
+  }
+  if (hint.includes("calldata") || hint.includes("selector") || hint.includes("payload")) {
+    return "suspicious_calldata";
+  }
+  if (hint.includes("upgrade") || hint.includes("proxy")) {
+    return "upgrade_proxy";
+  }
+
+  return normalizedKey;
+}
+
+function toSnakeCase(value: string): string {
+  const converted = value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  return converted.length > 0 ? converted : "llm_signal";
+}
+
+const KNOWN_TAXON_KEYS = new Set<string>([
+  "permit_unlimited",
+  "phishing_domain",
+  "suspicious_calldata",
+  "upgrade_proxy",
+]);
 
 function determineLevel(
   score: number,

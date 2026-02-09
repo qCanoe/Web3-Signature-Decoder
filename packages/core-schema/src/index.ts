@@ -106,19 +106,88 @@ export const AnalysisResultV2Schema = z.object({
   llm: LlmMetaSchema,
 });
 
-export const LlmReasoningResponseSchema = z.object({
-  action: z.string().min(1),
-  description: z.string().min(1),
-  confidence: z.number().min(0).max(1),
-  protocol: z.string().optional(),
-  riskSignals: z.array(
-    z.object({
-      key: z.string().min(1),
-      reason: z.string().min(1),
-      severity: z.enum(["low", "medium", "high", "critical"]),
-    })
-  ),
+const LlmRiskSignalSchema = z.object({
+  key: z.string().min(1),
+  reason: z.string().min(1),
+  severity: z.enum(["low", "medium", "high", "critical"]),
 });
+
+const LlmDetectSchema = z.object({
+  action: z.string().min(1),
+  protocol: z.string().optional(),
+  riskSignals: z.array(LlmRiskSignalSchema).default([]),
+  confidence: z.number().min(0).max(1).optional(),
+});
+
+const LlmExplainSchema = z.object({
+  description: z.string().min(1).max(160),
+});
+
+export const LlmReasoningResponseSchema = z
+  .object({
+    // Backward-compatible fields used by existing callers.
+    action: z.string().min(1).optional(),
+    description: z.string().min(1).max(160).optional(),
+    confidence: z.number().min(0).max(1).optional(),
+    protocol: z.string().optional(),
+    riskSignals: z.array(LlmRiskSignalSchema).optional(),
+    // New two-stage output fields.
+    detect: LlmDetectSchema.optional(),
+    explain: LlmExplainSchema.optional(),
+  })
+  .superRefine((value, ctx) => {
+    const hasAction = Boolean(value.action ?? value.detect?.action);
+    const hasDescription = Boolean(value.description ?? value.explain?.description);
+    const hasSignals = Array.isArray(value.riskSignals) || Array.isArray(value.detect?.riskSignals);
+
+    if (!hasAction) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "LLM response must include action or detect.action",
+      });
+    }
+    if (!hasDescription) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "LLM response must include description or explain.description",
+      });
+    }
+    if (!hasSignals) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "LLM response must include riskSignals or detect.riskSignals",
+      });
+    }
+  })
+  .transform((value) => {
+    const detect = value.detect
+      ? {
+          action: value.detect.action,
+          riskSignals: value.detect.riskSignals,
+          ...(value.detect.protocol ? { protocol: value.detect.protocol } : {}),
+          ...(value.detect.confidence !== undefined
+            ? { confidence: value.detect.confidence }
+            : {}),
+        }
+      : undefined;
+    const explain = value.explain
+      ? {
+          description: value.explain.description,
+        }
+      : undefined;
+
+    return {
+      action: value.action ?? detect?.action ?? "unknown_operation",
+      description: value.description ?? explain?.description ?? "LLM description unavailable",
+      confidence: value.confidence ?? detect?.confidence ?? 0.5,
+      riskSignals: value.riskSignals ?? detect?.riskSignals ?? [],
+      ...(value.protocol ?? detect?.protocol
+        ? { protocol: value.protocol ?? detect?.protocol }
+        : {}),
+      ...(detect ? { detect } : {}),
+      ...(explain ? { explain } : {}),
+    };
+  });
 
 const VersionSchema = z.literal("v2");
 
@@ -158,6 +227,7 @@ export const RiskRulesKnowledgeSchema = z.object({
   version: VersionSchema,
   baseScoreByMethod: z.record(z.number().int().min(0).max(100)),
   signalWeights: z.record(z.number().int().min(-100).max(100)),
+  llmSourceWeightCap: z.number().int().min(0).max(100).optional(),
   thresholds: z.object({
     medium: z.number().int().min(0).max(100),
     high: z.number().int().min(0).max(100),
@@ -177,6 +247,41 @@ export const MessagePatternsKnowledgeSchema = z.object({
   ),
 });
 
+const ThreatIntelEntrySchema = z.object({
+  category: z.string().min(1),
+  severity: RiskLevelSchema,
+  reason: z.string().min(1),
+});
+
+export const MaliciousAddressesKnowledgeSchema = z.object({
+  version: VersionSchema,
+  addresses: z.record(ThreatIntelEntrySchema),
+});
+
+export const MaliciousDomainsKnowledgeSchema = z.object({
+  version: VersionSchema,
+  domains: z.record(ThreatIntelEntrySchema),
+});
+
+const ChainRiskFeatureKnowledgeSchema = z.object({
+  key: z.string().min(1),
+  signal: z.string().min(1),
+  reason: z.string().min(1),
+  selectors: z.array(z.string().regex(/^0x[a-fA-F0-9]{8}$/)).default([]),
+  primaryTypes: z.array(z.string().min(1)).default([]),
+  actionKeywords: z.array(z.string().min(1)).default([]),
+});
+
+export const ChainsKnowledgeSchema = z.object({
+  version: VersionSchema,
+  chains: z.record(
+    z.object({
+      name: z.string().min(1),
+      features: z.array(ChainRiskFeatureKnowledgeSchema).default([]),
+    })
+  ),
+});
+
 export type AnalyzeRequestV2 = z.infer<typeof AnalyzeRequestV2Schema>;
 export type AnalysisResultV2 = z.infer<typeof AnalysisResultV2Schema>;
 export type RiskSignal = z.infer<typeof RiskSignalSchema>;
@@ -186,6 +291,9 @@ export type Eip712TypesKnowledge = z.infer<typeof Eip712TypesKnowledgeSchema>;
 export type ProtocolsKnowledge = z.infer<typeof ProtocolsKnowledgeSchema>;
 export type RiskRulesKnowledge = z.infer<typeof RiskRulesKnowledgeSchema>;
 export type MessagePatternsKnowledge = z.infer<typeof MessagePatternsKnowledgeSchema>;
+export type MaliciousAddressesKnowledge = z.infer<typeof MaliciousAddressesKnowledgeSchema>;
+export type MaliciousDomainsKnowledge = z.infer<typeof MaliciousDomainsKnowledgeSchema>;
+export type ChainsKnowledge = z.infer<typeof ChainsKnowledgeSchema>;
 
 export function validateAnalyzeRequest(input: unknown): AnalyzeRequestV2 {
   return AnalyzeRequestV2Schema.parse(input);

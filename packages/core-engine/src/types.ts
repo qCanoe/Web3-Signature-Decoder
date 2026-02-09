@@ -46,6 +46,23 @@ export interface EnrichedRequest extends ParsedRequest {
   inferredAction: string;
   inferredProtocol?: string;
   inferredSignals: RiskSignal[];
+  maliciousAddressHits: Array<{
+    address: string;
+    category: string;
+    severity: "low" | "medium" | "high" | "critical";
+    reason: string;
+  }>;
+  maliciousDomainHits: Array<{
+    domain: string;
+    category: string;
+    severity: "low" | "medium" | "high" | "critical";
+    reason: string;
+  }>;
+  chainFeatureHits: Array<{
+    key: string;
+    signal: string;
+    reason: string;
+  }>;
 }
 
 export interface LlmStageResult {

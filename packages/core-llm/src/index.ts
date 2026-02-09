@@ -10,8 +10,10 @@ export interface LlmReasoningInput {
   enriched: Record<string, unknown>;
   context: {
     origin?: string;
+    originDomain?: string;
     chainId?: string;
     walletAddress?: string;
+    contractAddresses?: string[];
     timestamp?: number;
   };
 }
@@ -222,9 +224,11 @@ export function parseStrictJson(content: string): unknown {
 
 function buildPrompt(input: LlmReasoningInput): string {
   return [
-    "Analyze this wallet request and return strict JSON with shape:",
-    '{"action":"...","description":"one sentence, max 80 chars","confidence":0.0,"protocol":"...","riskSignals":[{"key":"snake_case_id","reason":"max 50 chars","severity":"low|medium|high|critical"}]}',
-    "Rules: description must be one concise sentence. Each riskSignal reason must be under 50 characters. Return at most 3 riskSignals. key must be snake_case.",
+    "Analyze this wallet request and return strict JSON only.",
+    "Primary response shape (two-stage):",
+    '{"detect":{"action":"...","protocol":"...","confidence":0.0,"riskSignals":[{"key":"snake_case_id","reason":"max 50 chars","severity":"low|medium|high|critical"}]},"explain":{"description":"one sentence, max 80 chars"}}',
+    "Compatibility aliases are allowed at top level: action, protocol, confidence, riskSignals, description.",
+    "Rules: description must be one concise sentence. Each riskSignal reason must be under 50 chars. Return at most 3 riskSignals. key must be snake_case.",
     "Request:",
     JSON.stringify(input),
   ].join("\n");

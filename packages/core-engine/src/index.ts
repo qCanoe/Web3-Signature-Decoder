@@ -63,11 +63,16 @@ export class CoreEngine {
         inferredAction: enriched.inferredAction,
         inferredProtocol: enriched.inferredProtocol,
         inferredSignals: enriched.inferredSignals,
+        maliciousAddressHits: enriched.maliciousAddressHits,
+        maliciousDomainHits: enriched.maliciousDomainHits,
+        chainFeatureHits: enriched.chainFeatureHits,
       },
       context: {
         origin: request.context?.origin,
+        originDomain: extractOriginDomain(request.context?.origin),
         chainId: request.context?.chainId,
         walletAddress: request.context?.walletAddress,
+        contractAddresses: enriched.contracts.map((entry) => entry.address),
         timestamp: request.context?.timestamp,
       },
     };
@@ -92,6 +97,15 @@ export class CoreEngine {
           confidence: 0,
           protocol: enriched.inferredProtocol,
           riskSignals: [],
+          detect: {
+            action: enriched.inferredAction,
+            protocol: enriched.inferredProtocol,
+            confidence: 0,
+            riskSignals: [],
+          },
+          explain: {
+            description: "LLM reasoning unavailable",
+          },
         },
         latencyMs: this.now() - start,
         status: "error",
@@ -110,3 +124,14 @@ export function createCoreEngine(options: CoreEngineOptions): CoreEngine {
 export { normalizeRequest } from "./normalize";
 export { parseRequest } from "./parse";
 export { enrichParsedRequest } from "./enrich";
+
+function extractOriginDomain(origin?: string): string | undefined {
+  if (!origin) {
+    return undefined;
+  }
+  try {
+    return new URL(origin).hostname.toLowerCase();
+  } catch {
+    return undefined;
+  }
+}

@@ -9,6 +9,9 @@ const MAX_UINT256 = BigInt(
 export function enrichParsedRequest(parsed: ParsedRequest): EnrichedRequest {
   const knowledge = getKnowledge();
   const inferredSignals: RiskSignal[] = [];
+  const maliciousAddressHits: EnrichedRequest["maliciousAddressHits"] = [];
+  const maliciousDomainHits: EnrichedRequest["maliciousDomainHits"] = [];
+  const chainFeatureHits: EnrichedRequest["chainFeatureHits"] = [];
   let inferredAction = "unknown_operation";
   let inferredProtocol: string | undefined;
 
@@ -82,11 +85,114 @@ export function enrichParsedRequest(parsed: ParsedRequest): EnrichedRequest {
     });
   }
 
+  const addressesToCheck = new Set<string>();
+  for (const actor of parsed.actors) {
+    addressesToCheck.add(actor.address.toLowerCase());
+  }
+  for (const contract of parsed.contracts) {
+    addressesToCheck.add(contract.address.toLowerCase());
+  }
+
+  for (const address of addressesToCheck) {
+    const hit = knowledge.maliciousAddresses.addresses[address];
+    if (!hit) {
+      continue;
+    }
+
+    maliciousAddressHits.push({
+      address,
+      category: hit.category,
+      severity: hit.severity,
+      reason: hit.reason,
+    });
+    inferredSignals.push({
+      key: "malicious_address_hit",
+      weight: 0,
+      source: "knowledge",
+      reason: `Threat intel hit (${hit.category}): ${hit.reason}`,
+    });
+  }
+
+  const domainsToCheck = new Set<string>();
+  if (parsed.domainName) {
+    domainsToCheck.add(parsed.domainName.toLowerCase());
+  }
+  const originDomain = extractDomain(parsed.request.context?.origin);
+  if (originDomain) {
+    domainsToCheck.add(originDomain);
+  }
+
+  for (const domain of domainsToCheck) {
+    const matched = findDomainIntel(domain, knowledge.maliciousDomains.domains);
+    if (!matched) {
+      continue;
+    }
+
+    maliciousDomainHits.push({
+      domain,
+      category: matched.category,
+      severity: matched.severity,
+      reason: matched.reason,
+    });
+    inferredSignals.push({
+      key: "malicious_domain_hit",
+      weight: 0,
+      source: "knowledge",
+      reason: `Threat intel hit (${matched.category}): ${matched.reason}`,
+    });
+
+    if (matched.category.toLowerCase().includes("phishing")) {
+      inferredSignals.push({
+        key: "phishing_domain",
+        weight: 0,
+        source: "knowledge",
+        reason: matched.reason,
+      });
+    }
+  }
+
+  const chainId = parsed.request.context?.chainId;
+  if (chainId) {
+    const chainConfig = knowledge.chains.chains[chainId];
+    if (chainConfig) {
+      for (const feature of chainConfig.features) {
+        const selectorMatched =
+          Boolean(parsed.selector) &&
+          feature.selectors.some((selector) => selector.toLowerCase() === parsed.selector?.toLowerCase());
+        const typeMatched =
+          Boolean(parsed.primaryType) &&
+          feature.primaryTypes.some((type) => type.toLowerCase() === parsed.primaryType?.toLowerCase());
+        const actionMatched = feature.actionKeywords.some((keyword) =>
+          inferredAction.toLowerCase().includes(keyword.toLowerCase())
+        );
+
+        if (!selectorMatched && !typeMatched && !actionMatched) {
+          continue;
+        }
+
+        chainFeatureHits.push({
+          key: feature.key,
+          signal: feature.signal,
+          reason: feature.reason,
+        });
+        inferredSignals.push({
+          key: feature.signal,
+          weight: 0,
+          source: "knowledge",
+          reason: feature.reason,
+        });
+      }
+    }
+  }
+
   return {
     ...parsed,
     inferredAction,
     inferredProtocol,
     inferredSignals: dedupeSignals(inferredSignals),
+    maliciousAddressHits: dedupeByKey(maliciousAddressHits, (item) => item.address),
+    maliciousDomainHits: dedupeByKey(maliciousDomainHits, (item) => item.domain),
+    chainFeatureHits: dedupeByKey(chainFeatureHits, (item) => item.key),
   };
 
   function detectProtocol(domainName?: string, verifyingContract?: string): string | undefined {
@@ -122,6 +228,43 @@ function dedupeSignals(signals: RiskSignal[]): RiskSignal[] {
     seen.add(key);
     return true;
   });
+}
+
+function dedupeByKey<T>(items: T[], getKey: (item: T) => string): T[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    const key = getKey(item);
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+}
+
+function extractDomain(origin?: string): string | undefined {
+  if (!origin) {
+    return undefined;
+  }
+  try {
+    return new URL(origin).hostname.toLowerCase();
+  } catch {
+    return undefined;
+  }
+}
+
+function findDomainIntel(
+  domain: string,
+  domains: Record<string, { category: string; severity: "low" | "medium" | "high" | "critical"; reason: string }>
+): { category: string; severity: "low" | "medium" | "high" | "critical"; reason: string } | undefined {
+  const normalized = domain.toLowerCase();
+  for (const [listedDomain, intel] of Object.entries(domains)) {
+    const listedLower = listedDomain.toLowerCase();
+    if (normalized === listedLower || normalized.endsWith(`.${listedLower}`)) {
+      return intel;
+    }
+  }
+  return undefined;
 }
 
 function isUnlimitedApproval(parsed: ParsedRequest): boolean {

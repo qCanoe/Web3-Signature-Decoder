@@ -1,0 +1,39 @@
+{
+  "version": "v2",
+  "chains": {
+    "eip155:1": {
+      "name": "Ethereum Mainnet",
+      "features": [
+        {
+          "key": "approve_permit_surface",
+          "signal": "chain_risky_pattern",
+          "reason": "Mainnet approve/permit path needs stricter allowance checks",
+          "selectors": ["0x095ea7b3"],
+          "primaryTypes": ["Permit", "PermitSingle"],
+          "actionKeywords": ["approval", "permit"]
+        },
+        {
+          "key": "proxy_upgrade_surface",
+          "signal": "upgrade_proxy",
+          "reason": "Proxy upgrade pattern detected on a high-value chain",
+          "selectors": ["0x3659cfe6"],
+          "primaryTypes": [],
+          "actionKeywords": ["upgrade", "proxy"]
+        }
+      ]
+    },
+    "eip155:56": {
+      "name": "BNB Smart Chain",
+      "features": [
+        {
+          "key": "approve_permit_surface",
+          "signal": "chain_risky_pattern",
+          "reason": "BSC approve/permit traffic has elevated scam prevalence",
+          "selectors": ["0x095ea7b3"],
+          "primaryTypes": ["Permit", "PermitSingle"],
+          "actionKeywords": ["approval", "permit"]
+        }
+      ]
+    }
+  }
+}
