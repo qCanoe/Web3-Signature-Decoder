@@ -27,7 +27,7 @@ signature-decoder-v2/
 │   ├── test-fixtures/           # Golden test fixtures with schema validation
 │   └── test-harness/            # Contract, schema, and integration tests
 ├── apps/                        # Deployable applications
-    │   ├── snap/                    # MetaMask Snap (uses core-engine via gateway)
+    │   ├── snap/                    # MetaMask Snap (uses core-engine with pluggable LLM provider)
     │   ├── site/                    # Project landing page and Snap initialization UI
     │   ├── test-api/                # Express REST API for development and testing
     │   └── test-web/                # Browser-based test shell
@@ -69,17 +69,26 @@ Request ──> Normalize ──> Parse ──> Enrich ──> LLM Reason ──
    The parser also generates `highlights` (key-value pairs surfaced to the user) and collects `actors` (addresses found in the payload with inferred roles).
 3. **Enrich** -- Augments the parsed request with knowledge-based inferences:
 
-   - Matches the function selector against a known selector database to resolve the action name (e.g., `0x095ea7c3` -> `approve`).
+   - Matches the function selector against a known selector database to resolve the action name (for example, `0x095ea7b3` -> `token_approval`).
    - Matches `primaryType` against known EIP-712 type patterns (Permit, Permit2, Order, etc.).
    - Detects protocols by matching domain names and contract addresses against protocol pattern rules.
    - Checks for high-risk patterns: unlimited approvals (amount >= MAX_UINT256 / 2), batch operations (multicall selector `0xac9650d8`), and message content matching personal sign risk patterns.
    - Emits deterministic risk signals with severity levels and human-readable reasons.
-4. **LLM Reason** -- Sends a structured prompt to the configured LLM provider containing the parsed and enriched context. The LLM returns a JSON response with a recommended action, risk level, summary, and additional risk signals. The response is validated against `LlmReasoningResponseSchema`. If the LLM call fails or times out, the pipeline falls back to a fail-closed policy (see below).
-5. **Risk Score** -- Merges deterministic (knowledge-based) and LLM-generated risk signals, computes a weighted risk score (0-100), determines the risk level based on configurable thresholds, and produces a final `allow` or `block` decision. The result is returned as an `AnalysisResultV2` object.
+4. **LLM Reason** -- Sends a structured prompt to the configured LLM provider containing parsed and enriched context (including domain/address threat-intel hits and chain risk hints). The provider returns a two-stage payload:
+
+   - `detect`: action/protocol/riskSignals
+   - `explain`: one-sentence user-facing description
+
+   The response is validated and normalized by `LlmReasoningResponseSchema`, which also supports backward-compatible top-level fields (`action`, `description`, etc.).
+5. **Risk Score** -- Merges deterministic (knowledge-based) and LLM-generated risk signals, then applies dual-track scoring:
+
+   - LLM signals are treated as **incremental only** (knowledge-covered keys are not duplicated).
+   - LLM cumulative contribution is capped by `llmSourceWeightCap` from `risk_rules.v2.json`.
+   - Final score is clamped to 0-100 and mapped to risk levels/decision.
 
 ### Fail-closed policy
 
-If the LLM provider is unavailable, times out, or returns an invalid response, the engine does not default to `allow`. Instead, it returns a `block` decision with `policyReason: "analysis_unavailable"` and `riskLevel: "critical"`. This ensures that users are never exposed to unanalyzed requests.
+If the LLM provider is unavailable, times out, or returns an invalid response, the engine does not default to `allow`. Instead, it enforces a `block` decision with `policyReason: "analysis_unavailable"` and continues knowledge-based scoring for transparency. This ensures that users are never exposed to unanalyzed requests.
 
 ### Risk scoring
 
@@ -87,7 +96,9 @@ The scoring system works as follows:
 
 - Each signing method has a base score (higher for methods like `eth_sign` that provide less context).
 - Each risk signal carries a weight defined in the knowledge base (`risk_rules.v2.json`).
-- The final score is the sum of the base score and all signal weights, clamped to the range [0, 100].
+- The final score is the sum of the base score and signal weights, clamped to [0, 100].
+- LLM signals are normalized to fixed taxon keys (for example: `permit_unlimited`, `phishing_domain`, `suspicious_calldata`), with high-severity fallback keys (`llm_high_risk`, `llm_critical_risk`).
+- LLM-origin weights are capped by `llmSourceWeightCap` to prevent model-only over-dominance.
 - Risk levels are determined by thresholds: `low` (default), `medium` (>= threshold), `high` (>= threshold), `critical` (>= threshold).
 - The decision is `block` if the risk level is `high` or `critical`; otherwise `allow`.
 
@@ -101,7 +112,33 @@ The `@sd/core-llm` package defines a `ReasoningProvider` interface with three im
 | `GatewayReasoningProvider` | HTTP gateway (e.g., test-api `/v2/reason`) | URL, optional bearer token, timeout |
 | `MockReasoningProvider`    | Deterministic testing                        | Fixed response object               |
 
-The Snap uses `GatewayReasoningProvider` to call the test-api server, which in turn uses `OpenAiReasoningProvider`. This design keeps the Snap bundle lightweight and avoids embedding API keys in client-side code.
+Current default wiring in this repo initializes Snap with `OpenAiReasoningProvider` directly. `GatewayReasoningProvider` remains available for deployments that prefer a server-side gateway (`/v2/reason`) and token-based control.
+
+### Two-stage LLM response format
+
+The preferred LLM output is:
+
+```json
+{
+  "detect": {
+    "action": "token_approval",
+    "protocol": "Uniswap",
+    "confidence": 0.78,
+    "riskSignals": [
+      {
+        "key": "suspicious_calldata",
+        "reason": "Calldata includes obfuscated target",
+        "severity": "medium"
+      }
+    ]
+  },
+  "explain": {
+    "description": "This request may grant token spending approval."
+  }
+}
+```
+
+Backward-compatible top-level aliases are still accepted (`action`, `description`, `protocol`, `confidence`, `riskSignals`).
 
 ### Knowledge base
 
@@ -114,6 +151,9 @@ The knowledge base is a set of versioned JSON files (`v2`) loaded at startup and
 | `protocols.v2.json`        | Protocol detection rules (domain patterns, contract addresses) |
 | `risk_rules.v2.json`       | Risk signal definitions with severity levels and weights       |
 | `message_patterns.v2.json` | Regex patterns for personal_sign message content analysis      |
+| `malicious_addresses.v2.json` | Static malicious address intelligence (category/severity/reason) |
+| `malicious_domains.v2.json` | Static malicious domain intelligence (category/severity/reason) |
+| `chains.v2.json` | Chain-specific risk features (approve/permit/upgrade/proxy patterns) |
 
 The knowledge singleton is initialized lazily and can be reset for testing.
 
@@ -240,6 +280,7 @@ The test suite is organized into several categories:
 - **Fail-closed tests** (`fail_closed.test.ts`): Confirms that LLM provider failures result in `block` decisions with appropriate error metadata.
 - **Fixture tests** (`fixtures.test.ts`): Runs golden fixtures through the pipeline and asserts expected decisions.
 - **LLM adapter tests** (`llm_adapter.test.ts`): Tests LLM provider behavior and response parsing.
+- **Signal mapping tests** (`signal_mapping.test.ts`): Verifies LLM taxon normalization, incremental merge, and source-cap scoring behavior.
 - **Snap tests** (`index.test.ts`): Unit tests for the MetaMask Snap handlers.
 
 ## Tech stack
