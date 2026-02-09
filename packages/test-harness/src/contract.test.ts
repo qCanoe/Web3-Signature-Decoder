@@ -9,6 +9,13 @@ describe("Result contract", () => {
       llmProvider: new MockReasoningProvider({
         action: "login",
         description: "Mock login reasoning",
+        detect: {
+          action: "login",
+          riskSignals: [],
+        },
+        explain: {
+          description: "Mock login reasoning",
+        },
         confidence: 0.6,
         riskSignals: [],
       }),
