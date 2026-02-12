@@ -1,12 +1,16 @@
-import "dotenv/config";
+import { config as loadDotEnv } from "dotenv";
 import express from "express";
 import cors from "cors";
+import { resolve } from "node:path";
 import { CoreEngine } from "@sd/core-engine";
 import {
   OpenAiReasoningProvider,
   type LlmReasoningInput,
 } from "@sd/core-llm";
 import { loadFixtures } from "@sd/test-fixtures";
+
+// Ensure test-api reads workspace-root .env regardless of CWD.
+loadDotEnv({ path: resolve(__dirname, "../../../.env") });
 
 const app = express();
 app.use(cors());
@@ -103,7 +107,7 @@ app.post("/v2/reason", async (req, res) => {
 });
 
 const host = process.env.TEST_API_HOST ?? "0.0.0.0";
-const port = Number(process.env.TEST_API_PORT ?? "4000");
+const port = Number(process.env.TEST_API_PORT ?? "4005");
 
 app.listen(port, host, () => {
   // eslint-disable-next-line no-console
