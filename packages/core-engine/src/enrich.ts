@@ -5,6 +5,9 @@ import type { EnrichedRequest, ParsedRequest } from "./types";
 const MAX_UINT256 = BigInt(
   "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
 );
+const MAX_UINT160 = BigInt(
+  "0xffffffffffffffffffffffffffffffffffffffff"
+);
 
 export function enrichParsedRequest(parsed: ParsedRequest): EnrichedRequest {
   const knowledge = getKnowledge();
@@ -283,12 +286,34 @@ function isUnlimitedApproval(parsed: ParsedRequest): boolean {
   if (parsed.request.method === "eth_signTypedData_v4") {
     const msg = parsed.normalizedPayload.message;
     if (msg && typeof msg === "object" && !Array.isArray(msg)) {
-      const value = (msg as Record<string, unknown>).value ?? (msg as Record<string, unknown>).amount;
-      if (value !== undefined) {
+      const record = msg as Record<string, unknown>;
+
+      // ERC-2612 Permit: top-level value/amount (uint256)
+      const topLevel = record.value ?? record.amount;
+      if (topLevel !== undefined) {
         try {
-          return BigInt(String(value)) >= MAX_UINT256 / 2n;
+          if (BigInt(String(topLevel)) >= MAX_UINT256 / 2n) return true;
         } catch {
-          return false;
+          /* ignore parse errors */
+        }
+      }
+
+      // Permit2 PermitSingle: details.amount (uint160)
+      // Permit2 PermitBatch:  details[].amount (uint160)
+      const details = record.details;
+      if (details && typeof details === "object") {
+        const detailsList = Array.isArray(details) ? details : [details];
+        for (const detail of detailsList) {
+          if (detail && typeof detail === "object") {
+            const amt = (detail as Record<string, unknown>).amount;
+            if (amt !== undefined) {
+              try {
+                if (BigInt(String(amt)) >= MAX_UINT160 / 2n) return true;
+              } catch {
+                /* ignore parse errors */
+              }
+            }
+          }
         }
       }
     }
