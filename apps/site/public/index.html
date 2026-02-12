@@ -33,13 +33,231 @@
       padding: var(--pad);
     }
 
+    /* ─── Shell (dual-column wrapper) ─── */
+    .shell {
+      display: flex;
+      gap: 0;
+      width: 100%;
+      align-items: stretch;
+    }
+
     /* ─── Grid Layout ─── */
     .interface {
-      width: 100%;
-      max-width: 680px;
+      flex: 1 1 0;
+      min-width: 0;
       border: 1px solid var(--border);
-      display: grid;
-      grid-template-columns: 1fr;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ─── Samples Panel ─── */
+    .samples {
+      flex: 0 0 340px;
+      border: 1px solid var(--border);
+      border-left: none;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .samples-header {
+      padding: var(--pad);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      /* Match interface header height approximately */
+      flex: 0 0 auto;
+    }
+
+    .samples-list {
+      display: flex;
+      flex-direction: column;
+      flex: 1; /* Take remaining height */
+    }
+
+    .sample-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 var(--pad); /* Remove vertical padding, handle via flex alignment */
+      border: none;
+      border-bottom: 1px solid var(--border);
+      background: transparent;
+      color: var(--fg);
+      font-family: inherit;
+      font-size: 12px;
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.1s;
+      text-transform: none;
+      flex: 1; /* Distribute height evenly */
+      min-height: 48px; /* Minimum touch target */
+    }
+    .sample-row:last-child { border-bottom: none; }
+    .sample-row:hover { background: #111; }
+    .sample-row:active { background: #1a1a1a; transform: translateY(1px); }
+
+    .sample-row::before,
+    .sample-row::after { content: none; }
+
+    .sample-label {
+      flex: 1;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      font-size: 11px;
+    }
+
+    .sample-meta {
+      color: var(--dim);
+      font-size: 10px;
+      flex-shrink: 0;
+    }
+
+    .sample-expect {
+      font-size: 10px;
+      padding: 1px 5px;
+      flex-shrink: 0;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .sample-expect.allow { color: var(--signal); border: 1px solid var(--signal); }
+    .sample-expect.block { color: var(--err); border: 1px solid var(--err); }
+
+    .sample-arrow {
+      color: var(--dim);
+      font-size: 14px;
+      flex-shrink: 0;
+      transition: color 0.1s;
+    }
+    .sample-row:hover .sample-arrow { color: var(--accent); }
+
+    /* ─── Page Wrapper ─── */
+    .page {
+      width: 100%;
+      max-width: 1100px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ─── Wallet Bar ─── */
+    .wallet-bar {
+      border: 1px solid var(--border);
+      border-bottom: none; /* Merge with shell top border */
+      padding: 12px var(--pad);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      font-size: 12px;
+      box-sizing: border-box; /* Ensure padding is included in width */
+    }
+
+    .wallet-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .wallet-dot {
+      width: 6px; height: 6px;
+      flex-shrink: 0;
+      background: var(--dim);
+    }
+    .wallet-dot.connected {
+      background: var(--signal);
+      box-shadow: 0 0 6px var(--signal);
+    }
+
+    .wallet-chain {
+      color: var(--dim);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 10px;
+      flex-shrink: 0;
+    }
+
+    .wallet-addr {
+      color: var(--fg);
+      letter-spacing: 0.02em;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .wallet-actions {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      flex-shrink: 0;
+      margin-right: 10px; /* Shift button left to prevent border clipping */
+    }
+
+    .wallet-btn {
+      background: transparent;
+      color: var(--dim); /* Default gray */
+      border: 1px solid var(--border); /* Default gray border */
+      padding: 6px 14px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      transition: all 0.2s;
+    }
+    
+    /* Override global button:last-child rule */
+    .wallet-actions .wallet-btn:last-child {
+      border-right: 1px solid;
+    }
+
+    .wallet-btn:hover {
+      color: var(--fg);
+      border-color: var(--fg);
+      background: #111;
+    }
+    .wallet-btn:active { transform: translateY(1px); }
+    
+    /* Connect Button (Unconnected state) - Gray by default, Green on hover */
+    .wallet-btn.connect-btn {
+      color: var(--dim);
+      border-color: var(--dim);
+    }
+    .wallet-btn.connect-btn:hover {
+      color: var(--signal);
+      border-color: var(--signal);
+      background: rgba(0, 255, 0, 0.05);
+    }
+
+    /* Connected Button - Subtle background */
+    .wallet-btn.connected-btn {
+      background: rgba(0, 255, 0, 0.1);
+      color: var(--signal);
+      border-color: var(--signal);
+      font-weight: normal;
+    }
+    .wallet-btn.connected-btn:hover {
+      background: rgba(255, 0, 0, 0.1); /* Subtle red on hover */
+      border-color: var(--err);
+      color: var(--err);
+    }
+    .wallet-btn.connected-btn:hover::before {
+      content: "DISCONNECT";
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(255, 0, 0, 0.9); /* Opaque red for text contrast */
+      color: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+
+    /* Connected State Indicator */
+    .wallet-status.connected .wallet-addr {
+        color: var(--signal);
     }
 
     /* ─── Typography & Elements ─── */
@@ -177,6 +395,17 @@
     }
     .hidden { display: none; }
 
+    @media (max-width: 1100px) {
+      .page { max-width: 680px; }
+      .shell { flex-direction: column; }
+      .samples {
+        flex: none;
+        width: 100%;
+        border-left: 1px solid var(--border);
+        border-top: none;
+      }
+    }
+
     @media (max-width: 600px) {
       .info-grid { grid-template-columns: 1fr; }
       .info-item { border-right: none; border-bottom: 1px solid var(--border); }
@@ -185,6 +414,20 @@
 </head>
 <body>
 
+<div class="page">
+  <!-- Wallet Connect Bar -->
+  <div class="wallet-bar" id="walletBar">
+    <div class="wallet-status">
+      <div class="wallet-dot" id="walletDot"></div>
+      <span class="wallet-chain" id="walletChain">NOT CONNECTED</span>
+      <span class="wallet-addr" id="walletAddr"></span>
+    </div>
+    <div class="wallet-actions" id="walletActions">
+      <button class="wallet-btn connect-btn" id="walletConnectBtn">Connect Wallet</button>
+    </div>
+  </div>
+
+  <div class="shell">
   <div class="interface">
     <!-- Header -->
     <header class="row">
@@ -228,6 +471,66 @@
       </div>
     </div>
   </div>
+
+  <!-- Signature Samples Panel -->
+  <div class="samples">
+    <div class="samples-header">
+      <h2>Signature Samples</h2>
+      <span class="badge">TEST</span>
+    </div>
+    <div class="samples-list">
+      <button class="sample-row" data-sample="loginMessage">
+        <span class="sample-label">Login Message</span>
+        <span class="sample-meta">personal_sign</span>
+        <span class="sample-expect allow">ALLOW</span>
+        <span class="sample-arrow">&gt;</span>
+      </button>
+      <button class="sample-row" data-sample="hexMessage">
+        <span class="sample-label">Hex Message</span>
+        <span class="sample-meta">personal_sign</span>
+        <span class="sample-expect allow">ALLOW</span>
+        <span class="sample-arrow">&gt;</span>
+      </button>
+      <button class="sample-row" data-sample="permit2Unlimited">
+        <span class="sample-label">Permit2 Unlimited</span>
+        <span class="sample-meta">eth_signTypedData_v4</span>
+        <span class="sample-expect block">BLOCK</span>
+        <span class="sample-arrow">&gt;</span>
+      </button>
+      <button class="sample-row" data-sample="seaportOrder">
+        <span class="sample-label">Seaport Order</span>
+        <span class="sample-meta">eth_signTypedData_v4</span>
+        <span class="sample-expect block">BLOCK</span>
+        <span class="sample-arrow">&gt;</span>
+      </button>
+      <button class="sample-row" data-sample="daiPermit">
+        <span class="sample-label">DAI Permit</span>
+        <span class="sample-meta">eth_signTypedData_v4</span>
+        <span class="sample-expect allow">ALLOW</span>
+        <span class="sample-arrow">&gt;</span>
+      </button>
+      <button class="sample-row" data-sample="ethTransfer">
+        <span class="sample-label">ETH Transfer</span>
+        <span class="sample-meta">eth_sendTransaction</span>
+        <span class="sample-expect allow">ALLOW</span>
+        <span class="sample-arrow">&gt;</span>
+      </button>
+      <button class="sample-row" data-sample="multicallTx">
+        <span class="sample-label">Multicall Tx</span>
+        <span class="sample-meta">eth_sendTransaction</span>
+        <span class="sample-expect block">BLOCK</span>
+        <span class="sample-arrow">&gt;</span>
+      </button>
+      <button class="sample-row" data-sample="erc20Approve">
+        <span class="sample-label">ERC-20 Approve</span>
+        <span class="sample-meta">eth_sendTransaction</span>
+        <span class="sample-expect block">BLOCK</span>
+        <span class="sample-arrow">&gt;</span>
+      </button>
+    </div>
+  </div>
+</div>
+</div>
 
   <script src="/config.js"></script>
   <script src="/app.js"></script>
