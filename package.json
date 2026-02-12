@@ -15,7 +15,7 @@
     "dev:test-web": "npm run -w @sd/test-web dev",
     "dev:snap": "npm run -w @sd/snap start",
     "dev:site": "npm run -w @sd/site dev",
-    "dev": "run-p dev:snap dev:site",
+    "dev": "run-p dev:test-api dev:snap dev:site",
     "test:harness": "npm run -w @sd/test-harness test"
   },
   "devDependencies": {
