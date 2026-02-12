@@ -6,23 +6,25 @@ import type {
   OnTransactionResponse,
 } from "@metamask/snaps-sdk";
 import { CoreEngine } from "@sd/core-engine";
-import { OpenAiReasoningProvider } from "@sd/core-llm";
+import { GatewayReasoningProvider } from "@sd/core-llm";
 import {
   toSnapSignatureResponse,
   toSnapTransactionResponse,
 } from "@sd/core-renderers";
 import type { AnalysisResultV2, AnalyzeRequestV2 } from "@sd/core-schema";
 import {
-  OPENAI_API_KEY,
-  OPENAI_MODEL,
-  OPENAI_TIMEOUT_MS,
+  SNAP_GATEWAY_TIMEOUT_MS,
+  SNAP_GATEWAY_TOKEN,
+  SNAP_GATEWAY_URL,
 } from "./config";
 
 const engine = new CoreEngine({
-  llmProvider: new OpenAiReasoningProvider({
-    apiKey: OPENAI_API_KEY,
-    model: OPENAI_MODEL,
-    timeoutMs: OPENAI_TIMEOUT_MS,
+  llmProvider: new GatewayReasoningProvider({
+    endpoint: SNAP_GATEWAY_URL,
+    token: SNAP_GATEWAY_TOKEN || undefined,
+    timeoutMs: SNAP_GATEWAY_TIMEOUT_MS,
+    model: "gateway",
+    promptVersion: "gateway-v2",
   }),
 });
 

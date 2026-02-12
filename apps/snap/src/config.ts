@@ -1,5 +1,4 @@
-// Direct OpenAI configuration (no gateway needed)
-// API key should be set via environment variable or build-time replacement
-export const OPENAI_API_KEY = "";
-export const OPENAI_MODEL = "gpt-4o";
-export const OPENAI_TIMEOUT_MS = 15000;
+// Snap uses local gateway in development to keep API keys on server side.
+export const SNAP_GATEWAY_URL = "http://localhost:4005/v2/reason";
+export const SNAP_GATEWAY_TOKEN = "";
+export const SNAP_GATEWAY_TIMEOUT_MS = 15000;
