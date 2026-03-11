@@ -87,6 +87,8 @@ virtualenv/
 # ==========================================
 # IDE / Editors
 # ==========================================
+.agents/
+.cursor/
 .vscode/
 !.vscode/settings.json
 !.vscode/tasks.json
