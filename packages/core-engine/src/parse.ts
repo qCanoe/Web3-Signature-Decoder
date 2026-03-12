@@ -17,6 +17,7 @@ export function parseRequest(request: AnalyzeRequestV2): ParsedRequest {
   let selector: string | undefined;
   let message: string | undefined;
   let value: string | undefined;
+  let typedDataMessage: Record<string, unknown> | undefined;
 
   if (request.method === "eth_signTypedData_v4") {
     const typed = extractTypedData(normalizedPayload);
@@ -27,7 +28,8 @@ export function parseRequest(request: AnalyzeRequestV2): ParsedRequest {
     verifyingContract = asAddress(domain.verifyingContract);
 
     const msg = asObject(typed.message);
-    collectActorsFromObject(msg, actors);
+    typedDataMessage = msg;
+    collectActorsFromValue(msg, actors);
 
     if (domainName) {
       highlights.push({ label: "domain", value: domainName, type: "text" });
@@ -111,6 +113,7 @@ export function parseRequest(request: AnalyzeRequestV2): ParsedRequest {
     selector,
     message,
     value,
+    typedDataMessage,
     actors: uniqueByAddressAndRole(actors),
     assets,
     contracts: uniqueContracts(contracts),
@@ -194,10 +197,29 @@ function decodeHexIfNeeded(value: string): string {
   }
 }
 
-function collectActorsFromObject(message: Record<string, unknown>, actors: Actor[]): void {
-  for (const [key, value] of Object.entries(message)) {
-    if (typeof value === "string" && ADDRESS_RE.test(value)) {
-      actors.push({ role: key, address: value });
+function collectActorsFromValue(
+  value: unknown,
+  actors: Actor[],
+  path: string[] = []
+): void {
+  if (typeof value === "string") {
+    if (ADDRESS_RE.test(value)) {
+      actors.push({
+        role: path.join(".") || "message",
+        address: value,
+      });
+    }
+    return;
+  }
+
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => collectActorsFromValue(item, actors, [...path, String(index)]));
+    return;
+  }
+
+  if (value && typeof value === "object") {
+    for (const [key, nestedValue] of Object.entries(value)) {
+      collectActorsFromValue(nestedValue, actors, [...path, key]);
     }
   }
 }
@@ -205,7 +227,12 @@ function collectActorsFromObject(message: Record<string, unknown>, actors: Actor
 function pickAmount(message: Record<string, unknown>): string | undefined {
   const candidate = message.value ?? message.amount;
   if (candidate === undefined || candidate === null) {
-    return undefined;
+    const details = asObject(message.details);
+    const nestedAmount = details.amount;
+    if (nestedAmount === undefined || nestedAmount === null) {
+      return undefined;
+    }
+    return String(nestedAmount);
   }
   return String(candidate);
 }

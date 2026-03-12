@@ -58,6 +58,9 @@ export class CoreEngine {
         domainName: enriched.domainName,
         message: enriched.message,
         value: enriched.value,
+        // For eth_signTypedData_v4: the decoded EIP-712 message object so the AI can
+        // inspect actual parameters (e.g. token amount, spender, deadline).
+        typedDataMessage: enriched.typedDataMessage,
       },
       enriched: {
         inferredAction: enriched.inferredAction,

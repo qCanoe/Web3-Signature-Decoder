@@ -36,6 +36,8 @@ export interface ParsedRequest {
   selector?: string;
   message?: string;
   value?: string;
+  /** The decoded EIP-712 typed-data message object (only set for eth_signTypedData_v4). */
+  typedDataMessage?: Record<string, unknown>;
   actors: Actor[];
   assets: Asset[];
   contracts: ContractEntity[];

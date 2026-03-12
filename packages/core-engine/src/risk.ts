@@ -1,4 +1,3 @@
-import { getKnowledge } from "@sd/core-knowledge";
 import type {
   AnalysisResultV2,
   RiskSignal,
@@ -12,74 +11,26 @@ export interface RiskDecisionInput {
 }
 
 export function buildAnalysisResult({ enriched, llm }: RiskDecisionInput): AnalysisResultV2 {
-  const knowledge = getKnowledge();
-  const rule = knowledge.riskRules;
   const llmFailed = llm.status === "error";
 
-  // Always run knowledge-based scoring, even when LLM is unavailable.
-  const base = rule.baseScoreByMethod[enriched.request.method] ?? 30;
-  const signals = llmFailed
-    ? [...enriched.inferredSignals]
-    : mergeSignals(enriched.inferredSignals, llm.output.riskSignals);
-
-  // When LLM failed, add a policy signal so the user knows analysis was degraded.
   if (llmFailed) {
-    signals.push({
-      key: "llm_unavailable",
-      weight: 0,
-      source: "policy",
-      reason: "LLM reasoning unavailable — analysis based on knowledge base only",
-    });
+    return buildErrorResult(enriched, llm);
   }
 
-  let score = base;
-  const reasons: string[] = [];
-  const llmSourceWeightCap = rule.llmSourceWeightCap ?? Number.POSITIVE_INFINITY;
-  let llmSourceWeightUsed = 0;
+  const llmOutput = llm.output;
 
-  for (const signal of signals) {
-    const baseWeight = rule.signalWeights[signal.key] ?? 0;
-    let weight = baseWeight;
+  // AI is the primary decision-maker: use its riskLevel and decision directly.
+  const level = llmOutput.riskLevel ?? deriveRiskLevelFromSignals(enriched, llmOutput);
+  const decision = llmOutput.decision ?? (level === "high" || level === "critical" ? "block" : "allow");
+  const score = riskLevelToScore(level);
 
-    if (signal.source === "llm" && Number.isFinite(llmSourceWeightCap) && baseWeight > 0) {
-      const remaining = Math.max(0, llmSourceWeightCap - llmSourceWeightUsed);
-      weight = Math.min(baseWeight, remaining);
-      llmSourceWeightUsed += weight;
-    }
+  const signals = buildSignals(enriched, llmOutput);
+  const reasons = buildReasons(llmOutput, signals);
 
-    signal.weight = weight;
-    score += weight;
-    reasons.push(signal.reason);
-  }
-
-  const normalizedScore = clamp(score, 0, 100);
-  const level = determineLevel(normalizedScore, rule.thresholds);
-
-  let decision: "allow" | "block" = "allow";
-  let policyReason = "policy_allow";
-
-  if (llmFailed) {
-    decision = "block";
-    policyReason = "analysis_unavailable";
-  } else if (level === "high" || level === "critical") {
-    decision = "block";
-    policyReason = "high_risk";
-  }
-
-  // Use LLM output when available, fall back to enriched (knowledge-base) data.
-  const action = llmFailed
-    ? enriched.inferredAction
-    : llm.output.action || enriched.inferredAction;
-
-  const description = llmFailed
-    ? buildFallbackDescription(enriched)
-    : llm.output.description;
-
-  const protocol = llmFailed
-    ? enriched.inferredProtocol
-    : llm.output.protocol ?? enriched.inferredProtocol;
-
-  const confidence = llmFailed ? 0 : llm.output.confidence;
+  const action = llmOutput.action || enriched.inferredAction;
+  const description = llmOutput.description;
+  const protocol = llmOutput.protocol ?? enriched.inferredProtocol;
+  const confidence = llmOutput.confidence;
 
   return {
     summary: {
@@ -90,9 +41,78 @@ export function buildAnalysisResult({ enriched, llm }: RiskDecisionInput): Analy
     },
     risk: {
       level,
-      score: normalizedScore,
-      reasons: dedupeReasons(reasons),
+      score,
+      reasons,
       signals,
+    },
+    decision: {
+      value: decision,
+      policyReason: decision === "block" ? "high_risk" : "policy_allow",
+    },
+    entities: {
+      actors: enriched.actors,
+      assets: enriched.assets,
+      contracts: enriched.contracts,
+    },
+    highlights: enriched.highlights,
+    llm: {
+      model: llm.model,
+      latencyMs: llm.latencyMs,
+      promptVersion: llm.promptVersion,
+      status: llm.status,
+    },
+  };
+}
+
+// Knowledge signals that are severe enough to force a block even without LLM.
+const CRITICAL_KNOWLEDGE_KEYS = new Set([
+  "infinite_allowance",
+  "malicious_address_hit",
+  "malicious_domain_hit",
+  "phishing_domain",
+]);
+
+function buildErrorResult(enriched: EnrichedRequest, llm: LlmStageResult): AnalysisResultV2 {
+  const hasCriticalKnowledge = enriched.inferredSignals.some((s) =>
+    CRITICAL_KNOWLEDGE_KEYS.has(s.key)
+  );
+
+  // Even without LLM, deterministic threat signals (e.g. infinite_allowance,
+  // malicious address/domain hit) are sufficient to block.
+  const decision = hasCriticalKnowledge ? "block" : "error";
+  const level = hasCriticalKnowledge ? "high" : "medium";
+  const score = hasCriticalKnowledge ? 75 : 50;
+  const policyReason = hasCriticalKnowledge ? "high_risk" : "analysis_unavailable";
+
+  const reasons = hasCriticalKnowledge
+    ? [
+        "AI analysis unavailable — decision based on knowledge signals only",
+        ...enriched.inferredSignals
+          .filter((s) => CRITICAL_KNOWLEDGE_KEYS.has(s.key))
+          .map((s) => s.reason),
+      ]
+    : ["AI analysis unavailable — risk level could not be determined"];
+
+  return {
+    summary: {
+      action: enriched.inferredAction,
+      description: buildFallbackDescription(enriched),
+      protocol: enriched.inferredProtocol,
+      confidence: 0,
+    },
+    risk: {
+      level,
+      score,
+      reasons,
+      signals: [
+        {
+          key: "llm_unavailable",
+          weight: 0,
+          source: "policy",
+          reason: "LLM reasoning unavailable — cannot assess risk",
+        },
+        ...enriched.inferredSignals,
+      ],
     },
     decision: {
       value: decision,
@@ -105,12 +125,91 @@ export function buildAnalysisResult({ enriched, llm }: RiskDecisionInput): Analy
     },
     highlights: enriched.highlights,
     llm: {
-      model: llmFailed ? "unavailable" : llm.model,
+      model: llm.model,
       latencyMs: llm.latencyMs,
       promptVersion: llm.promptVersion,
       status: llm.status,
     },
   };
+}
+
+/**
+ * Fallback risk level derivation when LLM did not return a riskLevel.
+ * Used only as a safety net — the LLM should always return riskLevel with the new prompt.
+ */
+function deriveRiskLevelFromSignals(
+  enriched: EnrichedRequest,
+  llmOutput: LlmReasoningResponse
+): "low" | "medium" | "high" | "critical" {
+  const hasThreatIntel =
+    enriched.maliciousAddressHits.length > 0 || enriched.maliciousDomainHits.length > 0;
+
+  if (hasThreatIntel) {
+    return "critical";
+  }
+
+  const allSignals = [
+    ...llmOutput.riskSignals,
+    ...(llmOutput.detect?.riskSignals ?? []),
+  ];
+
+  const hasCritical = allSignals.some((s) => s.severity === "critical");
+  const hasHigh = allSignals.some((s) => s.severity === "high");
+
+  if (hasCritical) return "critical";
+  if (hasHigh) return "high";
+  if (allSignals.length > 0) return "medium";
+  return "low";
+}
+
+function riskLevelToScore(level: "low" | "medium" | "high" | "critical"): number {
+  switch (level) {
+    case "critical": return 95;
+    case "high": return 75;
+    case "medium": return 50;
+    case "low": return 15;
+  }
+}
+
+function buildSignals(enriched: EnrichedRequest, llmOutput: LlmReasoningResponse): RiskSignal[] {
+  const knowledgeSignals: RiskSignal[] = enriched.inferredSignals.map((s) => ({
+    ...s,
+    source: "knowledge" as const,
+  }));
+
+  // Keys already covered by knowledge — skip LLM signals with the same key to avoid duplication.
+  const knowledgeKeys = new Set(knowledgeSignals.map((s) => s.key));
+
+  const llmSignals: RiskSignal[] = llmOutput.riskSignals
+    .filter((s) => !knowledgeKeys.has(s.key))
+    .map((s) => ({
+      key: s.key,
+      weight: 0,
+      source: "llm" as const,
+      reason: s.reason,
+    }));
+
+  return [...knowledgeSignals, ...llmSignals];
+}
+
+function buildReasons(llmOutput: LlmReasoningResponse, signals: RiskSignal[]): string[] {
+  const reasons: string[] = [];
+
+  if (llmOutput.reasoning) {
+    reasons.push(llmOutput.reasoning);
+  }
+
+  for (const signal of signals) {
+    if (signal.reason && !reasons.includes(signal.reason)) {
+      reasons.push(signal.reason);
+    }
+  }
+
+  if (reasons.length === 0) {
+    reasons.push("No explicit risk signals were identified");
+  }
+
+  return reasons.slice(0, 20);
 }
 
 function buildFallbackDescription(enriched: EnrichedRequest): string {
@@ -130,131 +229,7 @@ function buildFallbackDescription(enriched: EnrichedRequest): string {
     parts.push(`Protocol: ${protocol}`);
   }
 
-  parts.push("(LLM unavailable, knowledge-base analysis only)");
+  parts.push("(AI analysis unavailable)");
 
   return parts.join(". ");
-}
-
-function mergeSignals(
-  knowledgeSignals: RiskSignal[],
-  llmSignals: LlmReasoningResponse["riskSignals"]
-): RiskSignal[] {
-  const fromKnowledge: RiskSignal[] = knowledgeSignals.map((signal) => ({
-    ...signal,
-    source: "knowledge",
-  }));
-
-  const knowledgeKeys = new Set(fromKnowledge.map((signal) => signal.key));
-  const fromLlm: RiskSignal[] = [];
-
-  for (const signal of llmSignals) {
-    const key = normalizeLlmSignalKey(signal);
-    if (knowledgeKeys.has(key)) {
-      continue;
-    }
-    fromLlm.push({
-      key,
-      weight: 0,
-      source: "llm",
-      reason: signal.reason,
-    });
-  }
-
-  return dedupeSignals([...fromKnowledge, ...fromLlm]);
-}
-
-function normalizeLlmSignalKey(signal: LlmReasoningResponse["riskSignals"][number]): string {
-  if (signal.severity === "critical") {
-    return "llm_critical_risk";
-  }
-  if (signal.severity === "high") {
-    return "llm_high_risk";
-  }
-
-  const normalizedKey = toSnakeCase(signal.key);
-  if (KNOWN_TAXON_KEYS.has(normalizedKey)) {
-    return normalizedKey;
-  }
-
-  const hint = `${signal.key} ${signal.reason}`.toLowerCase();
-  if (hint.includes("permit") && (hint.includes("unlimit") || hint.includes("max"))) {
-    return "permit_unlimited";
-  }
-  if (hint.includes("phish") || hint.includes("spoof") || hint.includes("fake domain")) {
-    return "phishing_domain";
-  }
-  if (hint.includes("calldata") || hint.includes("selector") || hint.includes("payload")) {
-    return "suspicious_calldata";
-  }
-  if (hint.includes("upgrade") || hint.includes("proxy")) {
-    return "upgrade_proxy";
-  }
-
-  return normalizedKey;
-}
-
-function toSnakeCase(value: string): string {
-  const converted = value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "_")
-    .replace(/^_+|_+$/g, "");
-  return converted.length > 0 ? converted : "llm_signal";
-}
-
-const KNOWN_TAXON_KEYS = new Set<string>([
-  "permit_unlimited",
-  "phishing_domain",
-  "suspicious_calldata",
-  "upgrade_proxy",
-]);
-
-function determineLevel(
-  score: number,
-  thresholds: { medium: number; high: number; critical: number }
-): "low" | "medium" | "high" | "critical" {
-  if (score >= thresholds.critical) {
-    return "critical";
-  }
-  if (score >= thresholds.high) {
-    return "high";
-  }
-  if (score >= thresholds.medium) {
-    return "medium";
-  }
-  return "low";
-}
-
-function dedupeSignals(signals: RiskSignal[]): RiskSignal[] {
-  const seen = new Set<string>();
-  return signals.filter((signal) => {
-    const key = `${signal.source}:${signal.key}:${signal.reason}`;
-    if (seen.has(key)) {
-      return false;
-    }
-    seen.add(key);
-    return true;
-  });
-}
-
-function dedupeReasons(reasons: string[]): string[] {
-  const seen = new Set<string>();
-  const output: string[] = [];
-  for (const reason of reasons) {
-    if (!reason || seen.has(reason)) {
-      continue;
-    }
-    seen.add(reason);
-    output.push(reason);
-  }
-
-  if (output.length === 0) {
-    output.push("No explicit risk signals were triggered");
-  }
-
-  return output.slice(0, 20);
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
 }

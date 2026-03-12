@@ -95,6 +95,9 @@ export function enrichParsedRequest(parsed: ParsedRequest): EnrichedRequest {
   for (const contract of parsed.contracts) {
     addressesToCheck.add(contract.address.toLowerCase());
   }
+  for (const embeddedAddress of collectCalldataAddresses(parsed)) {
+    addressesToCheck.add(embeddedAddress.toLowerCase());
+  }
 
   for (const address of addressesToCheck) {
     const hit = knowledge.maliciousAddresses.addresses[address];
@@ -102,18 +105,27 @@ export function enrichParsedRequest(parsed: ParsedRequest): EnrichedRequest {
       continue;
     }
 
-    maliciousAddressHits.push({
-      address,
-      category: hit.category,
-      severity: hit.severity,
-      reason: hit.reason,
-    });
-    inferredSignals.push({
-      key: "malicious_address_hit",
-      weight: 0,
-      source: "knowledge",
-      reason: `Threat intel hit (${hit.category}): ${hit.reason}`,
-    });
+    if (isConfirmedThreatCategory(hit.category)) {
+      maliciousAddressHits.push({
+        address,
+        category: hit.category,
+        severity: hit.severity,
+        reason: hit.reason,
+      });
+      inferredSignals.push({
+        key: "malicious_address_hit",
+        weight: 0,
+        source: "knowledge",
+        reason: `Threat intel hit (${hit.category}): ${hit.reason}`,
+      });
+    } else {
+      inferredSignals.push({
+        key: "watchlist_address_hit",
+        weight: 0,
+        source: "knowledge",
+        reason: `Watchlist address (${hit.category}): ${hit.reason}`,
+      });
+    }
   }
 
   const domainsToCheck = new Set<string>();
@@ -131,25 +143,34 @@ export function enrichParsedRequest(parsed: ParsedRequest): EnrichedRequest {
       continue;
     }
 
-    maliciousDomainHits.push({
-      domain,
-      category: matched.category,
-      severity: matched.severity,
-      reason: matched.reason,
-    });
-    inferredSignals.push({
-      key: "malicious_domain_hit",
-      weight: 0,
-      source: "knowledge",
-      reason: `Threat intel hit (${matched.category}): ${matched.reason}`,
-    });
-
-    if (matched.category.toLowerCase().includes("phishing")) {
+    if (isConfirmedThreatCategory(matched.category)) {
+      maliciousDomainHits.push({
+        domain,
+        category: matched.category,
+        severity: matched.severity,
+        reason: matched.reason,
+      });
       inferredSignals.push({
-        key: "phishing_domain",
+        key: "malicious_domain_hit",
         weight: 0,
         source: "knowledge",
-        reason: matched.reason,
+        reason: `Threat intel hit (${matched.category}): ${matched.reason}`,
+      });
+
+      if (matched.category.toLowerCase().includes("phishing")) {
+        inferredSignals.push({
+          key: "phishing_domain",
+          weight: 0,
+          source: "knowledge",
+          reason: matched.reason,
+        });
+      }
+    } else {
+      inferredSignals.push({
+        key: "watchlist_domain_hit",
+        weight: 0,
+        source: "knowledge",
+        reason: `Watchlist domain (${matched.category}): ${matched.reason}`,
       });
     }
   }
@@ -256,6 +277,10 @@ function extractDomain(origin?: string): string | undefined {
   }
 }
 
+function isConfirmedThreatCategory(category: string): boolean {
+  return /phishing|drainer|malware|scam|exploit/i.test(category);
+}
+
 function findDomainIntel(
   domain: string,
   domains: Record<string, { category: string; severity: "low" | "medium" | "high" | "critical"; reason: string }>
@@ -270,23 +295,136 @@ function findDomainIntel(
   return undefined;
 }
 
-function isUnlimitedApproval(parsed: ParsedRequest): boolean {
+// approve(address,uint256)
+const SELECTOR_APPROVE = "095ea7b3";
+// increaseAllowance(address,uint256)
+const SELECTOR_INCREASE_ALLOWANCE = "39509351";
+// setApprovalForAll(address,bool)
+const SELECTOR_SET_APPROVAL_FOR_ALL = "a22cb465";
+const SELECTOR_TRANSFER = "a9059cbb";
+const SELECTOR_TRANSFER_FROM = "23b872dd";
+const SELECTOR_SAFE_TRANSFER_FROM_ERC721 = "42842e0e";
+const SELECTOR_SAFE_TRANSFER_FROM_ERC721_WITH_DATA = "b88d4fde";
+
+const SELECTOR_ADDRESS_ARGS: Record<string, number[]> = {
+  [SELECTOR_APPROVE]: [0],
+  [SELECTOR_INCREASE_ALLOWANCE]: [0],
+  [SELECTOR_SET_APPROVAL_FOR_ALL]: [0],
+  [SELECTOR_TRANSFER]: [0],
+  [SELECTOR_TRANSFER_FROM]: [0, 1],
+  [SELECTOR_SAFE_TRANSFER_FROM_ERC721]: [0, 1],
+  [SELECTOR_SAFE_TRANSFER_FROM_ERC721_WITH_DATA]: [0, 1],
+};
+
+function isUnlimitedApprovalCalldata(data: string): boolean {
+  if (!data.startsWith("0x") || data.length < 10) {
+    return false;
+  }
+
+  const selector = data.slice(2, 10).toLowerCase();
+
+  // approve(address,uint256) and increaseAllowance(address,uint256):
+  // amount is at calldata[4+32:4+64] → hex indices [74:138]
+  if (
+    (selector === SELECTOR_APPROVE || selector === SELECTOR_INCREASE_ALLOWANCE) &&
+    data.length >= 138
+  ) {
+    const amountHex = `0x${data.slice(74, 138)}`;
+    try {
+      return BigInt(amountHex) >= MAX_UINT256 / 2n;
+    } catch {
+      return false;
+    }
+  }
+
+  // setApprovalForAll(address,bool): bool=true means unlimited NFT approval.
+  if (selector === SELECTOR_SET_APPROVAL_FOR_ALL && data.length >= 138) {
+    const boolHex = data.slice(74, 138);
+    return boolHex.endsWith("01");
+  }
+
+  return false;
+}
+
+function collectHexDataValues(value: unknown, output: string[] = []): string[] {
+  if (typeof value === "string") {
+    if (/^0x[a-fA-F0-9]{8,}$/.test(value)) {
+      output.push(value);
+    }
+    return output;
+  }
+
+  if (Array.isArray(value)) {
+    value.forEach((item) => collectHexDataValues(item, output));
+    return output;
+  }
+
+  if (value && typeof value === "object") {
+    Object.values(value).forEach((nestedValue) => collectHexDataValues(nestedValue, output));
+  }
+
+  return output;
+}
+
+function extractAddressArgument(data: string, argumentIndex: number): string | undefined {
+  const start = 10 + argumentIndex * 64;
+  const chunk = data.slice(start, start + 64);
+  if (chunk.length !== 64) {
+    return undefined;
+  }
+
+  const address = `0x${chunk.slice(24)}`;
+  return /^0x[a-fA-F0-9]{40}$/.test(address) ? address.toLowerCase() : undefined;
+}
+
+function collectCalldataAddresses(parsed: ParsedRequest): string[] {
+  const payloads: string[] = [];
+
   if (parsed.request.method === "eth_sendTransaction") {
     const data = parsed.normalizedPayload.data;
-    if (typeof data === "string" && data.startsWith("0x") && data.length >= 138) {
-      const amountHex = `0x${data.slice(74, 138)}`;
-      try {
-        return BigInt(amountHex) >= MAX_UINT256 / 2n;
-      } catch {
-        return false;
+    if (typeof data === "string") {
+      payloads.push(data);
+    }
+  }
+
+  if (parsed.request.method === "eth_signTypedData_v4" && parsed.typedDataMessage) {
+    payloads.push(...collectHexDataValues(parsed.typedDataMessage));
+  }
+
+  const addresses = new Set<string>();
+  for (const data of payloads) {
+    if (!data.startsWith("0x") || data.length < 10) {
+      continue;
+    }
+
+    const selector = data.slice(2, 10).toLowerCase();
+    const argIndexes = SELECTOR_ADDRESS_ARGS[selector] ?? [];
+    for (const argIndex of argIndexes) {
+      const extracted = extractAddressArgument(data, argIndex);
+      if (extracted) {
+        addresses.add(extracted);
       }
     }
   }
 
+  return [...addresses];
+}
+
+function isUnlimitedApproval(parsed: ParsedRequest): boolean {
+  if (parsed.request.method === "eth_sendTransaction") {
+    const data = parsed.normalizedPayload.data;
+    if (typeof data === "string" && isUnlimitedApprovalCalldata(data)) {
+      return true;
+    }
+  }
+
   if (parsed.request.method === "eth_signTypedData_v4") {
-    const msg = parsed.normalizedPayload.message;
-    if (msg && typeof msg === "object" && !Array.isArray(msg)) {
-      const record = msg as Record<string, unknown>;
+    // Use the already-decoded typedDataMessage from parse.ts, which correctly handles
+    // both direct payload formats and MetaMask Snap payloads where the typed data
+    // is embedded as a JSON string inside payload.data.
+    const msg = parsed.typedDataMessage;
+    if (msg) {
+      const record = msg;
 
       // ERC-2612 Permit: top-level value/amount (uint256)
       const topLevel = record.value ?? record.amount;
@@ -314,6 +452,14 @@ function isUnlimitedApproval(parsed: ParsedRequest): boolean {
               }
             }
           }
+        }
+      }
+
+      // Wrapper requests like SafeTx / ForwardRequest may embed calldata inside
+      // message.data. Scan nested hex payloads for unlimited approval patterns.
+      for (const data of collectHexDataValues(record)) {
+        if (isUnlimitedApprovalCalldata(data)) {
+          return true;
         }
       }
     }
