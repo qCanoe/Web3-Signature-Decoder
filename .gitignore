@@ -140,6 +140,9 @@ flask_session/
 # Node.js (if used)
 node_modules/
 skills-lock.json
+
+# Legacy / archive (not part of active codebase)
+legacy/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
