@@ -19,9 +19,13 @@ export function buildAnalysisResult({ enriched, llm }: RiskDecisionInput): Analy
 
   const llmOutput = llm.output;
 
-  // AI is the primary decision-maker: use its riskLevel and decision directly.
-  const level = llmOutput.riskLevel ?? deriveRiskLevelFromSignals(enriched, llmOutput);
-  const decision = llmOutput.decision ?? (level === "high" || level === "critical" ? "block" : "allow");
+  // AI is the primary decision-maker, but hard knowledge signals (e.g. infinite_allowance,
+  // malicious address/domain) enforce a minimum "high" floor that the LLM cannot override.
+  const llmLevel = llmOutput.riskLevel ?? deriveRiskLevelFromSignals(enriched, llmOutput);
+  const level = applyPolicyFloor(llmLevel, enriched);
+  const decision = level === "high" || level === "critical"
+    ? "block"
+    : (llmOutput.decision ?? "allow");
   const score = riskLevelToScore(level);
 
   const signals = buildSignals(enriched, llmOutput);
@@ -71,6 +75,30 @@ const CRITICAL_KNOWLEDGE_KEYS = new Set([
   "malicious_domain_hit",
   "phishing_domain",
 ]);
+
+// Knowledge signals that must floor the risk level at "high" even when LLM succeeds.
+// The LLM can raise the level further (e.g. to "critical") but cannot lower it below "high".
+const FLOOR_HIGH_RISK_KEYS = new Set([
+  "infinite_allowance",
+  "malicious_address_hit",
+  "malicious_domain_hit",
+  "phishing_domain",
+]);
+
+const RISK_LEVEL_ORDER: Record<string, number> = {
+  low: 0, medium: 1, high: 2, critical: 3,
+};
+
+function applyPolicyFloor(
+  level: "low" | "medium" | "high" | "critical",
+  enriched: EnrichedRequest
+): "low" | "medium" | "high" | "critical" {
+  const hasFloorSignal = enriched.inferredSignals.some((s) =>
+    FLOOR_HIGH_RISK_KEYS.has(s.key)
+  );
+  if (!hasFloorSignal) return level;
+  return RISK_LEVEL_ORDER[level] >= RISK_LEVEL_ORDER["high"] ? level : "high";
+}
 
 function buildErrorResult(enriched: EnrichedRequest, llm: LlmStageResult): AnalysisResultV2 {
   const hasCriticalKnowledge = enriched.inferredSignals.some((s) =>

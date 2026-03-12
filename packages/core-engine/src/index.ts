@@ -71,8 +71,10 @@ export class CoreEngine {
         chainFeatureHits: enriched.chainFeatureHits,
       },
       context: {
-        origin: request.context?.origin,
-        originDomain: extractOriginDomain(request.context?.origin),
+        // Omit localhost/loopback origins — they indicate a local dev/test environment
+        // and must not be treated as a risk signal by the LLM.
+        origin: isLocalOrigin(request.context?.origin) ? undefined : request.context?.origin,
+        originDomain: isLocalOrigin(request.context?.origin) ? undefined : extractOriginDomain(request.context?.origin),
         chainId: request.context?.chainId,
         walletAddress: request.context?.walletAddress,
         contractAddresses: enriched.contracts.map((entry) => entry.address),
@@ -136,5 +138,16 @@ function extractOriginDomain(origin?: string): string | undefined {
     return new URL(origin).hostname.toLowerCase();
   } catch {
     return undefined;
+  }
+}
+
+/** Returns true for localhost / loopback origins used during local development/testing. */
+function isLocalOrigin(origin?: string): boolean {
+  if (!origin) return false;
+  try {
+    const { hostname } = new URL(origin);
+    return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
+  } catch {
+    return false;
   }
 }

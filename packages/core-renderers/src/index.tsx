@@ -5,15 +5,48 @@ import {
 } from "@metamask/snaps-sdk";
 import {
   Banner,
+  Bold,
   Box,
   Divider,
   Heading,
   Row,
   Text,
 } from "@metamask/snaps-sdk/jsx";
+import type { BoldElement } from "@metamask/snaps-sdk/jsx";
 import type { AnalysisResultV2 } from "@sd/core-schema";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
+
+/**
+ * Splits a description string into plain-text segments and Bold-wrapped keywords.
+ * Highlights:
+ *   - Ethereum addresses (full or truncated, e.g. 0xDef1…5EfF)
+ *   - Token / protocol symbols (2-6 consecutive uppercase letters, e.g. DAI, ETH)
+ */
+function highlightDescription(text: string): (string | BoldElement)[] {
+  // Group 1: 0x-prefixed hex address, optionally truncated with …/...
+  // Group 2: standalone all-caps token symbol (2–6 uppercase letters)
+  const pattern =
+    /(0x[0-9a-fA-F]{4,40}(?:[…\.]{1,3}[0-9a-fA-F]{4,10})?|\b[A-Z]{2,6}\b)/g;
+
+  const parts: (string | BoldElement)[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    parts.push(<Bold>{match[0]}</Bold>);
+    lastIndex = pattern.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts.length > 1 ? parts : [text];
+}
 
 /**
  * Converts an action string to a human-readable heading.
@@ -45,7 +78,7 @@ const ALWAYS_NOTABLE_REASONS: Record<string, string> = {
 };
 
 /**
- * Returns up to 4 risk factor strings to show in the Banner, in priority order:
+ * Returns the single highest-priority risk factor string to show in the Banner, in priority order:
  * 1. Always-notable knowledge signals (e.g. infinite_allowance) — deterministic, never filtered
  * 2. AI reasoning paragraph (first reason, if it reads like a sentence)
  * 3. LLM-sourced signal reasons
@@ -59,7 +92,7 @@ function getDisplayedRiskFactors(result: AnalysisResultV2): string[] {
   for (const signal of result.risk.signals) {
     if (ALWAYS_NOTABLE_KEYS.has(signal.key)) {
       const text = signal.reason
-        ? truncate(signal.reason, 80)
+        ? signal.reason
         : (ALWAYS_NOTABLE_REASONS[signal.key] ?? signal.key);
       if (!items.includes(text)) {
         items.push(text);
@@ -74,31 +107,28 @@ function getDisplayedRiskFactors(result: AnalysisResultV2): string[] {
     firstReason !== "AI analysis unavailable — risk level could not be determined";
 
   if (isAiReasoning) {
-    const text = truncate(firstReason, 120);
-    if (!items.includes(text)) {
-      items.push(text);
+    if (!items.includes(firstReason)) {
+      items.push(firstReason);
     }
   }
 
   for (const signal of result.risk.signals) {
     if (signal.source === "llm" && signal.reason) {
-      const entry = truncate(signal.reason, 80);
-      if (!items.includes(entry)) {
-        items.push(entry);
+      if (!items.includes(signal.reason)) {
+        items.push(signal.reason);
       }
     }
   }
 
   for (const signal of result.risk.signals) {
     if (THREAT_INTEL_KEYS.has(signal.key) && signal.reason) {
-      const entry = truncate(signal.reason, 80);
-      if (!items.includes(entry)) {
-        items.push(entry);
+      if (!items.includes(signal.reason)) {
+        items.push(signal.reason);
       }
     }
   }
 
-  return items.slice(0, 4);
+  return items.slice(0, 1);
 }
 
 /**
@@ -125,6 +155,19 @@ function getBannerSeverity(
   return level === "critical" || level === "high" ? "danger" : "warning";
 }
 
+/**
+ * Returns a human-readable, risk-level-aware Banner title so users can
+ * immediately distinguish severity without reading the body text.
+ */
+function getBannerTitle(level: "low" | "medium" | "high" | "critical"): string {
+  switch (level) {
+    case "critical": return "Critical Risk";
+    case "high":     return "High Risk";
+    case "medium":   return "Medium Risk";
+    default:         return "Low Risk";
+  }
+}
+
 function truncate(value: string, max: number): string {
   return value.length <= max ? value : `${value.slice(0, max - 1)}…`;
 }
@@ -147,11 +190,12 @@ export function renderSnapAnalysis(result: AnalysisResultV2) {
   const showRisk = shouldShowRiskSection(result);
   const riskFactors = getDisplayedRiskFactors(result);
   const bannerSeverity = getBannerSeverity(result.risk.level);
+  const bannerTitle = getBannerTitle(result.risk.level);
 
   return (
     <Box>
       <Heading>{heading}</Heading>
-      <Text>{result.summary.description}</Text>
+      <Text>{highlightDescription(result.summary.description)}</Text>
 
       {result.summary.protocol ? (
         <Box>
@@ -175,10 +219,10 @@ export function renderSnapAnalysis(result: AnalysisResultV2) {
       ) : isBlock ? (
         <Box>
           <Divider />
-          <Banner title="This request should be blocked" severity="danger">
+          <Banner title="Block — Do Not Sign" severity="danger">
             {riskFactors.length > 0
               ? riskFactors.map((factor, index) => (
-                  <Text key={`rf-${index}`}>{`• ${factor}`}</Text>
+                  <Text key={`rf-${index}`}>{factor}</Text>
                 ))
               : <Text>This request has been flagged as high risk.</Text>}
           </Banner>
@@ -186,9 +230,9 @@ export function renderSnapAnalysis(result: AnalysisResultV2) {
       ) : showRisk && riskFactors.length > 0 ? (
         <Box>
           <Divider />
-          <Banner title="Risk Factors" severity={bannerSeverity}>
+          <Banner title={bannerTitle} severity={bannerSeverity}>
             {riskFactors.map((factor, index) => (
-              <Text key={`rf-${index}`}>{`• ${factor}`}</Text>
+              <Text key={`rf-${index}`}>{factor}</Text>
             ))}
           </Banner>
         </Box>

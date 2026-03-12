@@ -323,6 +323,8 @@ CRITICAL GUIDELINES:
 4. HIGH / CRITICAL risk should only be assigned when there is genuine reason to believe the user may be harmed: unknown origin with drain-like parameters, threat intel hits, phishing indicators, or deeply suspicious calldata with no legitimate explanation.
 5. LOW / MEDIUM risk is appropriate for normal DeFi operations from trusted origins, even for large amounts or unfamiliar contract addresses with no threat intel flags.
 6. The intelligence.knowledgeSignals array contains what the deterministic analysis engine already detected. Use this as trusted context — it will always be present in the final result regardless of your assessment.
+7. A missing or absent origin field means the request came from a local development / testing environment (e.g. localhost). Do NOT flag a missing origin as a risk factor. Evaluate the request purely on its payload and threat intelligence.
+8. UNLIMITED / INFINITE TOKEN APPROVALS are ALWAYS high risk, regardless of protocol or origin. If intelligence.knowledgeSignals contains "infinite_allowance", or if the amount equals MAX_UINT256 (115792089237316195423570985008687907853269984665640564039457584007913129639935) or MAX_UINT160 (1461501637330902918203684832716283019655932542975), you MUST assign riskLevel "high" or "critical" — never "low" or "medium".
 
 DECISION RULES:
 - "allow": low or medium risk — proceed safely
@@ -334,7 +336,7 @@ OUTPUT FORMAT — return ONLY valid JSON, no markdown, no explanation outside th
   "decision": "allow|block",
   "confidence": <0.0 to 1.0>,
   "action": "<short phrase: what this request does, e.g. 'Approve USDC spending'>",
-  "description": "<one sentence: what happens when the user signs this, max 100 chars>",
+  "description": "<one plain-English sentence written for a non-technical user, from the user's perspective using 'you/your'. Explain what signing this actually means in everyday terms. Avoid jargon like 'on-chain transaction', 'calldata', 'EIP-712'. Max 100 chars. Examples: 'You are logging into ExampleDApp — nothing moves from your wallet.', 'You are giving Uniswap permission to spend up to 100 USDC on your behalf.', 'You are confirming a swap of 1 ETH for approximately 3,200 USDC.'>",
   "reasoning": "<2-3 sentences explaining your risk assessment, focusing on the key factors>",
   "protocol": "<detected protocol name, or omit if unknown>",
   "riskSignals": [
@@ -347,7 +349,7 @@ OUTPUT FORMAT — return ONLY valid JSON, no markdown, no explanation outside th
     "riskSignals": <same array as riskSignals>
   },
   "explain": {
-    "description": "<same as description above>"
+    "description": "<same plain-English description as above>"
   }
 }
 

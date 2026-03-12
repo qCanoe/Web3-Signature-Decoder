@@ -509,21 +509,21 @@
         <span class="sample-expect allow">ALLOW</span>
         <span class="sample-arrow">&gt;</span>
       </button>
-      <button class="sample-row" data-sample="ethTransfer">
-        <span class="sample-label">ETH Transfer</span>
-        <span class="sample-meta">eth_sendTransaction</span>
-        <span class="sample-expect allow">ALLOW</span>
-        <span class="sample-arrow">&gt;</span>
-      </button>
-      <button class="sample-row" data-sample="multicallTx">
-        <span class="sample-label">Multicall Tx</span>
-        <span class="sample-meta">eth_sendTransaction</span>
+      <button class="sample-row" data-sample="blindEthSign">
+        <span class="sample-label">Blind Hex Sign</span>
+        <span class="sample-meta">personal_sign</span>
         <span class="sample-expect block">BLOCK</span>
         <span class="sample-arrow">&gt;</span>
       </button>
-      <button class="sample-row" data-sample="erc20Approve">
-        <span class="sample-label">ERC-20 Approve</span>
-        <span class="sample-meta">eth_sendTransaction</span>
+      <button class="sample-row" data-sample="phishingPermit">
+        <span class="sample-label">Phishing Permit</span>
+        <span class="sample-meta">eth_signTypedData_v4</span>
+        <span class="sample-expect block">BLOCK</span>
+        <span class="sample-arrow">&gt;</span>
+      </button>
+      <button class="sample-row" data-sample="nftDrainer">
+        <span class="sample-label">NFT Drainer</span>
+        <span class="sample-meta">eth_signTypedData_v4</span>
         <span class="sample-expect block">BLOCK</span>
         <span class="sample-arrow">&gt;</span>
       </button>
