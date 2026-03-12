@@ -39,7 +39,7 @@ export const AnalyzeRequestV2Schema = z
   });
 
 export const RiskLevelSchema = z.enum(["low", "medium", "high", "critical"]);
-export const DecisionSchema = z.enum(["allow", "block"]);
+export const DecisionSchema = z.enum(["allow", "block", "error"]);
 
 export const RiskSignalSchema = z.object({
   key: z.string().min(1),
@@ -134,6 +134,10 @@ export const LlmReasoningResponseSchema = z
     // New two-stage output fields.
     detect: LlmDetectSchema.optional(),
     explain: LlmExplainSchema.optional(),
+    // AI-driven judgment fields — primary decision outputs.
+    riskLevel: z.enum(["low", "medium", "high", "critical"]).optional(),
+    decision: z.enum(["allow", "block"]).optional(),
+    reasoning: z.string().min(1).optional(),
   })
   .superRefine((value, ctx) => {
     const hasAction = Boolean(value.action ?? value.detect?.action);
@@ -186,6 +190,9 @@ export const LlmReasoningResponseSchema = z
         : {}),
       ...(detect ? { detect } : {}),
       ...(explain ? { explain } : {}),
+      ...(value.riskLevel !== undefined ? { riskLevel: value.riskLevel } : {}),
+      ...(value.decision !== undefined ? { decision: value.decision } : {}),
+      ...(value.reasoning !== undefined ? { reasoning: value.reasoning } : {}),
     };
   });
 
@@ -226,13 +233,16 @@ export const ProtocolsKnowledgeSchema = z.object({
 export const RiskRulesKnowledgeSchema = z.object({
   version: VersionSchema,
   baseScoreByMethod: z.record(z.number().int().min(0).max(100)),
-  signalWeights: z.record(z.number().int().min(-100).max(100)),
+  // Deprecated: weight-based scoring fields are no longer used for decision-making.
+  signalWeights: z.record(z.number().int().min(-100).max(100)).optional(),
   llmSourceWeightCap: z.number().int().min(0).max(100).optional(),
-  thresholds: z.object({
-    medium: z.number().int().min(0).max(100),
-    high: z.number().int().min(0).max(100),
-    critical: z.number().int().min(0).max(100),
-  }),
+  thresholds: z
+    .object({
+      medium: z.number().int().min(0).max(100),
+      high: z.number().int().min(0).max(100),
+      critical: z.number().int().min(0).max(100),
+    })
+    .optional(),
 });
 
 export const MessagePatternsKnowledgeSchema = z.object({
@@ -253,14 +263,19 @@ const ThreatIntelEntrySchema = z.object({
   reason: z.string().min(1),
 });
 
+const ThreatIntelAddressKeySchema = z.string().regex(/^0x[a-fA-F0-9]{40}$/);
+const ThreatIntelDomainKeySchema = z
+  .string()
+  .regex(/^(?=.{1,253}$)(?!-)(?:[a-z0-9-]{1,63}\.)+[a-z]{2,63}$/);
+
 export const MaliciousAddressesKnowledgeSchema = z.object({
   version: VersionSchema,
-  addresses: z.record(ThreatIntelEntrySchema),
+  addresses: z.record(ThreatIntelAddressKeySchema, ThreatIntelEntrySchema),
 });
 
 export const MaliciousDomainsKnowledgeSchema = z.object({
   version: VersionSchema,
-  domains: z.record(ThreatIntelEntrySchema),
+  domains: z.record(ThreatIntelDomainKeySchema, ThreatIntelEntrySchema),
 });
 
 const ChainRiskFeatureKnowledgeSchema = z.object({
