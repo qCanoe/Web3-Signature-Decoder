@@ -1,0 +1,18 @@
+{
+  "name": "login_siwe",
+  "request": {
+    "kind": "signature",
+    "method": "personal_sign",
+    "payload": {
+      "message": "app.uniswap.org wants you to sign in with your Ethereum account:\n0x1111111111111111111111111111111111111111\n\nSign in with Ethereum to the app.\n\nURI: https://app.uniswap.org\nVersion: 1\nChain ID: 1\nNonce: abc123xyz\nIssued At: 2024-11-01T10:00:00Z\nExpiration Time: 2024-11-02T10:00:00Z"
+    },
+    "context": {
+      "origin": "https://app.uniswap.org",
+      "chainId": "eip155:1",
+      "walletAddress": "0x1111111111111111111111111111111111111111"
+    }
+  },
+  "expected": {
+    "decision": "allow"
+  }
+}

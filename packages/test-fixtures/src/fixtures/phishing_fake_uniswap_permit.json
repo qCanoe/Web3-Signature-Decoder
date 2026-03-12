@@ -1,0 +1,33 @@
+{
+  "name": "phishing_fake_uniswap_permit",
+  "request": {
+    "kind": "signature",
+    "method": "eth_signTypedData_v4",
+    "payload": {
+      "primaryType": "PermitSingle",
+      "domain": {
+        "name": "Permit2",
+        "chainId": 1,
+        "verifyingContract": "0x000000000022d473030f116ddee9f6b43ac78ba3"
+      },
+      "message": {
+        "details": {
+          "token": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+          "amount": "1461501637330902918203684832716283019655932542975",
+          "expiration": "1924992000",
+          "nonce": "0"
+        },
+        "spender": "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+        "sigDeadline": "1924992000"
+      }
+    },
+    "context": {
+      "origin": "https://uniswap-airdrop.xyz",
+      "chainId": "eip155:1",
+      "walletAddress": "0x1111111111111111111111111111111111111111"
+    }
+  },
+  "expected": {
+    "decision": "block"
+  }
+}

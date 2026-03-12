@@ -1,0 +1,54 @@
+{
+  "name": "opensea_seaport_nft_listing",
+  "request": {
+    "kind": "signature",
+    "method": "eth_signTypedData_v4",
+    "payload": {
+      "primaryType": "OrderComponents",
+      "domain": {
+        "name": "Seaport",
+        "version": "1.5",
+        "chainId": 1,
+        "verifyingContract": "0x00000000000000adc04c56bf30ac9d3c0aaf14dc"
+      },
+      "message": {
+        "offerer": "0x1111111111111111111111111111111111111111",
+        "zone": "0x004C00500000aD104D7DBd00e3ae0A5C00560C00",
+        "offer": [
+          {
+            "itemType": "2",
+            "token": "0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d",
+            "identifierOrCriteria": "7537",
+            "startAmount": "1",
+            "endAmount": "1"
+          }
+        ],
+        "consideration": [
+          {
+            "itemType": "0",
+            "token": "0x0000000000000000000000000000000000000000",
+            "identifierOrCriteria": "0",
+            "startAmount": "9750000000000000000",
+            "endAmount": "9750000000000000000",
+            "recipient": "0x1111111111111111111111111111111111111111"
+          }
+        ],
+        "orderType": "2",
+        "startTime": "1700000000",
+        "endTime": "1924992000",
+        "zoneHash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "salt": "0x360c6ebe000000000000000000000000000000000000000000000000000000",
+        "conduitKey": "0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000",
+        "counter": "0"
+      }
+    },
+    "context": {
+      "origin": "https://opensea.io",
+      "chainId": "eip155:1",
+      "walletAddress": "0x1111111111111111111111111111111111111111"
+    }
+  },
+  "expected": {
+    "decision": "allow"
+  }
+}
