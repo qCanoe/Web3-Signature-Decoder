@@ -80,27 +80,28 @@ Request ──> Normalize ──> Parse ──> Enrich ──> LLM Reason ──
    - `explain`: one-sentence user-facing description
 
    The response is validated and normalized by `LlmReasoningResponseSchema`, which also supports backward-compatible top-level fields (`action`, `description`, etc.).
-5. **Risk Score** -- Merges deterministic (knowledge-based) and LLM-generated risk signals, then applies dual-track scoring:
+5. **Risk Score** -- Merges deterministic (knowledge-based) and LLM-generated risk signals, then applies LLM-primary decision logic:
 
-   - LLM signals are treated as **incremental only** (knowledge-covered keys are not duplicated).
-   - LLM cumulative contribution is capped by `llmSourceWeightCap` from `risk_rules.v2.json`.
-   - Final score is clamped to 0-100 and mapped to risk levels/decision.
+   - The LLM's `riskLevel` and `decision` are used directly as the primary output.
+   - LLM risk signals are appended as incremental signals (knowledge-covered keys are not duplicated).
+   - If the LLM is unavailable, deterministic knowledge signals drive escalation: critical signals (`infinite_allowance`, threat intel hits) force `block`; all other cases return `error`.
 
 ### Fail-closed policy
 
-If the LLM provider is unavailable, times out, or returns an invalid response, the engine does not default to `allow`. Instead, it enforces a `block` decision with `policyReason: "analysis_unavailable"` and continues knowledge-based scoring for transparency. This ensures that users are never exposed to unanalyzed requests.
+If the LLM provider is unavailable, times out, or returns an invalid response, the engine returns an `error` decision with `policyReason: "analysis_unavailable"` — indicating that the risk level could not be determined. The engine never silently defaults to `allow`.
+
+**Deterministic escalation**: When the LLM is unavailable but the knowledge base has already detected a critical signal (`infinite_allowance`, `malicious_address_hit`, `malicious_domain_hit`, or `phishing_domain`), the engine escalates to `block` with `policyReason: "high_risk"`. This ensures that known threats are still blocked even when LLM reasoning is offline.
 
 ### Risk scoring
 
-The scoring system works as follows:
+The engine uses a **LLM-primary** scoring model:
 
-- Each signing method has a base score (higher for methods like `eth_sign` that provide less context).
-- Each risk signal carries a weight defined in the knowledge base (`risk_rules.v2.json`).
-- The final score is the sum of the base score and signal weights, clamped to [0, 100].
-- LLM signals are normalized to fixed taxon keys (for example: `permit_unlimited`, `phishing_domain`, `suspicious_calldata`), with high-severity fallback keys (`llm_high_risk`, `llm_critical_risk`).
-- LLM-origin weights are capped by `llmSourceWeightCap` to prevent model-only over-dominance.
-- Risk levels are determined by thresholds: `low` (default), `medium` (>= threshold), `high` (>= threshold), `critical` (>= threshold).
-- The decision is `block` if the risk level is `high` or `critical`; otherwise `allow`.
+- The LLM is the primary decision-maker. It returns `riskLevel` (`low` / `medium` / `high` / `critical`) and `decision` (`allow` / `block`) directly. The engine uses these values without further weight accumulation.
+- Risk scores are mapped from the LLM's `riskLevel`: `low` → 15, `medium` → 50, `high` → 75, `critical` → 95.
+- If the LLM does not return a `riskLevel` (backward-compatibility mode), the engine derives a level from the severity of LLM risk signals and threat intel hits.
+- The knowledge base (selectors, EIP-712 types, protocols, threat intel) feeds structured context into the LLM prompt as pre-computed signals, improving LLM judgment without replacing it.
+- Knowledge-derived signals (`source: "knowledge"`) are always included in `risk.signals` for transparency. LLM-derived signals (`source: "llm"`) are appended for keys not already covered by the knowledge base.
+- The `decision` is `allow`, `block`, or `error` (LLM unavailable, no critical knowledge signal).
 
 ### LLM provider abstraction
 
