@@ -9,12 +9,70 @@
     {
       "name": "OpenSea",
       "domainPatterns": ["seaport", "opensea"],
-      "contractPatterns": []
+      "contractPatterns": [
+        "0x00000000000000adc04c56bf30ac9d3c0aaf14dc",
+        "0x0000000000000068f116a894984e2db1123eb395"
+      ]
     },
     {
       "name": "Safe",
       "domainPatterns": ["safe", "gnosis"],
       "contractPatterns": []
+    },
+    {
+      "name": "Aave",
+      "domainPatterns": ["aave"],
+      "contractPatterns": [
+        "0x87870bca3f3fd6335c3f4ce8392d69350b4fa4e2",
+        "0x7d2768de32b0b80b7a3454c06bdac94a69ddc7a9"
+      ]
+    },
+    {
+      "name": "Compound",
+      "domainPatterns": ["compound"],
+      "contractPatterns": [
+        "0xc00e94cb662c3520282e6f5717214004a7f26888",
+        "0x3d9819210a31b4961b30ef54be2aed79b9c9cd3b"
+      ]
+    },
+    {
+      "name": "Blur",
+      "domainPatterns": ["blur"],
+      "contractPatterns": [
+        "0x000000000000ad05ccc4f10045630fb830b95127",
+        "0x29469395eaf6f95920e59f858042f0e28d98a20b"
+      ]
+    },
+    {
+      "name": "1inch",
+      "domainPatterns": ["1inch"],
+      "contractPatterns": [
+        "0x1111111254eeb25477b68fb85ed929f73a960582",
+        "0x111111125421ca6dc452d289314280a0f8842a65"
+      ]
+    },
+    {
+      "name": "Lido",
+      "domainPatterns": ["lido"],
+      "contractPatterns": [
+        "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+        "0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0"
+      ]
+    },
+    {
+      "name": "Curve",
+      "domainPatterns": ["curve"],
+      "contractPatterns": [
+        "0xd533a949740bb3306d119cc777fa900ba034cd52",
+        "0x5f3b5dfeb7b28cdbd7faba78963ee202a494e2a2"
+      ]
+    },
+    {
+      "name": "Balancer",
+      "domainPatterns": ["balancer"],
+      "contractPatterns": [
+        "0xba12222222228d8ba445958a75a0704d566bf2c8"
+      ]
     }
   ]
 }

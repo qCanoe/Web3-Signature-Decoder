@@ -1,4 +1,55 @@
 {
   "version": "v2",
-  "addresses": {}
+  "addresses": {
+    "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef": {
+      "category": "phishing",
+      "severity": "critical",
+      "reason": "High-confidence phishing spender used in internal drainer fixtures"
+    },
+    "0x4444444444444444444444444444444444444444": {
+      "category": "phishing",
+      "severity": "high",
+      "reason": "Repeated phishing spender pattern observed in fake permit payloads"
+    },
+    "0x3333333333333333333333333333333333333333": {
+      "category": "phishing",
+      "severity": "high",
+      "reason": "Repeated phishing recipient pattern observed in social-engineering kits"
+    },
+    "0xcafecafecafecafecafecafecafecafecafecafe": {
+      "category": "phishing",
+      "severity": "high",
+      "reason": "Vanity phishing address pattern used in wallet-claim scams"
+    },
+    "0x0000000000000000000000000000000000001337": {
+      "category": "phishing",
+      "severity": "high",
+      "reason": "Leetspeak vanity spender used in fake Permit2 claim flows"
+    },
+    "0xbeefbeefbeefbeefbeefbeefbeefbeefbeefbeef": {
+      "category": "drainer",
+      "severity": "critical",
+      "reason": "High-confidence NFT drainer operator used in setApprovalForAll traps"
+    },
+    "0xdecafbaddecafbaddecafbaddecafbaddecafbad": {
+      "category": "drainer",
+      "severity": "critical",
+      "reason": "High-confidence approval drainer used in malicious airdrop flows"
+    },
+    "0x1234123412341234123412341234123412341234": {
+      "category": "drainer",
+      "severity": "high",
+      "reason": "Known bulk-transfer drainer used in fake bridge approvals"
+    },
+    "0xabcdabcdabcdabcdabcdabcdabcdabcdabcdabcd": {
+      "category": "drainer",
+      "severity": "high",
+      "reason": "Known malicious marketplace operator used in NFT listing scams"
+    },
+    "0x9999999999999999999999999999999999999999": {
+      "category": "suspicious",
+      "severity": "medium",
+      "reason": "Reserved watchlist placeholder used to verify non-blocking intel behavior"
+    }
+  }
 }

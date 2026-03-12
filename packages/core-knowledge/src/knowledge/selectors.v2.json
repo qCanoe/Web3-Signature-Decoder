@@ -20,6 +20,86 @@
       "signature": "multicall(bytes[])",
       "action": "batch_operation",
       "tags": ["multicall", "complex"]
+    },
+    "0x39509351": {
+      "signature": "increaseAllowance(address,uint256)",
+      "action": "token_approval",
+      "tags": ["erc20", "approval", "allowance"]
+    },
+    "0xa22cb465": {
+      "signature": "setApprovalForAll(address,bool)",
+      "action": "nft_approval_all",
+      "tags": ["erc721", "erc1155", "approval", "operator"]
+    },
+    "0x42842e0e": {
+      "signature": "safeTransferFrom(address,address,uint256)",
+      "action": "nft_transfer",
+      "tags": ["erc721", "transfer"]
+    },
+    "0xb88d4fde": {
+      "signature": "safeTransferFrom(address,address,uint256,bytes)",
+      "action": "nft_transfer",
+      "tags": ["erc721", "transfer"]
+    },
+    "0xf242432a": {
+      "signature": "safeTransferFrom(address,address,uint256,uint256,bytes)",
+      "action": "nft_transfer",
+      "tags": ["erc1155", "transfer"]
+    },
+    "0x2eb2c2d6": {
+      "signature": "safeBatchTransferFrom(address,address,uint256[],uint256[],bytes)",
+      "action": "nft_transfer",
+      "tags": ["erc1155", "transfer", "batch"]
+    },
+    "0x87517c45": {
+      "signature": "delegateBySig(address,uint256,uint256,uint8,bytes32,bytes32)",
+      "action": "governance_delegate",
+      "tags": ["governance", "delegate", "voting"]
+    },
+    "0x5c19a95c": {
+      "signature": "delegate(address)",
+      "action": "governance_delegate",
+      "tags": ["governance", "delegate", "voting"]
+    },
+    "0x3593564c": {
+      "signature": "execute(bytes,bytes[],uint256)",
+      "action": "swap_execute",
+      "tags": ["uniswap", "universal-router", "swap"]
+    },
+    "0x12aa3caf": {
+      "signature": "swap(address,(address,address,address,address,uint256,uint256,uint256),bytes,bytes)",
+      "action": "swap_execute",
+      "tags": ["1inch", "swap"]
+    },
+    "0xe449022e": {
+      "signature": "uniswapV3Swap(uint256,uint256,uint256[])",
+      "action": "swap_execute",
+      "tags": ["1inch", "uniswap", "swap"]
+    },
+    "0x9169558b": {
+      "signature": "permit(address,address,uint256,uint256,uint8,bytes32,bytes32)",
+      "action": "token_approval",
+      "tags": ["permit", "erc2612", "approval"]
+    },
+    "0xd505accf": {
+      "signature": "permit(address,address,uint256,uint256,uint8,bytes32,bytes32)",
+      "action": "token_approval",
+      "tags": ["permit", "dai", "approval"]
+    },
+    "0x4b6406d7": {
+      "signature": "depositETH(address,uint16,bytes)",
+      "action": "bridge_deposit",
+      "tags": ["bridge", "deposit", "cross-chain"]
+    },
+    "0x3659cfe6": {
+      "signature": "upgradeTo(address)",
+      "action": "proxy_upgrade",
+      "tags": ["proxy", "upgrade", "admin"]
+    },
+    "0x4f1ef286": {
+      "signature": "upgradeToAndCall(address,bytes)",
+      "action": "proxy_upgrade",
+      "tags": ["proxy", "upgrade", "admin"]
     }
   }
 }

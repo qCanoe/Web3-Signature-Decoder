@@ -5,30 +5,5 @@
     "personal_sign": 20,
     "eth_signTypedData_v4": 25,
     "eth_sendTransaction": 30
-  },
-  "signalWeights": {
-    "infinite_allowance": 35,
-    "permit_unlimited": 35,
-    "batch_operation": 15,
-    "unknown_protocol": 20,
-    "token_approval": 15,
-    "token_transfer": 10,
-    "login_message": -10,
-    "suspicious_urgency": 30,
-    "high_value_transfer": 20,
-    "phishing_domain": 45,
-    "suspicious_calldata": 20,
-    "upgrade_proxy": 25,
-    "malicious_address_hit": 50,
-    "malicious_domain_hit": 45,
-    "chain_risky_pattern": 15,
-    "llm_high_risk": 25,
-    "llm_critical_risk": 40
-  },
-  "llmSourceWeightCap": 30,
-  "thresholds": {
-    "medium": 35,
-    "high": 65,
-    "critical": 85
   }
 }

@@ -1,4 +1,150 @@
 {
   "version": "v2",
-  "domains": {}
+  "domains": {
+    "uniswap-airdrop.xyz": {
+      "category": "phishing",
+      "severity": "critical",
+      "reason": "Fake Uniswap airdrop site harvesting permit signatures"
+    },
+    "uniswap-claim.com": {
+      "category": "phishing",
+      "severity": "critical",
+      "reason": "Uniswap impersonation phishing domain"
+    },
+    "uniswap-app.io": {
+      "category": "phishing",
+      "severity": "critical",
+      "reason": "Typosquatting domain mimicking app.uniswap.org"
+    },
+    "swap-airdrop.finance": {
+      "category": "phishing",
+      "severity": "critical",
+      "reason": "Generic swap-airdrop phishing domain targeting DeFi users"
+    },
+    "opensea-claim.com": {
+      "category": "phishing",
+      "severity": "critical",
+      "reason": "Fake OpenSea NFT claim site"
+    },
+    "opensea-airdrop.xyz": {
+      "category": "phishing",
+      "severity": "critical",
+      "reason": "OpenSea impersonation domain for NFT drain attacks"
+    },
+    "metamask-support.io": {
+      "category": "phishing",
+      "severity": "critical",
+      "reason": "Fake MetaMask support site collecting seed phrases"
+    },
+    "metamask-verify.com": {
+      "category": "phishing",
+      "severity": "critical",
+      "reason": "MetaMask wallet verification scam"
+    },
+    "blur-airdrop.com": {
+      "category": "phishing",
+      "severity": "critical",
+      "reason": "Fake Blur NFT platform phishing for approvals"
+    },
+    "blur-claim.xyz": {
+      "category": "phishing",
+      "severity": "critical",
+      "reason": "Blur token claim phishing site"
+    },
+    "aave-claim.com": {
+      "category": "phishing",
+      "severity": "critical",
+      "reason": "Fake Aave reward claim site"
+    },
+    "compound-claim.xyz": {
+      "category": "phishing",
+      "severity": "critical",
+      "reason": "Compound governance airdrop phishing domain"
+    },
+    "lido-airdrop.finance": {
+      "category": "phishing",
+      "severity": "critical",
+      "reason": "Lido staking reward phishing domain"
+    },
+    "curve-finance-app.com": {
+      "category": "phishing",
+      "severity": "high",
+      "reason": "Typosquatting curve.fi — used in liquidity drain attacks"
+    },
+    "1inch-swap.io": {
+      "category": "phishing",
+      "severity": "high",
+      "reason": "1inch router impersonation domain"
+    },
+    "sushiswap-claim.com": {
+      "category": "phishing",
+      "severity": "high",
+      "reason": "SushiSwap impersonation phishing domain"
+    },
+    "pancakeswap-airdrop.com": {
+      "category": "phishing",
+      "severity": "high",
+      "reason": "PancakeSwap airdrop scam targeting BSC users"
+    },
+    "safe-multisig.app": {
+      "category": "phishing",
+      "severity": "high",
+      "reason": "Gnosis Safe impersonation site for multisig drain"
+    },
+    "wallet-connect-verify.com": {
+      "category": "phishing",
+      "severity": "high",
+      "reason": "WalletConnect verification scam stealing connections"
+    },
+    "nft-mint-free.xyz": {
+      "category": "phishing",
+      "severity": "critical",
+      "reason": "Generic free NFT mint scam requiring unlimited approvals"
+    },
+    "defi-rewards.finance": {
+      "category": "phishing",
+      "severity": "high",
+      "reason": "Generic DeFi reward harvesting phishing domain"
+    },
+    "web3-airdrop.io": {
+      "category": "phishing",
+      "severity": "high",
+      "reason": "Generic Web3 airdrop phishing targeting approval signatures"
+    },
+    "claim-token.xyz": {
+      "category": "phishing",
+      "severity": "high",
+      "reason": "Token claim scam requiring permit signatures"
+    },
+    "free-mint.io": {
+      "category": "phishing",
+      "severity": "high",
+      "reason": "Free NFT mint scam — drains approvals after minting"
+    },
+    "arbitrum-bridge.xyz": {
+      "category": "phishing",
+      "severity": "critical",
+      "reason": "Fake Arbitrum bridge targeting cross-chain transfer signatures"
+    },
+    "optimism-airdrop.com": {
+      "category": "phishing",
+      "severity": "critical",
+      "reason": "Fake Optimism airdrop claim requiring wallet approval"
+    },
+    "polygon-claim.io": {
+      "category": "phishing",
+      "severity": "high",
+      "reason": "Polygon MATIC airdrop phishing domain"
+    },
+    "base-airdrop.xyz": {
+      "category": "phishing",
+      "severity": "high",
+      "reason": "Fake Base network airdrop site"
+    },
+    "wallet-warning.test": {
+      "category": "suspicious",
+      "severity": "medium",
+      "reason": "Reserved watchlist domain used to verify non-blocking intel behavior"
+    }
+  }
 }

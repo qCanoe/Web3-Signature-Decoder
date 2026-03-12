@@ -3,19 +3,67 @@
   "types": {
     "Permit": {
       "action": "token_approval",
-      "tags": ["permit", "approval"]
+      "tags": ["permit", "approval", "erc2612"]
     },
     "PermitSingle": {
       "action": "permit2_approval",
-      "tags": ["permit2", "approval"]
+      "tags": ["permit2", "approval", "uniswap"]
+    },
+    "PermitBatch": {
+      "action": "permit2_batch_approval",
+      "tags": ["permit2", "approval", "batch", "uniswap"]
+    },
+    "PermitTransferFrom": {
+      "action": "permit2_transfer",
+      "tags": ["permit2", "transfer", "uniswap"]
     },
     "OrderComponents": {
       "action": "nft_order",
+      "tags": ["nft", "marketplace", "seaport"]
+    },
+    "Order": {
+      "action": "nft_order",
       "tags": ["nft", "marketplace"]
+    },
+    "SafeTx": {
+      "action": "multisig_execute",
+      "tags": ["multisig", "safe", "gnosis", "execute"]
+    },
+    "Delegation": {
+      "action": "governance_delegate",
+      "tags": ["governance", "delegate", "voting", "compound"]
+    },
+    "Root": {
+      "action": "nft_bulk_auth",
+      "tags": ["nft", "bulk", "blur", "authorization"]
+    },
+    "ForwardRequest": {
+      "action": "meta_transaction",
+      "tags": ["meta-tx", "gasless", "eip2771"]
+    },
+    "MetaTransaction": {
+      "action": "meta_transaction",
+      "tags": ["meta-tx", "gasless", "polygon"]
     },
     "Mail": {
       "action": "structured_sign",
-      "tags": ["generic"]
+      "tags": ["generic", "message"]
+    },
+    "EIP712Domain": {
+      "action": "domain_sign",
+      "tags": ["domain", "generic"]
+    },
+    "BidData": {
+      "action": "nft_bid",
+      "tags": ["nft", "marketplace", "bid"]
+    },
+    "MakerOrder": {
+      "action": "nft_order",
+      "tags": ["nft", "marketplace", "looksrare"]
+    },
+    "TakerOrder": {
+      "action": "nft_order",
+      "tags": ["nft", "marketplace", "looksrare"]
     }
   }
 }

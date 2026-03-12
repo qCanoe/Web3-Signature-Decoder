@@ -7,16 +7,16 @@
         {
           "key": "approve_permit_surface",
           "signal": "chain_risky_pattern",
-          "reason": "Mainnet approve/permit path needs stricter allowance checks",
+          "reason": "High-value approvals and permits on Ethereum mainnet require careful amount inspection",
           "selectors": ["0x095ea7b3"],
-          "primaryTypes": ["Permit", "PermitSingle"],
+          "primaryTypes": ["Permit", "PermitSingle", "PermitBatch"],
           "actionKeywords": ["approval", "permit"]
         },
         {
           "key": "proxy_upgrade_surface",
           "signal": "upgrade_proxy",
-          "reason": "Proxy upgrade pattern detected on a high-value chain",
-          "selectors": ["0x3659cfe6"],
+          "reason": "Proxy upgrade detected on high-value chain — verify implementation contract",
+          "selectors": ["0x3659cfe6", "0x4f1ef286"],
           "primaryTypes": [],
           "actionKeywords": ["upgrade", "proxy"]
         }
@@ -28,7 +28,67 @@
         {
           "key": "approve_permit_surface",
           "signal": "chain_risky_pattern",
-          "reason": "BSC approve/permit traffic has elevated scam prevalence",
+          "reason": "BSC approval transactions have elevated scam rates — inspect spender carefully",
+          "selectors": ["0x095ea7b3"],
+          "primaryTypes": ["Permit", "PermitSingle"],
+          "actionKeywords": ["approval", "permit"]
+        }
+      ]
+    },
+    "eip155:137": {
+      "name": "Polygon",
+      "features": [
+        {
+          "key": "approve_permit_surface",
+          "signal": "chain_risky_pattern",
+          "reason": "Polygon approval and permit signatures — verify spender and amount",
+          "selectors": ["0x095ea7b3"],
+          "primaryTypes": ["Permit", "PermitSingle", "MetaTransaction"],
+          "actionKeywords": ["approval", "permit"]
+        },
+        {
+          "key": "meta_transaction_surface",
+          "signal": "meta_transaction",
+          "reason": "Meta-transaction detected on Polygon — verify the forwarding contract",
+          "selectors": [],
+          "primaryTypes": ["MetaTransaction", "ForwardRequest"],
+          "actionKeywords": ["meta_transaction", "forward"]
+        }
+      ]
+    },
+    "eip155:42161": {
+      "name": "Arbitrum One",
+      "features": [
+        {
+          "key": "approve_permit_surface",
+          "signal": "chain_risky_pattern",
+          "reason": "Arbitrum approval — high DeFi activity increases phishing risk",
+          "selectors": ["0x095ea7b3"],
+          "primaryTypes": ["Permit", "PermitSingle"],
+          "actionKeywords": ["approval", "permit"]
+        }
+      ]
+    },
+    "eip155:10": {
+      "name": "Optimism",
+      "features": [
+        {
+          "key": "approve_permit_surface",
+          "signal": "chain_risky_pattern",
+          "reason": "Optimism approval — verify spender contract on the correct chain",
+          "selectors": ["0x095ea7b3"],
+          "primaryTypes": ["Permit", "PermitSingle"],
+          "actionKeywords": ["approval", "permit"]
+        }
+      ]
+    },
+    "eip155:8453": {
+      "name": "Base",
+      "features": [
+        {
+          "key": "approve_permit_surface",
+          "signal": "chain_risky_pattern",
+          "reason": "Base network approval — growing ecosystem with increasing phishing activity",
           "selectors": ["0x095ea7b3"],
           "primaryTypes": ["Permit", "PermitSingle"],
           "actionKeywords": ["approval", "permit"]

@@ -8,10 +8,46 @@
       "reason": "Message appears to be an authentication request"
     },
     {
+      "key": "siwe_pattern",
+      "regex": "wants you to sign in with your Ethereum account",
+      "signal": "login_siwe",
+      "reason": "Standard Sign-In With Ethereum (EIP-4361) authentication request — does not transfer assets"
+    },
+    {
       "key": "urgent_language",
       "regex": "urgent|immediately|verify wallet",
       "signal": "suspicious_urgency",
-      "reason": "Message includes urgency language commonly used in phishing"
+      "reason": "Message contains urgency language commonly used in phishing attacks"
+    },
+    {
+      "key": "phishing_claim",
+      "regex": "claim|airdrop|reward|free.*token|free.*nft|bonus",
+      "signal": "suspicious_claim",
+      "reason": "Message contains claim/airdrop language — common in phishing and drainer attacks"
+    },
+    {
+      "key": "phishing_seed_phrase",
+      "regex": "seed\\s*phrase|private\\s*key|mnemonic|recovery\\s*phrase|secret\\s*phrase",
+      "signal": "seed_phrase_request",
+      "reason": "Message requests seed phrase or private key — never share these"
+    },
+    {
+      "key": "phishing_wallet_verify",
+      "regex": "verify.*wallet|wallet.*verification|confirm.*ownership|prove.*ownership",
+      "signal": "suspicious_verification",
+      "reason": "Message requests wallet verification — often used in phishing to extract approvals"
+    },
+    {
+      "key": "phishing_security_alert",
+      "regex": "security.*alert|account.*suspended|wallet.*compromised|suspicious.*activity",
+      "signal": "suspicious_urgency",
+      "reason": "Message contains security alert language — common social engineering tactic"
+    },
+    {
+      "key": "admin_action",
+      "regex": "admin|owner|operator|grant.*role|revoke.*role",
+      "signal": "admin_operation",
+      "reason": "Message references administrative operations — verify the requesting contract"
     }
   ]
 }
