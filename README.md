@@ -4,9 +4,12 @@ A TypeScript monorepo that analyzes Ethereum signature requests and transactions
 
 ![Signature Decoder Interface](image/README/interface.png)
 
-![Signature Example 1](image/README/signature1.png)
-
-![Signature Example 2](image/README/signature2.png)
+<table>
+  <tr>
+    <td><img src="image/README/signature1.png" alt="Signature Example 1" width="400" /></td>
+    <td><img src="image/README/signature2.png" alt="Signature Example 2" width="400" /></td>
+  </tr>
+</table>
 
 ## Background
 
