@@ -2,14 +2,29 @@
 
 A TypeScript monorepo that analyzes Ethereum signature requests and transactions in real time, providing human-readable risk assessments before users approve potentially dangerous operations.
 
-![Signature Decoder Interface](image/README/interface.png)
+<img src="image/README/interface.png" alt="Signature Decoder Interface" width="100%" />
 
-<table>
+<table width="100%">
   <tr>
-    <td><img src="image/README/signature1.png" alt="Signature Example 1" width="280" /></td>
-    <td><img src="image/README/signature2.png" alt="Signature Example 2" width="280" /></td>
+    <td width="33.33%"><img src="image/README/signature1.png" alt="Signature Example 1" style="width:100%;" /></td>
+    <td width="33.33%"><img src="image/README/signature2.png" alt="Signature Example 2" style="width:100%;" /></td>
+    <td width="33.33%"><img src="image/README/signature3.png" alt="Signature Example 3" style="width:100%;" /></td>
   </tr>
 </table>
+
+## Table of Contents
+
+- [Background](#background)
+- [Features](#features)
+- [Architecture](#architecture)
+- [Supported signing methods](#supported-signing-methods)
+- [Getting started](#getting-started)
+- [Development](#development)
+- [Environment variables](#environment-variables)
+- [Testing strategy](#testing-strategy)
+- [Tech stack](#tech-stack)
+- [Potential roadmap](#potential-roadmap)
+- [License](#license)
 
 ## Background
 
@@ -19,12 +34,22 @@ Signature Decoder addresses this problem by intercepting signature and transacti
 
 The v2 architecture is a complete rewrite from the original Python backend and standalone Snap v1 implementation. The core analysis logic is now a single TypeScript package shared across all consumers (MetaMask Snap, REST API, test harness), eliminating logic duplication and ensuring consistent behavior.
 
+## Features
+
+- **Real-time analysis** — Intercepts signature and transaction requests before user approval, providing instant risk assessments
+- **Multi-method support** — Handles `eth_signTypedData_v4`, `eth_sendTransaction`, `personal_sign`, and `eth_sign`
+- **Hybrid reasoning** — Combines deterministic rule-based analysis with LLM reasoning for reliable, context-aware decisions
+- **Fail-closed security** — Never silently defaults to allow; blocks or errors when risk cannot be determined
+- **Knowledge base** — Selector database, EIP-712 type patterns, protocol detection, and threat intelligence (malicious addresses/domains)
+- **MetaMask Snap** — Native integration with MetaMask via Snap, displaying human-readable insights in the wallet UI
+- **Pluggable LLM** — OpenAI, HTTP gateway, or mock provider for flexible deployment
+
 ## Architecture
 
 ### Monorepo layout
 
 ```
-signature-decoder-v2/
+Web3-Signature-Decoder/
 ├── packages/                    # Shared libraries
 │   ├── core-schema/             # Zod schemas and shared types
 │   ├── core-knowledge/          # Knowledge base loader (selectors, protocols, risk rules)
@@ -199,7 +224,7 @@ cp .env.example .env
 # Edit .env and set OPENAI_API_KEY
 ```
 
-### Development
+## Development
 
 The fastest way to get started is to run the local development environment, which starts both the MetaMask Snap and the companion site:
 
@@ -209,15 +234,6 @@ npm run dev
 
 - **Snap**: Running at `http://localhost:8080`
 - **Site**: Open `http://localhost:8000` to install and test the Snap
-
-### Other Commands
-
-- **Build**: `npm run build` (compiles all packages in dependency order)
-- **Test**: `npm run test` (runs harness and snap tests)
-- **API Server**: `npm run dev:test-api` (standalone analysis API)
-- **Web Shell**: `npm run dev:test-web` (fixture-based testing UI)
-
-## Development
 
 ### Test API server
 
@@ -262,6 +278,11 @@ npm run dev:site
 
 A landing page and initialization UI for the Snap. Open `http://localhost:8000` after starting.
 
+### Other Commands
+
+- **Build**: `npm run build` (compiles all packages in dependency order)
+- **Test**: `npm run test` (runs harness and snap tests)
+
 ## Environment variables
 
 Copy `.env.example` to `.env` and configure:
@@ -304,9 +325,13 @@ The test suite is organized into several categories:
 | API server        | Express 5                       |
 | Build             | tsc (per-package)               |
 
-## Legacy code
+## Potential roadmap
 
-The `legacy-python-src/`, `legacy-python-tests/`, `legacy-snap-v1/`, and `legacy-requirements.txt` contain the previous Python backend and Snap v1 implementation. These are preserved for reference but are not used by the v2 runtime.
+- [ ] **Knowledge base expansion** — Broaden selector coverage, EIP-712 types, and protocol patterns for emerging DeFi/NFT protocols
+- [ ] **Multi-chain support** — Chain-specific risk rules and threat intelligence (L2s, EVM-compatible chains)
+- [ ] **Local LLM option** — Support for self-hosted or local LLM providers for privacy-sensitive deployments
+- [ ] **Snap distribution** — Publish to MetaMask Snaps directory for one-click installation
+- [ ] **Enhanced semantic output** — Richer natural language descriptions and structured field visualization
 
 ## License
 
