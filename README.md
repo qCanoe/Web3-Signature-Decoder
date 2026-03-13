@@ -2,7 +2,11 @@
 
 A TypeScript monorepo that analyzes Ethereum signature requests and transactions in real time, providing human-readable risk assessments before users approve potentially dangerous operations.
 
-<img src="image/README/1770495052577.png" alt="1770495052577" style="zoom: 50%;" />
+![Signature Decoder Interface](image/README/interface.png)
+
+![Signature Example 1](image/README/signature1.png)
+
+![Signature Example 2](image/README/signature2.png)
 
 ## Background
 
