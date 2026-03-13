@@ -6,8 +6,8 @@ A TypeScript monorepo that analyzes Ethereum signature requests and transactions
 
 <table>
   <tr>
-    <td><img src="image/README/signature1.png" alt="Signature Example 1" width="400" /></td>
-    <td><img src="image/README/signature2.png" alt="Signature Example 2" width="400" /></td>
+    <td><img src="image/README/signature1.png" alt="Signature Example 1" width="280" /></td>
+    <td><img src="image/README/signature2.png" alt="Signature Example 2" width="280" /></td>
   </tr>
 </table>
 
