@@ -1,12 +1,13 @@
 # Web3 Signature Decoder
 
-[Node.js](https://nodejs.org)
-[TypeScript](https://www.typescriptlang.org)
-[npm](https://www.npmjs.com)
+[![Node.js](https://img.shields.io/badge/Node.js->=20.11-3c873a?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178c6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![npm](https://img.shields.io/badge/npm->=10-cc3534?style=flat-square&logo=npm&logoColor=white)](https://www.npmjs.com)
 
 A TypeScript monorepo that analyzes Ethereum signature requests and transactions in real time, providing human-readable risk assessments before users approve potentially dangerous operations.
 
 [Background](#background) • [Features](#features) • [Getting started](#getting-started) • [Architecture](#architecture) • [Development](#development)
+
 
 <img src="image/README/interface.png" alt="Signature Decoder Interface" width="100%" />
 
@@ -17,6 +18,7 @@ A TypeScript monorepo that analyzes Ethereum signature requests and transactions
     <td width="33.33%"><img src="image/README/signature3.png" alt="Signature Example 3" style="width:100%;" /></td>
   </tr>
 </table>
+
 
 ## Background
 
@@ -133,25 +135,16 @@ flowchart LR
 
 **Parse stage — method dispatch:**
 
-```
-                              ┌─────────────────────────────┐
-                              │           Parse             │
-                              └─────────────────────────────┘
-                                            │
-              ┌─────────────────────────────┼─────────────────────────────┐
-              │                             │                             │
-              ▼                             ▼                             ▼
-    ┌─────────────────────┐     ┌─────────────────────┐     ┌─────────────────────┐
-    │ eth_signTypedData_v4 │     │ eth_sendTransaction │     │ personal_sign /    │
-    │                     │     │                     │     │ eth_sign           │
-    └──────────┬──────────┘     └──────────┬──────────┘     └──────────┬──────────┘
-               │                           │                           │
-               ▼                           ▼                           ▼
-    primaryType, domain,          from, to, value,            message (UTF-8),
-    verifyingContract,           calldata, 4-byte           raw hash
-    message fields,              selector
-    token amounts,
-    actor addresses
+```mermaid
+flowchart TD
+    P[Parse]
+    P --> A[eth_signTypedData_v4]
+    P --> B[eth_sendTransaction]
+    P --> C[personal_sign / eth_sign]
+
+    A --> A1["primaryType, domain, <br/>verifyingContract<br/>message fields, <bramounts,<br/>actor addresses"]
+    B --> B1["from, to, value<br/>calldata, 4-byte selector"]
+    C --> C1["message (UTF-8) or raw hash"]
 ```
 
 **Enrich stage — knowledge lookups:**
