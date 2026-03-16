@@ -1,8 +1,8 @@
 # Web3 Signature Decoder
 
-[![Node.js](https://img.shields.io/badge/Node.js->=20.11-3c873a?style=flat-square)](https://nodejs.org)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
-[![npm](https://img.shields.io/badge/npm->=10-cc3534?style=flat-square&logo=npm)](https://www.npmjs.com)
+[Node.js](https://nodejs.org)
+[TypeScript](https://www.typescriptlang.org)
+[npm](https://www.npmjs.com)
 
 A TypeScript monorepo that analyzes Ethereum signature requests and transactions in real time, providing human-readable risk assessments before users approve potentially dangerous operations.
 
@@ -97,27 +97,91 @@ Web3-Signature-Decoder/
 
 ### Analysis pipeline
 
-```
-Request ──> Normalize ──> Parse ──> Enrich ──> LLM Reason ──> Risk Score ──> Result
+The core engine processes every request through a five-stage pipeline. Each stage transforms the data and passes it to the next.
+
+```mermaid
+flowchart LR
+    subgraph Input
+        A[Raw Request]
+    end
+    subgraph Pipeline
+        B[Normalize]
+        C[Parse]
+        D[Enrich]
+        E[LLM Reason]
+        F[Risk Score]
+    end
+    subgraph Output
+        G[Result]
+    end
+    A --> B --> C --> D --> E --> F --> G
 ```
 
-1. **Normalize** — Validates against `AnalyzeRequestV2Schema` (Zod), sets defaults, rejects malformed input.
-2. **Parse** — Method-specific parsers extract `primaryType`, domain, contract, message fields, token amounts, actors.
-3. **Enrich** — Matches selectors, EIP-712 types, protocols; detects high-risk patterns (unlimited approvals, batch ops).
-4. **LLM Reason** — Sends structured prompt; returns `detect` (action/protocol/riskSignals) and `explain` (description).
-5. **Risk Score** — Merges knowledge and LLM signals; LLM-primary decision logic; fail-closed on LLM unavailability.
+
+
+**Stage details:**
+
+
+| Stage          | Input                | Output               | Key actions                                                                         |
+| -------------- | -------------------- | -------------------- | ----------------------------------------------------------------------------------- |
+| **Normalize**  | Raw JSON/hex payload | `AnalyzeRequestV2`   | Zod schema validation, defaults (timestamp), reject malformed input early           |
+| **Parse**      | Normalized request   | `ParsedRequest`      | Method dispatch → extract structured fields, highlights, actors                     |
+| **Enrich**     | Parsed request       | `EnrichedRequest`    | Selector lookup, EIP-712 type match, protocol detection, threat intel, risk signals |
+| **LLM Reason** | Enriched context     | `detect` + `explain` | Structured prompt → action, protocol, riskSignals, user-facing description          |
+| **Risk Score** | Enriched + LLM       | `AnalysisResultV2`   | Merge signals, LLM-primary decision, fail-closed on LLM error                       |
+
+
+**Parse stage — method dispatch:**
+
+```
+                              ┌─────────────────────────────┐
+                              │           Parse             │
+                              └─────────────────────────────┘
+                                            │
+              ┌─────────────────────────────┼─────────────────────────────┐
+              │                             │                             │
+              ▼                             ▼                             ▼
+    ┌─────────────────────┐     ┌─────────────────────┐     ┌─────────────────────┐
+    │ eth_signTypedData_v4 │     │ eth_sendTransaction │     │ personal_sign /    │
+    │                     │     │                     │     │ eth_sign           │
+    └──────────┬──────────┘     └──────────┬──────────┘     └──────────┬──────────┘
+               │                           │                           │
+               ▼                           ▼                           ▼
+    primaryType, domain,          from, to, value,            message (UTF-8),
+    verifyingContract,           calldata, 4-byte           raw hash
+    message fields,              selector
+    token amounts,
+    actor addresses
+```
+
+**Enrich stage — knowledge lookups:**
+
+- **Selector DB** → `0x095ea7b3` → `token_approval`
+- **EIP-712 types** → Permit, Permit2, Order patterns
+- **Protocols** → Domain + contract address → Uniswap, OpenSea, etc.
+- **Threat intel** → `malicious_addresses.v2.json`, `malicious_domains.v2.json`
+- **Risk patterns** → Unlimited approval (amount ≥ MAX_UINT256/2), multicall (`0xac9650d8`), message regex
+
+**Risk Score — decision logic:**
+
+- LLM returns `riskLevel` (low/medium/high/critical) and `decision` (allow/block) → used directly
+- Knowledge signals (`source: "knowledge"`) + LLM signals (`source: "llm"`) merged into `risk.signals`
+- **Fail-closed**: LLM unavailable → `error` with `policyReason: "analysis_unavailable"`
+- **Deterministic escalation**: LLM unavailable + critical knowledge signal → `block` with `policyReason: "high_risk"`
 
 > [!NOTE]
-> When the LLM is unavailable but the knowledge base detects a critical signal (`infinite_allowance`, threat intel hits), the engine escalates to `block` with `policyReason: "high_risk"`.
+> When the LLM is unavailable but the knowledge base detects a critical signal (`infinite_allowance`, `malicious_address_hit`, `malicious_domain_hit`, `phishing_domain`), the engine escalates to `block` with `policyReason: "high_risk"`.
 
 ### Supported signing methods
 
-| Method                 | EIP     | Description                                      |
-| ---------------------- | ------- | ------------------------------------------------ |
-| `eth_signTypedData_v4` | EIP-712 | Structured typed data (Permit, Permit2, orders)   |
-| `eth_sendTransaction` | —       | Transaction submission with calldata             |
-| `personal_sign`        | EIP-191 | Plaintext or hex-encoded message signing          |
-| `eth_sign`             | —       | Raw hash signing (highest inherent risk)         |
+
+| Method                 | EIP     | Description                                     |
+| ---------------------- | ------- | ----------------------------------------------- |
+| `eth_signTypedData_v4` | EIP-712 | Structured typed data (Permit, Permit2, orders) |
+| `eth_sendTransaction`  | —       | Transaction submission with calldata            |
+| `personal_sign`        | EIP-191 | Plaintext or hex-encoded message signing        |
+| `eth_sign`             | —       | Raw hash signing (highest inherent risk)        |
+
 
 ## Development
 
@@ -127,12 +191,14 @@ Request ──> Normalize ──> Parse ──> Enrich ──> LLM Reason ──
 npm run dev:test-api
 ```
 
-| Method | Path                  | Description                                    |
-| ------ | --------------------- | ---------------------------------------------- |
-| GET    | `/v2/health`          | Health check; returns LLM model and status     |
-| POST   | `/v2/analyze`         | Accepts `AnalyzeRequestV2`, returns result     |
+
+| Method | Path                    | Description                                |
+| ------ | ----------------------- | ------------------------------------------ |
+| GET    | `/v2/health`            | Health check; returns LLM model and status |
+| POST   | `/v2/analyze`           | Accepts `AnalyzeRequestV2`, returns result |
 | POST   | `/v2/fixtures/validate` | Runs golden fixtures, reports pass/fail    |
-| POST   | `/v2/reason`         | LLM reasoning gateway (used by Snap)         |
+| POST   | `/v2/reason`            | LLM reasoning gateway (used by Snap)       |
+
 
 ### Test web shell
 
@@ -165,36 +231,41 @@ Landing page and Snap initialization UI at `http://localhost:8000`.
 
 ## Environment variables
 
-| Variable              | Required | Default                         | Description                          |
-| --------------------- | -------- | ------------------------------- | ------------------------------------ |
-| `OPENAI_API_KEY`      | Yes      | —                               | OpenAI API key for LLM reasoning     |
-| `OPENAI_MODEL`        | No       | `gpt-5.2`                       | Model identifier                     |
-| `OPENAI_TIMEOUT_MS`   | No       | `12000`                         | Request timeout (ms)                 |
-| `TEST_API_HOST`       | No       | `0.0.0.0`                       | Test API bind address                |
-| `TEST_API_PORT`       | No       | `4000`                          | Test API port                        |
-| `TEST_WEB_HOST`       | No       | `0.0.0.0`                       | Web shell bind address               |
-| `TEST_WEB_PORT`       | No       | `4173`                          | Web shell port                       |
-| `TEST_WEB_API_BASE_URL` | No     | `http://localhost:4000`          | API URL used by web shell            |
-| `SNAP_GATEWAY_URL`    | No       | `http://localhost:4000/v2/reason` | Gateway endpoint for Snap         |
-| `SNAP_GATEWAY_TOKEN`  | No       | —                               | Optional bearer token for gateway    |
+
+| Variable                | Required | Default                           | Description                       |
+| ----------------------- | -------- | --------------------------------- | --------------------------------- |
+| `OPENAI_API_KEY`        | Yes      | —                                 | OpenAI API key for LLM reasoning  |
+| `OPENAI_MODEL`          | No       | `gpt-5.2`                         | Model identifier                  |
+| `OPENAI_TIMEOUT_MS`     | No       | `12000`                           | Request timeout (ms)              |
+| `TEST_API_HOST`         | No       | `0.0.0.0`                         | Test API bind address             |
+| `TEST_API_PORT`         | No       | `4000`                            | Test API port                     |
+| `TEST_WEB_HOST`         | No       | `0.0.0.0`                         | Web shell bind address            |
+| `TEST_WEB_PORT`         | No       | `4173`                            | Web shell port                    |
+| `TEST_WEB_API_BASE_URL` | No       | `http://localhost:4000`           | API URL used by web shell         |
+| `SNAP_GATEWAY_URL`      | No       | `http://localhost:4000/v2/reason` | Gateway endpoint for Snap         |
+| `SNAP_GATEWAY_TOKEN`    | No       | —                                 | Optional bearer token for gateway |
+
 
 ## Tech stack
 
-| Component         | Technology                     |
-| ----------------- | ------------------------------ |
-| Language          | TypeScript 5.7 (ES2022)        |
-| Monorepo          | npm workspaces                 |
-| Schema validation | Zod 3.24                       |
-| Testing           | Vitest 2.1, Jest (Snap)        |
-| LLM               | OpenAI API (configurable)      |
-| Snap SDK          | MetaMask Snaps SDK 6.22        |
-| API server        | Express 5                      |
-| Build             | tsc (per-package)              |
+
+| Component         | Technology                |
+| ----------------- | ------------------------- |
+| Language          | TypeScript 5.7 (ES2022)   |
+| Monorepo          | npm workspaces            |
+| Schema validation | Zod 3.24                  |
+| Testing           | Vitest 2.1, Jest (Snap)   |
+| LLM               | OpenAI API (configurable) |
+| Snap SDK          | MetaMask Snaps SDK 6.22   |
+| API server        | Express 5                 |
+| Build             | tsc (per-package)         |
+
 
 ## Potential roadmap
 
-- [ ] **Knowledge base expansion** — Broaden selector coverage, EIP-712 types, protocol patterns for emerging DeFi/NFT
-- [ ] **Multi-chain support** — Chain-specific risk rules and threat intelligence (L2s, EVM-compatible)
-- [ ] **Local LLM option** — Self-hosted or local LLM providers for privacy-sensitive deployments
-- [ ] **Snap distribution** — Publish to MetaMask Snaps directory for one-click installation
-- [ ] **Enhanced semantic output** — Richer natural language descriptions and structured field visualization
+- **Knowledge base expansion** — Broaden selector coverage, EIP-712 types, protocol patterns for emerging DeFi/NFT
+- **Multi-chain support** — Chain-specific risk rules and threat intelligence (L2s, EVM-compatible)
+- **Local LLM option** — Self-hosted or local LLM providers for privacy-sensitive deployments
+- **Snap distribution** — Publish to MetaMask Snaps directory for one-click installation
+- **Enhanced semantic output** — Richer natural language descriptions and structured field visualization
+
