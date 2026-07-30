@@ -22,7 +22,13 @@ There is no `OPENAI_API_KEY` by default and no `.env.example` in the repo (despi
 - Benign requests (e.g. SIWE login) return `decision.value: "error"` with `policyReason: "analysis_unavailable"`.
 - Requests with critical knowledge signals (`infinite_allowance`, `malicious_address_hit`, `malicious_domain_hit`, `phishing_domain`) still deterministically return `decision.value: "block"` with `policyReason: "high_risk"`.
 - Consequently `POST /v2/fixtures/validate` returns `pass: false` (fixtures expecting `allow` get `error`). This is expected without a key.
-To exercise the full LLM path and get `allow` decisions on benign fixtures, put `OPENAI_API_KEY` (and optionally `OPENAI_MODEL`) in a workspace-root `.env` (loaded by `apps/test-api`).
+To exercise the full LLM path and get `allow` decisions on benign fixtures, `OPENAI_API_KEY` must be set (see env configuration below).
+
+### Env configuration (Cloud Agent)
+Config precedence is **injected `process.env` (Cursor Secrets) > workspace-root `.env`** — `apps/test-api` loads `.env` via dotenv, which does NOT override already-set env vars. Full variable list is in `README.md`.
+- Durable / cross-VM values (e.g. `OPENAI_API_KEY`, `OPENAI_MODEL`, `SNAP_GATEWAY_TOKEN`): set them as **Cursor Secrets** — they are injected as env vars into every new VM. A workspace-root `.env` is git-ignored and does NOT persist to a fresh VM, so don't rely on it for cross-run config. Do not set env vars in the startup update script.
+- Model selection: `OPENAI_MODEL` (default `gpt-5.2` from `apps/test-api`). Note some newer models only accept the default `temperature`, which is why the OpenAI request no longer hardcodes `temperature`.
+- Start the API on port 4000 (see port gotcha above): `TEST_API_PORT=4000 npm run dev:test-api`.
 
 ### Lint / test / build
 - No dedicated `lint` script and no committed ESLint/Prettier config; the effective static check is the strict-mode TypeScript build. `npx prettier --check` reports diffs against Prettier defaults, but reformatting would rewrite existing source — do not run `--write` as a "lint fix".
