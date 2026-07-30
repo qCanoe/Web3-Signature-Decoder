@@ -92,7 +92,6 @@ export class OpenAiReasoningProvider implements ReasoningProvider {
       },
       body: JSON.stringify({
         model: this.model,
-        temperature: 0,
         messages: [
           {
             role: "system",
