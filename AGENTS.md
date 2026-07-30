@@ -4,6 +4,14 @@
 
 Web3 Signature Decoder is a TypeScript **npm-workspaces monorepo** (Node `>=20.11`). The shared logic lives in `packages/@sd/core-*`; the runnable apps live in `apps/`. See `README.md` for the full architecture, API routes, and env var table.
 
+### Task / subagent model (required)
+When launching Cursor **Task** subagents (`explore`, `generalPurpose`, `best-of-n-runner`, and other `subagent_type`s that accept a `model` parameter), **always** set `model` to Composer unless the user explicitly names a different model for that run:
+
+- Default: `composer-2.5`
+- Faster / cheaper exploration when appropriate: `composer-2.5-fast`
+- Do **not** omit `model` (omitting inherits the parent agent model, e.g. Grok) and do **not** default Task subagents to the parent model.
+- If the user explicitly requests another allowed model slug, honor that request for that invocation only; otherwise keep Composer as the fixed default.
+
 ### Build is required before running apps or tests (non-obvious)
 The apps and tests import the **compiled `dist/` output** of the `@sd/*` workspace packages (each package's `main` is `dist/index.js`), not their TypeScript source. So on a fresh checkout you MUST build the library packages before `dev`/`test` will work. The startup update script already runs the library builds (`@sd/core-schema`, `core-knowledge`, `core-llm`, `core-engine`, `core-renderers`, `test-fixtures`, `test-harness`); if you add/checkout a fresh tree yourself, rebuild them (dependency order: `core-schema` first). The dev servers themselves run via `tsx` on their own `src/`, so only the imported `@sd/*` libraries need building, not the apps.
 
